@@ -1,30 +1,67 @@
+@import '@fontsource/manrope/400.css';
 @import '@fontsource/manrope/500.css';
 @import '@fontsource/manrope/700.css';
 @import '@fontsource/newsreader/500.css';
 @import '@fontsource/newsreader/600.css';
 
 :root {
-  --bg: #f5efe4;
-  --surface: #fffaf2;
-  --surface-soft: #f0ece2;
-  --text: #5a615c;
-  --text-strong: #1e2d28;
-  --text-subtle: #7b8078;
-  --accent: #2e756a;
-  --accent-deep: #1f5c54;
-  --accent-soft: rgba(46, 117, 106, 0.12);
+  --color-compass-green: #2f6e62;
+  --color-deep-ink: #21313a;
+  --color-cloud-cream: #f8f6f1;
+  --color-sky-blue: #7ec8e3;
+  --color-sunshine-gold: #f4c95d;
+  --color-coral-pop: #f28c8c;
+  --color-lavender-mist: #b8a8e3;
+  --color-mint-tint: #ddf3ea;
+  --color-paper: #fffdfc;
+  --color-fog: #e9e5dc;
+  --color-soft-gray: #a7a29a;
+  --color-slate-text: #4b5563;
+
+  --primary: var(--color-compass-green);
+  --primary-strong: color-mix(in srgb, var(--color-compass-green) 84%, black);
+  --primary-soft: color-mix(in srgb, var(--color-compass-green) 14%, white);
+  --text: var(--color-slate-text);
+  --text-strong: var(--color-deep-ink);
+  --text-subtle: color-mix(in srgb, var(--color-slate-text) 74%, white);
+  --surface: var(--color-paper);
+  --surface-muted: var(--color-cloud-cream);
+  --surface-muted-2: var(--color-fog);
+  --surface-tint: color-mix(in srgb, var(--color-paper) 76%, var(--color-cloud-cream));
+  --surface-raised: color-mix(in srgb, var(--color-paper) 94%, transparent);
+  --info: var(--color-sky-blue);
+  --info-soft: color-mix(in srgb, var(--color-sky-blue) 30%, white);
+  --success: var(--color-mint-tint);
+  --success-strong: color-mix(in srgb, var(--color-compass-green) 78%, white);
+  --highlight: var(--color-sunshine-gold);
+  --highlight-soft: color-mix(in srgb, var(--color-sunshine-gold) 28%, white);
+  --warning-soft: var(--color-coral-pop);
+  --warning-soft-tint: color-mix(in srgb, var(--color-coral-pop) 22%, white);
+  --accent: var(--color-compass-green);
+  --accent-deep: var(--primary-strong);
+  --accent-soft: color-mix(in srgb, var(--color-compass-green) 14%, white);
+  --accent-secondary: var(--color-lavender-mist);
+  --accent-secondary-soft: color-mix(in srgb, var(--color-lavender-mist) 28%, white);
+  --border-soft: color-mix(in srgb, var(--color-deep-ink) 10%, white);
+  --border-strong: color-mix(in srgb, var(--color-compass-green) 26%, white);
+  --line-soft: color-mix(in srgb, var(--color-deep-ink) 8%, transparent);
   --shadow-soft:
-    0 20px 50px rgba(39, 39, 30, 0.08), 0 4px 14px rgba(39, 39, 30, 0.04);
+    0 24px 70px color-mix(in srgb, var(--color-deep-ink) 12%, transparent),
+    0 8px 24px color-mix(in srgb, var(--color-deep-ink) 8%, transparent);
+  --shadow-card:
+    0 18px 38px color-mix(in srgb, var(--color-deep-ink) 8%, transparent),
+    0 4px 12px color-mix(in srgb, var(--color-deep-ink) 5%, transparent);
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.9rem;
+  --radius-pill: 999px;
   --sans: 'Manrope', 'Avenir Next', 'Segoe UI', sans-serif;
   --heading: 'Newsreader', Georgia, serif;
   --mono: 'SFMono-Regular', 'IBM Plex Mono', monospace;
   font-family: var(--sans);
-  line-height: 1.55;
-  font-weight: 500;
+  line-height: 1.6;
+  font-weight: 400;
   color: var(--text);
-  background:
-    radial-gradient(circle at top, rgba(255, 219, 164, 0.28), transparent 28%),
-    linear-gradient(180deg, #f8f2e7 0%, #f5efe4 100%);
+  background: var(--surface-muted);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -35,10 +72,31 @@
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--info) 26%, transparent), transparent 28%),
+    radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--highlight) 24%, transparent), transparent 22%),
+    radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 24%),
+    repeating-linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-deep-ink) 3%, transparent) 0,
+      color-mix(in srgb, var(--color-deep-ink) 3%, transparent) 1px,
+      transparent 1px,
+      transparent 44px
+    ),
+    linear-gradient(
+      180deg,
+      var(--surface) 0%,
+      var(--surface-muted) 48%,
+      color-mix(in srgb, var(--surface-muted) 82%, var(--surface-muted-2)) 100%
+    );
 }
 
 button,
@@ -46,6 +104,7 @@ textarea,
 input,
 select {
   font: inherit;
+  color: inherit;
 }
 
 button {
@@ -53,17 +112,18 @@ button {
     transform 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    color 160ms ease;
 }
 
-button:hover {
+button:not(:disabled):hover {
   transform: translateY(-1px);
 }
 
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(46, 117, 106, 0.24);
+  outline: 3px solid color-mix(in srgb, var(--info) 52%, white);
   outline-offset: 2px;
 }
 
@@ -73,7 +133,8 @@ textarea:focus-visible {
 
 h1,
 h2,
-h3 {
+h3,
+h4 {
   margin: 0;
   color: var(--text-strong);
 }
@@ -86,29 +147,34 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(2.5rem, 8vw, 4.5rem);
-  line-height: 0.94;
+  font-size: clamp(2.9rem, 9vw, 4.9rem);
+  line-height: 0.95;
 }
 
 h2 {
-  font-size: clamp(1.5rem, 3vw, 2.15rem);
-  line-height: 1;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.05;
 }
 
 h3 {
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 
 p,
 li,
 dd {
   margin: 0;
+  font-size: 1rem;
+}
+
+strong {
+  color: var(--text-strong);
 }
 
 code {
   padding: 0.2rem 0.45rem;
   border-radius: 0.5rem;
-  background: rgba(33, 54, 48, 0.08);
+  background: color-mix(in srgb, var(--color-deep-ink) 8%, white);
   color: var(--text-strong);
   font-family: var(--mono);
   font-size: 0.88em;

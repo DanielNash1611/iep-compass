@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+public/models/*.task
+public/models/*.litertlm
+!public/models/.gitkeep
 
 # Editor directories and files
 .vscode/*

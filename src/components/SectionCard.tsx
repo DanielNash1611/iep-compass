@@ -6,6 +6,7 @@ interface SectionCardProps {
   description?: string
   eyebrow?: string
   footer?: ReactNode
+  icon?: ReactNode
   title: string
   tone?: 'default' | 'accent' | 'soft'
 }
@@ -16,6 +17,7 @@ export function SectionCard({
   description,
   eyebrow,
   footer,
+  icon,
   title,
   tone = 'default',
 }: SectionCardProps) {
@@ -27,7 +29,10 @@ export function SectionCard({
     <section className={cardClassName}>
       <header className="section-card__header">
         {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
-        <h2 className="section-card__title">{title}</h2>
+        <div className="section-card__title-row">
+          {icon ? <span className="section-card__icon">{icon}</span> : null}
+          <h2 className="section-card__title">{title}</h2>
+        </div>
         {description ? (
           <p className="section-card__description">{description}</p>
         ) : null}

@@ -26,6 +26,12 @@ export function PreviewReviewPanel({
   taskText,
 }: PreviewReviewPanelProps) {
   const readyForAnalysis = Boolean(iepExcerpt.trim() && taskText.trim())
+  const analyzeLabel = modelPlan.liveConfigured
+    ? `Analyze with ${modelPlan.primaryLabel}`
+    : 'Run structured demo analysis'
+  const analyzingLabel = modelPlan.liveConfigured
+    ? `Analyzing with ${modelPlan.primaryLabel}...`
+    : 'Building structured demo analysis...'
 
   return (
     <SectionCard
@@ -76,8 +82,8 @@ export function PreviewReviewPanel({
             <strong>Model plan</strong>
             <p>
               Primary model: {modelPlan.primaryLabel}. Fallback: {modelPlan.fallbackLabel}.
-              {modelPlan.remoteConfigured
-                ? ' A remote Gemma endpoint is configured.'
+              {modelPlan.liveConfigured
+                ? ` ${modelPlan.runtimeLabel} is configured for live analysis.`
                 : ' No endpoint is configured yet, so the app stays in demo mode with the same structured schema.'}
             </p>
           </div>
@@ -91,11 +97,7 @@ export function PreviewReviewPanel({
           disabled={!readyForAnalysis || isAnalyzing}
           onClick={() => void onAnalyze()}
         >
-          {isAnalyzing
-            ? 'Analyzing with Gemma 4...'
-            : isStale
-              ? 'Refresh analysis'
-              : 'Analyze with Gemma 4'}
+          {isAnalyzing ? analyzingLabel : isStale ? 'Refresh analysis' : analyzeLabel}
         </button>
 
         <p className="review-note">

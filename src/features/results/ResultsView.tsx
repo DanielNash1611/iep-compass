@@ -1,3 +1,4 @@
+import { AppIcon } from '../../components/AppIcon'
 import { ConfidenceBadge } from '../../components/ConfidenceBadge'
 import { SectionCard } from '../../components/SectionCard'
 import type { AnalysisExecution, Role } from '../../types/analysis'
@@ -6,31 +7,32 @@ const ROLE_LEADS: Record<Role, { description: string; title: string }> = {
   student: {
     title: 'Student focus',
     description:
-      'Lead with the likely supports and the advocacy script you can use before the task begins.',
+      'Lead with the support that seems most useful here and the words a student can use to ask for it.',
   },
   parent: {
     title: 'Parent focus',
     description:
-      'Use this to coach the student, preview possible supports, and decide what to confirm with school staff.',
+      'Use this to coach the student, preview what may help, and decide what is worth confirming with school staff.',
   },
   teacher: {
     title: 'Teacher focus',
     description:
-      'Use this as a reminder of which approved supports may matter here and where staff confirmation is still needed.',
+      'Use this as a grounded reminder of which approved supports may matter and what still needs confirmation.',
   },
 }
 
+const ACCOMMODATION_SUPPORT_COPY = {
+  likely_relevant: 'Worth checking first for this assignment.',
+  possibly_relevant: 'Could help, but the fit is less certain.',
+  unclear_confirm: 'Pause here and confirm the details with staff.',
+} as const
+
 interface ResultsViewProps {
   analysis: AnalysisExecution
-  isStale: boolean
   role: Role
 }
 
-export function ResultsView({
-  analysis,
-  isStale,
-  role,
-}: ResultsViewProps) {
+export function ResultsView({ analysis, role }: ResultsViewProps) {
   const roleLead = ROLE_LEADS[role]
   const remindersFirst = role === 'teacher'
 
@@ -38,20 +40,24 @@ export function ResultsView({
     <SectionCard
       key="advocacy"
       eyebrow="Student advocacy"
-      title="Respectful language to ask for support"
-      description="These scripts stay focused on approved supports rather than asking for academic help."
+      title="Words you can use to ask for support"
+      description="These scripts stay focused on approved supports and keep the ask respectful and specific."
+      icon={<AppIcon name="quote" />}
     >
       <div className="stacked-copy">
-        <blockquote className="quote-card">
+        <blockquote className="quote-card quote-card--featured">
           <p>{analysis.result.studentAdvocacy.suggestedScript}</p>
         </blockquote>
 
         {analysis.result.studentAdvocacy.alternativeScripts.length > 0 ? (
-          <ul className="support-list">
-            {analysis.result.studentAdvocacy.alternativeScripts.map((script) => (
-              <li key={script}>{script}</li>
-            ))}
-          </ul>
+          <div className="results-detail-block">
+            <h3>Other ways to say it</h3>
+            <ul className="support-list">
+              {analysis.result.studentAdvocacy.alternativeScripts.map((script) => (
+                <li key={script}>{script}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </div>
     </SectionCard>
@@ -61,10 +67,11 @@ export function ResultsView({
     <SectionCard
       key="teacher"
       eyebrow="Teacher reminders"
-      title="Implementation notes to keep the support grounded"
-      description="These reminders emphasize access supports and clear confirmation points."
+      title="Helpful implementation notes"
+      description="These notes keep the support grounded in access, not in doing the academic work for the student."
+      icon={<AppIcon name="shield" />}
     >
-      <ul className="support-list">
+      <ul className="support-list support-list--checks">
         {analysis.result.teacherReminders.map((reminder) => (
           <li key={reminder}>{reminder}</li>
         ))}
@@ -75,89 +82,112 @@ export function ResultsView({
   return (
     <div className="results-stack">
       <SectionCard
-        eyebrow="Analysis summary"
-        title="What may matter for this task"
+        eyebrow="Recommended first"
+        title="Supports to check first"
         description={analysis.result.summary}
         tone="accent"
+        icon={<AppIcon name="compass" />}
       >
-        <div className="role-callout">
-          <span className="eyebrow">{roleLead.title}</span>
-          <p>{roleLead.description}</p>
-        </div>
+        <p className="results-priority-note">
+          Here&apos;s what may apply for this assignment. Each checkpoint shows
+          the exact source text the app is using so the reasoning stays easy to
+          follow.
+        </p>
 
-        <div className="results-meta" aria-label="Analysis metadata">
-          <span className="meta-badge">
-            {analysis.meta.mode === 'remote' ? 'Gemma live' : 'Demo mode'}
-          </span>
-          <span className="meta-badge">{analysis.meta.model}</span>
-          {analysis.meta.usedFallback ? (
-            <span className="meta-badge">Fallback path used</span>
-          ) : null}
-        </div>
-
-        {analysis.meta.notes.length > 0 ? (
-          <ul className="support-list">
-            {analysis.meta.notes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-        ) : null}
-
-        {isStale ? (
-          <div className="status-banner">
-            The input changed after this result was generated. Refresh the analysis
-            before sharing it with a student, parent, or teacher.
-          </div>
-        ) : null}
-      </SectionCard>
-
-      <SectionCard
-        eyebrow="Potentially relevant accommodations"
-        title="Supports from the excerpt that may apply here"
-        description="Confidence stays cautious when the task details are incomplete or the accommodation depends on what the task is measuring."
-      >
         {analysis.result.relevantAccommodations.length > 0 ? (
           <div className="accommodation-list">
-            {analysis.result.relevantAccommodations.map((item) => (
-              <article key={`${item.name}-${item.sourceText}`} className="accommodation-card">
-                <div className="accommodation-card__header">
-                  <h3>{item.name}</h3>
-                  <ConfidenceBadge confidence={item.confidence} />
-                </div>
+            {analysis.result.relevantAccommodations.map((item, index) => {
+              const detailBlocks = [
+                {
+                  icon: 'spark' as const,
+                  label: 'What this support means',
+                  value: item.plainLanguage,
+                },
+                {
+                  icon: 'results' as const,
+                  label: 'Why it may fit this assignment',
+                  value: item.applicationReason,
+                },
+                {
+                  icon: 'waypoint' as const,
+                  label: 'Why it may help with access',
+                  value: item.whyItMayMatter,
+                },
+                {
+                  icon: 'source' as const,
+                  label: 'Source text we relied on',
+                  value: item.sourceText,
+                },
+              ]
 
-                <div className="accommodation-details">
-                  <div>
-                    <dt>Plain language</dt>
-                    <dd>{item.plainLanguage}</dd>
+              return (
+                <article
+                  key={`${item.name}-${item.sourceText}`}
+                  className={`accommodation-card accommodation-card--${item.confidence}`}
+                >
+                  <div className="accommodation-card__topline">
+                    <span className="accommodation-card__waypoint">
+                      <AppIcon name="star" className="button-icon button-icon--sm" />
+                      Checkpoint {index + 1}
+                    </span>
+                    <ConfidenceBadge confidence={item.confidence} />
                   </div>
 
-                  <div>
-                    <dt>Why it may matter</dt>
-                    <dd>{item.whyItMayMatter}</dd>
+                  <div className="accommodation-card__header">
+                    <div>
+                      <h3>{item.name}</h3>
+                      <p className="accommodation-card__summary">
+                        {ACCOMMODATION_SUPPORT_COPY[item.confidence]}
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <dt>Source text from the IEP excerpt</dt>
-                    <dd>{item.sourceText}</dd>
-                  </div>
-                </div>
-
-                {item.implementationNotes.length > 0 ? (
-                  <ul className="support-list">
-                    {item.implementationNotes.map((note) => (
-                      <li key={note}>{note}</li>
+                  <dl className="accommodation-details">
+                    {detailBlocks.map((detail) => (
+                      <div
+                        key={`${item.name}-${detail.label}`}
+                        className={`accommodation-detail-card accommodation-detail-card--${detail.icon}`}
+                      >
+                        <dt>
+                          <AppIcon name={detail.icon} className="button-icon button-icon--sm" />
+                          <span>{detail.label}</span>
+                        </dt>
+                        <dd>{detail.value}</dd>
+                      </div>
                     ))}
-                  </ul>
-                ) : null}
-              </article>
-            ))}
+                  </dl>
+
+                  {item.implementationNotes.length > 0 ? (
+                    <div className="accommodation-card__notes">
+                      <h4>
+                        <AppIcon name="flag" className="button-icon button-icon--sm" />
+                        <span>What to double-check next</span>
+                      </h4>
+                      <ul className="support-list support-list--checks">
+                        {item.implementationNotes.map((note) => (
+                          <li key={note}>{note}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </article>
+              )
+            })}
           </div>
         ) : (
-          <p>
-            No accommodations from the pasted excerpt stand out as clearly relevant
-            from the current task description. That usually means the task details
-            are incomplete or the connection is not obvious yet.
-          </p>
+          <div className="results-empty-state">
+            <span className="results-empty-state__icon" aria-hidden="true">
+              <AppIcon name="waypoint" />
+            </span>
+            <div>
+              <h3>No clear support match yet</h3>
+              <p>
+                Nothing in the current excerpt stands out as a strong fit yet.
+                That usually means the assignment details need a little more
+                context or the connection is still too uncertain to call.
+              </p>
+            </div>
+          </div>
         )}
       </SectionCard>
 
@@ -165,37 +195,77 @@ export function ResultsView({
       {remindersFirst ? advocacyPanel : teacherPanel}
 
       <SectionCard
-        eyebrow="Not obviously relevant"
-        title="Supports that do not clearly connect yet"
-        description="Keeping these separate helps the app avoid overclaiming."
+        eyebrow="More detail"
+        title="Why this output looks this way"
+        description="Open this if you want to inspect the reasoning trail, model notes, and the boundaries that stayed in place."
         tone="soft"
+        icon={<AppIcon name="results" />}
       >
-        {analysis.result.notObviouslyRelevant.length > 0 ? (
-          <ul className="support-list">
-            {analysis.result.notObviouslyRelevant.map((item) => (
-              <li key={`${item.name}-${item.reason}`}>
-                <strong>{item.name}:</strong> {item.reason}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>
-            Every accommodation in the excerpt either appeared relevant here or
-            required an uncertainty note.
-          </p>
-        )}
-      </SectionCard>
+        <details className="results-details-panel">
+          <summary className="results-details-panel__summary">
+            <span className="summary-label">
+              <AppIcon name="compass" className="button-icon button-icon--sm" />
+              Open the reasoning trail
+            </span>
+          </summary>
 
-      <SectionCard
-        eyebrow="Boundaries"
-        title="Safety notes and scope"
-        description="These reminders keep the output grounded in the PRD rules."
-      >
-        <ul className="support-list">
-          {analysis.result.boundaries.map((boundary) => (
-            <li key={boundary}>{boundary}</li>
-          ))}
-        </ul>
+          <div className="results-details-panel__body">
+            <div className="role-callout">
+              <span className="eyebrow">{roleLead.title}</span>
+              <p>{roleLead.description}</p>
+            </div>
+
+            <div className="results-meta" aria-label="Analysis metadata">
+              <span className="meta-badge">
+                {analysis.meta.mode === 'live'
+                  ? analysis.meta.runtimeLabel
+                  : 'Demo mode'}
+              </span>
+              <span className="meta-badge">{analysis.meta.model}</span>
+              {analysis.meta.usedFallback ? (
+                <span className="meta-badge">Fallback path used</span>
+              ) : null}
+            </div>
+
+            {analysis.meta.notes.length > 0 ? (
+              <div className="results-detail-block">
+                <h3>Model notes</h3>
+                <ul className="support-list">
+                  {analysis.meta.notes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className="results-detail-block">
+              <h3>Not obviously relevant</h3>
+              {analysis.result.notObviouslyRelevant.length > 0 ? (
+                <ul className="support-list">
+                  {analysis.result.notObviouslyRelevant.map((item) => (
+                    <li key={`${item.name}-${item.reason}`}>
+                      <strong>{item.name}:</strong> {item.reason}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>
+                  Every accommodation in the excerpt either looked relevant here
+                  or needed an uncertainty note.
+                </p>
+              )}
+            </div>
+
+            <div className="results-detail-block">
+              <h3>Boundaries that stayed in place</h3>
+              <ul className="support-list support-list--checks">
+                {analysis.result.boundaries.map((boundary) => (
+                  <li key={boundary}>{boundary}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </details>
       </SectionCard>
     </div>
   )

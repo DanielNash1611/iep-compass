@@ -1,0 +1,196 @@
+.browser-gemma-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.browser-gemma-panel__intro {
+  padding: 0.95rem 1rem;
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(113, 111, 102, 0.12);
+}
+
+.browser-gemma-panel__status-grid,
+.browser-gemma-panel__debug-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.browser-gemma-panel__status-card,
+.browser-gemma-panel__composer,
+.browser-gemma-panel__response,
+.browser-gemma-panel__debug-grid > div {
+  padding: 1rem;
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(113, 111, 102, 0.12);
+}
+
+.browser-gemma-panel__status-card--soft {
+  background: rgba(247, 245, 239, 0.84);
+}
+
+.browser-gemma-panel__status-header,
+.browser-gemma-panel__composer-header,
+.browser-gemma-panel__response-header,
+.browser-gemma-panel__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.browser-gemma-panel__status-header h3,
+.browser-gemma-panel__composer-header h3,
+.browser-gemma-panel__response-header h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1.02rem;
+  color: var(--text-strong);
+}
+
+.browser-gemma-panel__detail,
+.browser-gemma-panel__microcopy,
+.browser-gemma-panel__debug-grid dt,
+.browser-gemma-panel__debug-grid dd {
+  margin: 0;
+}
+
+.browser-gemma-panel__detail {
+  color: var(--text);
+}
+
+.browser-gemma-panel__warnings {
+  margin: 0;
+  color: var(--text-subtle);
+}
+
+.browser-gemma-panel__microcopy {
+  font-size: 0.9rem;
+  color: var(--text-subtle);
+}
+
+.browser-gemma-panel__pill,
+.browser-gemma-panel__response-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.browser-gemma-panel__pill--ready {
+  background: rgba(46, 117, 106, 0.14);
+  color: var(--accent-deep);
+}
+
+.browser-gemma-panel__pill--busy {
+  background: rgba(74, 109, 184, 0.14);
+  color: #365ba2;
+}
+
+.browser-gemma-panel__pill--error {
+  background: rgba(170, 67, 49, 0.14);
+  color: #943c2a;
+}
+
+.browser-gemma-panel__pill--idle,
+.browser-gemma-panel__response-label {
+  background: rgba(113, 111, 102, 0.1);
+  color: var(--text-subtle);
+}
+
+.browser-gemma-panel__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.browser-gemma-panel__toggle input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.browser-gemma-panel__prompt {
+  min-height: 8rem;
+}
+
+.browser-gemma-panel__response-surface {
+  min-height: 8rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(247, 245, 239, 0.92);
+  border: 1px solid rgba(113, 111, 102, 0.1);
+}
+
+.browser-gemma-panel__response-surface p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.browser-gemma-panel__placeholder {
+  color: var(--text-subtle);
+}
+
+.browser-gemma-panel__error {
+  margin: 0.85rem 0 0;
+  padding: 0.85rem 0.95rem;
+  border-radius: 1rem;
+  background: rgba(170, 67, 49, 0.1);
+  color: #943c2a;
+}
+
+.browser-gemma-panel__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.browser-gemma-panel__links a {
+  color: var(--accent-deep);
+  text-decoration: none;
+}
+
+.browser-gemma-panel__links a:hover {
+  text-decoration: underline;
+}
+
+.browser-gemma-panel__debug-grid dt {
+  margin-bottom: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+}
+
+.browser-gemma-panel__debug-grid dd {
+  color: var(--text);
+  word-break: break-word;
+}
+
+@media (min-width: 900px) {
+  .browser-gemma-panel__status-grid,
+  .browser-gemma-panel__debug-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .browser-gemma-panel__status-card,
+  .browser-gemma-panel__composer,
+  .browser-gemma-panel__response,
+  .browser-gemma-panel__debug-grid > div {
+    border-radius: 1rem;
+  }
+
+  .browser-gemma-panel__status-header,
+  .browser-gemma-panel__composer-header,
+  .browser-gemma-panel__response-header,
+  .browser-gemma-panel__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

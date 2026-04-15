@@ -1,4 +1,7 @@
-import type { AnalysisResult } from '../lib/schema/analysisSchema'
+import type {
+  AnalysisResult,
+  TeacherConcernEvaluation,
+} from '../lib/schema/analysisSchema'
 
 export const roles = ['student', 'parent', 'teacher'] as const
 export type Role = (typeof roles)[number]
@@ -30,21 +33,39 @@ export interface UploadedAttachment {
   status: AttachmentStatus
 }
 
-export interface AnalysisRequest {
+export interface SourceMaterial {
   attachments: UploadedAttachment[]
+  text: string
+}
+
+export interface AnalysisRequest {
   contextTags: TaskContext[]
-  iepExcerpt: string
+  iepSource: SourceMaterial
   role: Role
-  taskText: string
+  taskTitle: string
+  teacherConcern?: string
+  taskSource: SourceMaterial
+}
+
+export interface TeacherConcernRequest extends AnalysisRequest {
+  teacherConcern: string
+}
+
+export interface AnalysisMeta {
+  adapterLabel: string
+  mode: 'live' | 'demo'
+  model: string
+  notes: string[]
+  runtimeLabel: string
+  usedFallback: boolean
 }
 
 export interface AnalysisExecution {
-  meta: {
-    adapterLabel: string
-    mode: 'remote' | 'demo'
-    model: string
-    notes: string[]
-    usedFallback: boolean
-  }
+  meta: AnalysisMeta
   result: AnalysisResult
+}
+
+export interface TeacherConcernExecution {
+  meta: AnalysisMeta
+  result: TeacherConcernEvaluation
 }
