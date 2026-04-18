@@ -1,13 +1,23 @@
 import type { AnalysisModelAdapter } from './adapter'
 import {
+  parseCoreAnalysisResult,
   parseAnalysisResult,
+  parentGuidanceSchema,
   parseTeacherConcernEvaluation,
+  studentGuidanceSchema,
+  teacherGuidanceSchema,
 } from '../schema/analysisSchema'
 import {
-  buildGemmaSystemPrompt,
+  buildCoreAnalysisSystemPrompt,
+  buildCoreAnalysisUserPrompt,
+  buildParentGuidanceSystemPrompt,
+  buildParentGuidanceUserPrompt,
+  buildStudentGuidanceSystemPrompt,
+  buildStudentGuidanceUserPrompt,
   buildTeacherConcernSystemPrompt,
   buildTeacherConcernUserPrompt,
-  buildGemmaUserPrompt,
+  buildTeacherGuidanceSystemPrompt,
+  buildTeacherGuidanceUserPrompt,
   GEMMA_LOCAL_MODEL_ID,
   GEMMA_LOCAL_MODEL_LABEL,
 } from './prompt'
@@ -15,6 +25,7 @@ import {
   runDeterministicAnalysis,
   runTeacherConcernAnalysis,
 } from './mockAnalysis'
+import { getSourceReadyAttachments } from '../../features/source/sourceText'
 import type {
   AnalysisExecution,
   AnalysisRequest,
@@ -45,12 +56,17 @@ const MODEL_LABELS: Record<string, string> = {
 const STRUCTURED_DEMO_LABEL = 'Structured demo'
 
 function readConfig(): GemmaConfig {
+  const primaryModel =
+    import.meta.env.VITE_GEMMA_APP_MODEL?.trim()
+    || import.meta.env.VITE_GEMMA_PRIMARY_MODEL?.trim()
+    || GEMMA_LOCAL_MODEL_ID
+
   return {
     apiKey: import.meta.env.VITE_GEMMA_API_KEY?.trim(),
     baseUrl: import.meta.env.VITE_GEMMA_BASE_URL?.trim(),
     fallbackModel: import.meta.env.VITE_GEMMA_FALLBACK_MODEL?.trim() || undefined,
     multimodalReady: import.meta.env.VITE_GEMMA_MULTIMODAL === 'true',
-    primaryModel: import.meta.env.VITE_GEMMA_PRIMARY_MODEL?.trim() || GEMMA_LOCAL_MODEL_ID,
+    primaryModel,
   }
 }
 
@@ -94,7 +110,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
   }
 
   async analyze(request: AnalysisRequest): Promise<AnalysisExecution> {
-    const attachmentNotes = this.buildAttachmentNotes(request)
+    const attachmentNotes = this.buildAnalysisNotes(request)
     const primaryLabel = formatModelLabel(this.config.primaryModel)
 
     if (!this.config.baseUrl) {
@@ -115,12 +131,10 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
     }
 
     try {
-      const result = await this.callLiveModel({
-        model: this.config.primaryModel,
-        parseResponse: parseAnalysisResult,
-        systemPrompt: buildGemmaSystemPrompt(),
-        userPrompt: buildGemmaUserPrompt(request),
-      })
+      const result = await this.runLiveCompositeAnalysis(
+        this.config.primaryModel,
+        request,
+      )
 
       return {
         meta: {
@@ -153,12 +167,10 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
       }
 
       try {
-        const fallbackResult = await this.callLiveModel({
-          model: this.config.fallbackModel,
-          parseResponse: parseAnalysisResult,
-          systemPrompt: buildGemmaSystemPrompt(),
-          userPrompt: buildGemmaUserPrompt(request),
-        })
+        const fallbackResult = await this.runLiveCompositeAnalysis(
+          this.config.fallbackModel,
+          request,
+        )
         const fallbackLabel = formatModelLabel(this.config.fallbackModel)
 
         return {
@@ -199,7 +211,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
   async analyzeTeacherConcern(
     request: TeacherConcernRequest,
   ): Promise<TeacherConcernExecution> {
-    const attachmentNotes = this.buildAttachmentNotes(request)
+    const attachmentNotes = this.buildAnalysisNotes(request)
     const primaryLabel = formatModelLabel(this.config.primaryModel)
 
     if (!this.config.baseUrl) {
@@ -301,21 +313,89 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
     }
   }
 
-  private buildAttachmentNotes(request: AnalysisRequest) {
-    const attachmentCount =
-      request.iepSource.attachments.length + request.taskSource.attachments.length
+  private buildAnalysisNotes(request: AnalysisRequest) {
+    const attachments = [
+      ...request.iepSource.attachments,
+      ...request.taskSource.attachments,
+    ]
+    const attachmentCount = attachments.length
 
     if (attachmentCount === 0) {
-      return ['No uploads were attached for this analysis run.']
-    }
-
-    if (!this.config.multimodalReady) {
       return [
-        'Uploads were included as reference notes. Paste the important task text as well unless the live endpoint is upgraded for multimodal input.',
+        'Student, parent, and teacher sidecars are derived from one shared core mapping pass.',
+        'No uploads were attached for this analysis run.',
       ]
     }
 
-    return ['A multimodal-ready endpoint is configured; uploads can be incorporated in later iterations of this adapter.']
+    const reviewedAttachmentCount = attachments.filter((attachment) =>
+      getSourceReadyAttachments([attachment]).length > 0,
+    ).length
+    const referenceOnlyCount = attachments.filter(
+      (attachment) => getSourceReadyAttachments([attachment]).length === 0,
+    ).length
+
+    if (!this.config.multimodalReady && referenceOnlyCount > 0) {
+      return [
+        reviewedAttachmentCount > 0
+          ? `${reviewedAttachmentCount} upload${
+              reviewedAttachmentCount === 1 ? ' was' : 's were'
+            } reviewed and folded into the source trail.`
+          : 'No reviewed upload details were included in the source trail yet.',
+        `${referenceOnlyCount} upload${
+          referenceOnlyCount === 1 ? ' stays' : 's stay'
+        } reference-only for this run.`,
+      ]
+    }
+
+    return [
+      'Student, parent, and teacher sidecars are derived from one shared core mapping pass.',
+      reviewedAttachmentCount > 0
+        ? `${reviewedAttachmentCount} reviewed upload${
+            reviewedAttachmentCount === 1 ? ' is' : 's are'
+          } already part of the source trail.`
+        : 'Uploads are attached, but none were included in the source trail yet.',
+      'A multimodal-ready endpoint is configured; later iterations can incorporate uploads more directly.',
+    ]
+  }
+
+  private async runLiveCompositeAnalysis(
+    model: string,
+    request: AnalysisRequest,
+  ) {
+    const coreResult = await this.callLiveModel({
+      model,
+      parseResponse: parseCoreAnalysisResult,
+      systemPrompt: buildCoreAnalysisSystemPrompt(),
+      userPrompt: buildCoreAnalysisUserPrompt(request),
+    })
+
+    const [studentGuidance, parentGuidance, teacherGuidance] = await Promise.all([
+      this.callLiveModel({
+        model,
+        parseResponse: (input) => studentGuidanceSchema.parse(input),
+        systemPrompt: buildStudentGuidanceSystemPrompt(),
+        userPrompt: buildStudentGuidanceUserPrompt(request, coreResult),
+      }),
+      this.callLiveModel({
+        model,
+        parseResponse: (input) => parentGuidanceSchema.parse(input),
+        systemPrompt: buildParentGuidanceSystemPrompt(),
+        userPrompt: buildParentGuidanceUserPrompt(request, coreResult),
+      }),
+      this.callLiveModel({
+        model,
+        parseResponse: (input) => teacherGuidanceSchema.parse(input),
+        systemPrompt: buildTeacherGuidanceSystemPrompt(),
+        userPrompt: buildTeacherGuidanceUserPrompt(request, coreResult),
+      }),
+    ])
+
+    return parseAnalysisResult({
+      ...coreResult,
+      parentGuidance,
+      studentGuidance,
+      teacherGuidance,
+    })
   }
 
   private async callLiveModel<T>({

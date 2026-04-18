@@ -1,0 +1,41 @@
+{
+  "suite": "accommodation_upload",
+  "id": "exception_language",
+  "label": "Accommodation with exception language",
+  "image_path": "scripts/evals/image/fixtures/accommodation_upload/exception_language.png",
+  "notes": [
+    "Tests whether condition language is preserved instead of flattened."
+  ],
+  "expected": {
+    "document_type": "iep_accommodation_page",
+    "expected_accommodations": [
+      {
+        "normalized_type": "spelling_mechanics_flexibility",
+        "category": "writing",
+        "label_keywords": ["spelling errors", "reduce score"],
+        "source_evidence_keywords": ["except", "rubric"],
+        "conditions": [
+          "except when spelling is part of the rubric"
+        ]
+      },
+      {
+        "normalized_type": "speech_to_text",
+        "category": "assistive_technology",
+        "label_keywords": ["speech-to-text"],
+        "source_evidence_keywords": ["multi-paragraph writing"],
+        "conditions": []
+      }
+    ],
+    "must_include_keywords": [
+      "spelling",
+      "rubric"
+    ],
+    "conditions": [
+      "except when spelling is part of the rubric"
+    ],
+    "must_not_include": [
+      "calculator use"
+    ],
+    "requires_uncertainty": false
+  }
+}

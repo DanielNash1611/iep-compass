@@ -24,7 +24,7 @@ export function IEPExcerptInput({
     <SectionCard
       eyebrow="Step 1"
       title="Paste the IEP accommodations excerpt"
-      description="Keep this focused on the accommodations section. The app will only cite supports that appear here."
+      description="Keep this focused on the accommodations section. The app will only cite accommodations that appear here."
     >
       <div className="field-stack">
         <label className="textarea-label">

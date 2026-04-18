@@ -151,7 +151,7 @@ Preferred tone:
 - “Let’s start with the approved IEP details.”
 - “Here’s what may apply for this assignment.”
 - “This looks worth checking with your teacher.”
-- “We only use supports shown in your source materials.”
+- “We only use accommodations shown in your source materials.”
 
 Avoid:
 

@@ -1,0 +1,46 @@
+{
+  "suite": "accommodation_upload",
+  "id": "clear_typed_document",
+  "label": "Clear typed accommodation document",
+  "image_path": "scripts/evals/image/fixtures/accommodation_upload/clear_typed_document.png",
+  "notes": [
+    "Starter synthetic typed document.",
+    "Checks basic extraction and normalization on a clear page."
+  ],
+  "expected": {
+    "document_type": "iep_accommodation_page",
+    "expected_accommodations": [
+      {
+        "normalized_type": "extended_time",
+        "category": "timing",
+        "label_keywords": ["extended time"],
+        "source_evidence_keywords": ["time and a half"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "reduced_distraction_setting",
+        "category": "setting",
+        "label_keywords": ["small-group", "reduced distraction"],
+        "source_evidence_keywords": ["tests"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "read_aloud",
+        "category": "reading",
+        "label_keywords": ["read aloud"],
+        "source_evidence_keywords": ["directions"],
+        "conditions": []
+      }
+    ],
+    "must_include_keywords": [
+      "extended time",
+      "small-group",
+      "read aloud"
+    ],
+    "conditions": [],
+    "must_not_include": [
+      "speech-to-text"
+    ],
+    "requires_uncertainty": false
+  }
+}

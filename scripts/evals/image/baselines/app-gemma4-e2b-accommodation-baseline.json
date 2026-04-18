@@ -1,0 +1,1211 @@
+{
+  "generated_at": "2026-04-18T05:42:38.349Z",
+  "judge_mode": "off",
+  "judge_model": "gemma4:31b",
+  "model": "gemma4:e2b",
+  "suites": [
+    {
+      "cases": [
+        {
+          "case": {
+            "id": "blurry_phone_photo",
+            "image_path": "scripts/evals/image/fixtures/accommodation_upload/blurry_phone_photo.png",
+            "label": "Blurry phone photo with partial clarity",
+            "notes": [
+              "Synthetic blurred page to test OCR and uncertainty handling."
+            ],
+            "expected": {
+              "conditions": [],
+              "document_type": "iep_accommodation_page",
+              "expected_accommodations": [
+                {
+                  "category": "assistive_technology",
+                  "conditions": [],
+                  "label_keywords": [
+                    "speech-to-text"
+                  ],
+                  "normalized_type": "speech_to_text",
+                  "source_evidence_keywords": [
+                    "long written responses"
+                  ]
+                },
+                {
+                  "category": "setting",
+                  "conditions": [],
+                  "label_keywords": [
+                    "preferential seating"
+                  ],
+                  "normalized_type": "preferential_seating",
+                  "source_evidence_keywords": [
+                    "near direct instruction"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "speech-to-text"
+              ],
+              "must_not_include": [
+                "calculator"
+              ],
+              "requires_uncertainty": true
+            },
+            "suite": "accommodation_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/accommodation_upload/blurry_phone_photo.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/blurry_phone_photo.png"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "details": "length=169",
+                "key": "plain_text_present",
+                "passed": true
+              },
+              {
+                "details": "Accommodation extraction should now return plain text, not JSON.",
+                "key": "plain_text_not_json",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "attempts": [
+              {
+                "failureMode": "none",
+                "outputPreview": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
+                "passLabel": "full",
+                "runtimeMs": 5862
+              }
+            ],
+            "pipeline": "vision_extract_text",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/v1/chat/completions",
+            "totalTimeoutMs": 600000,
+            "transport": "openai_compatible",
+            "originalAsset": {
+              "bytes": 318186,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/blurry_phone_photo.png"
+            },
+            "finalAsset": {
+              "bytes": 318186,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/blurry_phone_photo.png"
+            },
+            "focusedRecoveryTriggered": false,
+            "photoMode": false,
+            "preprocessRuntimeMs": 0,
+            "draftHealth": {
+              "boilerplateLineCount": 0,
+              "hasModificationsPreamble": false,
+              "isHeadingHeavy": false,
+              "lowSignalLineCount": false,
+              "sectionHeadingCount": 0,
+              "signalLineCount": 3,
+              "totalLineCount": 4
+            },
+            "selectedPassLabel": "full",
+            "extractionPreview": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
+            "extractionRuntimeMs": 5862,
+            "runtimeMs": 6002,
+            "runnerAttempts": [
+              {
+                "attemptNumber": 1,
+                "durationMs": 6132,
+                "failureMode": "none",
+                "status": "passed"
+              }
+            ],
+            "runnerIsolation": "fresh_process"
+          },
+          "failure_tags": [],
+          "field": {
+            "checks": [
+              {
+                "details": "speech-to-text, long written responses",
+                "key": "accommodation_speech_to_text_found",
+                "passed": true
+              },
+              {
+                "details": "preferential seating, near direct instruction",
+                "key": "accommodation_preferential_seating_found",
+                "passed": true
+              },
+              {
+                "details": "speech-to-text",
+                "key": "must_include_speech-to-text",
+                "passed": true
+              },
+              {
+                "details": "calculator",
+                "key": "must_not_include_calculator",
+                "passed": true
+              },
+              {
+                "details": "Expected a cautious uncertainty marker in the extracted text.",
+                "key": "uncertainty_handling",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": null,
+            "field_score": 1,
+            "hallucination_flagged": 0,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 1
+          },
+          "model": "gemma4:e2b",
+          "output": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
+          "raw_content": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
+          "status": "passed"
+        },
+        {
+          "case": {
+            "id": "clear_typed_document",
+            "image_path": "scripts/evals/image/fixtures/accommodation_upload/clear_typed_document.png",
+            "label": "Clear typed accommodation document",
+            "notes": [
+              "Starter synthetic typed document.",
+              "Checks basic extraction and normalization on a clear page."
+            ],
+            "expected": {
+              "conditions": [],
+              "document_type": "iep_accommodation_page",
+              "expected_accommodations": [
+                {
+                  "category": "timing",
+                  "conditions": [],
+                  "label_keywords": [
+                    "extended time"
+                  ],
+                  "normalized_type": "extended_time",
+                  "source_evidence_keywords": [
+                    "time and a half"
+                  ]
+                },
+                {
+                  "category": "setting",
+                  "conditions": [],
+                  "label_keywords": [
+                    "small-group",
+                    "reduced distraction"
+                  ],
+                  "normalized_type": "reduced_distraction_setting",
+                  "source_evidence_keywords": [
+                    "tests"
+                  ]
+                },
+                {
+                  "category": "reading",
+                  "conditions": [],
+                  "label_keywords": [
+                    "read aloud"
+                  ],
+                  "normalized_type": "read_aloud",
+                  "source_evidence_keywords": [
+                    "directions"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "extended time",
+                "small-group",
+                "read aloud"
+              ],
+              "must_not_include": [
+                "speech-to-text"
+              ],
+              "requires_uncertainty": false
+            },
+            "suite": "accommodation_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/accommodation_upload/clear_typed_document.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/clear_typed_document.png"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "details": "length=271",
+                "key": "plain_text_present",
+                "passed": true
+              },
+              {
+                "details": "Accommodation extraction should now return plain text, not JSON.",
+                "key": "plain_text_not_json",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "attempts": [
+              {
+                "failureMode": "none",
+                "outputPreview": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when need",
+                "passLabel": "full",
+                "runtimeMs": 5899
+              }
+            ],
+            "pipeline": "vision_extract_text",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/v1/chat/completions",
+            "totalTimeoutMs": 600000,
+            "transport": "openai_compatible",
+            "originalAsset": {
+              "bytes": 176431,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/clear_typed_document.png"
+            },
+            "finalAsset": {
+              "bytes": 176431,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/clear_typed_document.png"
+            },
+            "focusedRecoveryTriggered": false,
+            "photoMode": false,
+            "preprocessRuntimeMs": 0,
+            "draftHealth": {
+              "boilerplateLineCount": 0,
+              "hasModificationsPreamble": false,
+              "isHeadingHeavy": false,
+              "lowSignalLineCount": false,
+              "sectionHeadingCount": 0,
+              "signalLineCount": 3,
+              "totalLineCount": 7
+            },
+            "selectedPassLabel": "full",
+            "extractionPreview": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
+            "extractionRuntimeMs": 5899,
+            "runtimeMs": 6041,
+            "runnerAttempts": [
+              {
+                "attemptNumber": 1,
+                "durationMs": 6162,
+                "failureMode": "none",
+                "status": "passed"
+              }
+            ],
+            "runnerIsolation": "fresh_process"
+          },
+          "failure_tags": [],
+          "field": {
+            "checks": [
+              {
+                "details": "extended time, time and a half",
+                "key": "accommodation_extended_time_found",
+                "passed": true
+              },
+              {
+                "details": "small-group, reduced distraction, tests",
+                "key": "accommodation_reduced_distraction_setting_found",
+                "passed": true
+              },
+              {
+                "details": "read aloud, directions",
+                "key": "accommodation_read_aloud_found",
+                "passed": true
+              },
+              {
+                "details": "extended time",
+                "key": "must_include_extended time",
+                "passed": true
+              },
+              {
+                "details": "small-group",
+                "key": "must_include_small-group",
+                "passed": true
+              },
+              {
+                "details": "read aloud",
+                "key": "must_include_read aloud",
+                "passed": true
+              },
+              {
+                "details": "speech-to-text",
+                "key": "must_not_include_speech-to-text",
+                "passed": true
+              },
+              {
+                "details": "Expected a cautious uncertainty marker in the extracted text.",
+                "key": "uncertainty_handling",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": null,
+            "field_score": 1,
+            "hallucination_flagged": 0,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 1
+          },
+          "model": "gemma4:e2b",
+          "output": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
+          "raw_content": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
+          "status": "passed"
+        },
+        {
+          "case": {
+            "id": "exception_language",
+            "image_path": "scripts/evals/image/fixtures/accommodation_upload/exception_language.png",
+            "label": "Accommodation with exception language",
+            "notes": [
+              "Tests whether condition language is preserved instead of flattened."
+            ],
+            "expected": {
+              "conditions": [
+                "except when spelling is part of the rubric"
+              ],
+              "document_type": "iep_accommodation_page",
+              "expected_accommodations": [
+                {
+                  "category": "writing",
+                  "conditions": [
+                    "except when spelling is part of the rubric"
+                  ],
+                  "label_keywords": [
+                    "spelling errors",
+                    "reduce score"
+                  ],
+                  "normalized_type": "spelling_mechanics_flexibility",
+                  "source_evidence_keywords": [
+                    "except",
+                    "rubric"
+                  ]
+                },
+                {
+                  "category": "assistive_technology",
+                  "conditions": [],
+                  "label_keywords": [
+                    "speech-to-text"
+                  ],
+                  "normalized_type": "speech_to_text",
+                  "source_evidence_keywords": [
+                    "multi-paragraph writing"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "spelling",
+                "rubric"
+              ],
+              "must_not_include": [
+                "calculator use"
+              ],
+              "requires_uncertainty": false
+            },
+            "suite": "accommodation_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/accommodation_upload/exception_language.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/exception_language.png"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "details": "length=238",
+                "key": "plain_text_present",
+                "passed": true
+              },
+              {
+                "details": "Accommodation extraction should now return plain text, not JSON.",
+                "key": "plain_text_not_json",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "attempts": [
+              {
+                "failureMode": "none",
+                "outputPreview": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
+                "passLabel": "full",
+                "runtimeMs": 4969
+              }
+            ],
+            "pipeline": "vision_extract_text",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/v1/chat/completions",
+            "totalTimeoutMs": 600000,
+            "transport": "openai_compatible",
+            "originalAsset": {
+              "bytes": 156257,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/exception_language.png"
+            },
+            "finalAsset": {
+              "bytes": 156257,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/exception_language.png"
+            },
+            "focusedRecoveryTriggered": false,
+            "photoMode": false,
+            "preprocessRuntimeMs": 0,
+            "draftHealth": {
+              "boilerplateLineCount": 0,
+              "hasModificationsPreamble": false,
+              "isHeadingHeavy": false,
+              "lowSignalLineCount": false,
+              "sectionHeadingCount": 0,
+              "signalLineCount": 2,
+              "totalLineCount": 4
+            },
+            "selectedPassLabel": "full",
+            "extractionPreview": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
+            "extractionRuntimeMs": 4969,
+            "runtimeMs": 5112,
+            "runnerAttempts": [
+              {
+                "attemptNumber": 1,
+                "durationMs": 5239,
+                "failureMode": "none",
+                "status": "passed"
+              }
+            ],
+            "runnerIsolation": "fresh_process"
+          },
+          "failure_tags": [],
+          "field": {
+            "checks": [
+              {
+                "details": "spelling errors, reduce score, except, rubric",
+                "key": "accommodation_spelling_mechanics_flexibility_found",
+                "passed": true
+              },
+              {
+                "details": "speech-to-text, multi-paragraph writing",
+                "key": "accommodation_speech_to_text_found",
+                "passed": true
+              },
+              {
+                "details": "spelling",
+                "key": "must_include_spelling",
+                "passed": true
+              },
+              {
+                "details": "rubric",
+                "key": "must_include_rubric",
+                "passed": true
+              },
+              {
+                "details": "calculator use",
+                "key": "must_not_include_calculator use",
+                "passed": true
+              },
+              {
+                "details": "Expected a cautious uncertainty marker in the extracted text.",
+                "key": "uncertainty_handling",
+                "passed": true
+              },
+              {
+                "details": "except when spelling is part of the rubric",
+                "key": "condition_spelling_mechanics_flexibility_except when spelling is part of the rubric",
+                "passed": true
+              },
+              {
+                "details": "except when spelling is part of the rubric",
+                "key": "expected_condition_except when spelling is part of the rubric",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": 1,
+            "field_score": 1,
+            "hallucination_flagged": 0,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 1
+          },
+          "model": "gemma4:e2b",
+          "output": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
+          "raw_content": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
+          "status": "passed"
+        },
+        {
+          "case": {
+            "id": "mixed_sections_page",
+            "image_path": "scripts/evals/image/fixtures/accommodation_upload/mixed_sections_page.png",
+            "label": "Mixed page with goals, services, and accommodations",
+            "notes": [
+              "Checks whether the model extracts accommodations without hallucinating goals or service minutes."
+            ],
+            "expected": {
+              "conditions": [],
+              "document_type": "iep_accommodation_page",
+              "expected_accommodations": [
+                {
+                  "category": "instruction",
+                  "conditions": [],
+                  "label_keywords": [
+                    "chunked"
+                  ],
+                  "normalized_type": "chunked_instructions",
+                  "source_evidence_keywords": [
+                    "multi-step assignments"
+                  ]
+                },
+                {
+                  "category": "attention",
+                  "conditions": [],
+                  "label_keywords": [
+                    "breaks"
+                  ],
+                  "normalized_type": "breaks",
+                  "source_evidence_keywords": [
+                    "extended class tasks"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "chunked",
+                "breaks"
+              ],
+              "must_not_include": [
+                "reading fluency goal",
+                "30 minutes weekly counseling"
+              ],
+              "requires_uncertainty": false
+            },
+            "suite": "accommodation_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/accommodation_upload/mixed_sections_page.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/mixed_sections_page.png"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "details": "length=205",
+                "key": "plain_text_present",
+                "passed": true
+              },
+              {
+                "details": "Accommodation extraction should now return plain text, not JSON.",
+                "key": "plain_text_not_json",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "attempts": [
+              {
+                "failureMode": "none",
+                "outputPreview": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+                "passLabel": "full",
+                "runtimeMs": 6948
+              }
+            ],
+            "pipeline": "vision_extract_text",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/v1/chat/completions",
+            "totalTimeoutMs": 600000,
+            "transport": "openai_compatible",
+            "originalAsset": {
+              "bytes": 146971,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/mixed_sections_page.png"
+            },
+            "finalAsset": {
+              "bytes": 146971,
+              "dimensions": {
+                "height": 1600,
+                "width": 1600
+              },
+              "format": "png",
+              "mimeType": "image/png",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/mixed_sections_page.png"
+            },
+            "focusedRecoveryTriggered": false,
+            "photoMode": false,
+            "preprocessRuntimeMs": 0,
+            "draftHealth": {
+              "boilerplateLineCount": 0,
+              "hasModificationsPreamble": false,
+              "isHeadingHeavy": false,
+              "lowSignalLineCount": false,
+              "sectionHeadingCount": 0,
+              "signalLineCount": 2,
+              "totalLineCount": 7
+            },
+            "selectedPassLabel": "full",
+            "extractionPreview": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+            "extractionRuntimeMs": 6948,
+            "runtimeMs": 7089,
+            "runnerAttempts": [
+              {
+                "attemptNumber": 1,
+                "durationMs": 7218,
+                "failureMode": "none",
+                "status": "failed"
+              }
+            ],
+            "runnerIsolation": "fresh_process"
+          },
+          "failure_tags": [
+            "hallucinated_accommodation"
+          ],
+          "field": {
+            "checks": [
+              {
+                "details": "chunked, multi-step assignments",
+                "key": "accommodation_chunked_instructions_found",
+                "passed": true
+              },
+              {
+                "details": "breaks, extended class tasks",
+                "key": "accommodation_breaks_found",
+                "passed": true
+              },
+              {
+                "details": "chunked",
+                "key": "must_include_chunked",
+                "passed": true
+              },
+              {
+                "details": "breaks",
+                "key": "must_include_breaks",
+                "passed": true
+              },
+              {
+                "details": "reading fluency goal",
+                "key": "must_not_include_reading fluency goal",
+                "passed": false
+              },
+              {
+                "details": "30 minutes weekly counseling",
+                "key": "must_not_include_30 minutes weekly counseling",
+                "passed": false
+              },
+              {
+                "details": "Expected a cautious uncertainty marker in the extracted text.",
+                "key": "uncertainty_handling",
+                "passed": true
+              }
+            ],
+            "passed": false,
+            "score": 0.7142857142857143
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": null,
+            "field_score": 0.7142857142857143,
+            "hallucination_flagged": 1,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 1
+          },
+          "model": "gemma4:e2b",
+          "output": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+          "raw_content": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+          "status": "failed"
+        },
+        {
+          "case": {
+            "id": "real_accommodation_page_phone_photo",
+            "image_path": "scripts/evals/image/fixtures/accommodation_upload/real_accommodation_page_phone_photo.jpg",
+            "label": "Real accommodations page phone photo",
+            "notes": [
+              "Real phone photo of an accommodations form page.",
+              "The page is rotated, slightly shadowed, and only some rows are cleanly legible.",
+              "This case should reward extracting the clearly visible accommodations while preserving uncertainty on the harder sections."
+            ],
+            "expected": {
+              "conditions": [
+                "except on spelling task",
+                "unless it is a grammar task",
+                "except for calculation tests"
+              ],
+              "document_type": "iep_accommodation_page",
+              "expected_accommodations": [
+                {
+                  "category": "timing",
+                  "conditions": [],
+                  "label_keywords": [
+                    "extended time"
+                  ],
+                  "normalized_type": "extended_time",
+                  "source_evidence_keywords": [
+                    "tests",
+                    "2 days"
+                  ]
+                },
+                {
+                  "category": "setting",
+                  "conditions": [
+                    "when requested"
+                  ],
+                  "label_keywords": [
+                    "small group",
+                    "seat away"
+                  ],
+                  "normalized_type": "reduced_distraction_setting",
+                  "source_evidence_keywords": [
+                    "distractions",
+                    "noise"
+                  ]
+                },
+                {
+                  "category": "assistive_technology",
+                  "conditions": [],
+                  "label_keywords": [
+                    "speech-to-text"
+                  ],
+                  "normalized_type": "speech_to_text",
+                  "source_evidence_keywords": [
+                    "application"
+                  ]
+                },
+                {
+                  "category": "writing",
+                  "conditions": [
+                    "except on spelling task"
+                  ],
+                  "label_keywords": [
+                    "no penalty",
+                    "spelling"
+                  ],
+                  "normalized_type": "spelling_mechanics_flexibility",
+                  "source_evidence_keywords": [
+                    "except",
+                    "spelling task"
+                  ]
+                },
+                {
+                  "category": "writing",
+                  "conditions": [
+                    "unless it is a grammar task"
+                  ],
+                  "label_keywords": [
+                    "no penalty",
+                    "grammar"
+                  ],
+                  "normalized_type": "other",
+                  "source_evidence_keywords": [
+                    "unless",
+                    "grammar task"
+                  ]
+                },
+                {
+                  "category": "math",
+                  "conditions": [
+                    "except for calculation tests"
+                  ],
+                  "label_keywords": [
+                    "calculator"
+                  ],
+                  "normalized_type": "calculator_use",
+                  "source_evidence_keywords": [
+                    "except",
+                    "calculation tests"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "Student Information",
+                "Student Name",
+                "Date of Birth",
+                "Meeting Date",
+                "Overall Report Card Type",
+                "Extracted Accommodations Details",
+                "Setting / Scheduling",
+                "Teacher Directions",
+                "Student Response",
+                "Organization / Study Skills",
+                "extended time",
+                "frequent checks",
+                "speech-to-text",
+                "grammar",
+                "calculator",
+                "multiplication chart",
+                "graphic organizer",
+                "teacher-provided notes",
+                "graph paper"
+              ],
+              "must_not_include": [
+                "assignment modification"
+              ],
+              "requires_uncertainty": true
+            },
+            "suite": "accommodation_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/accommodation_upload/real_accommodation_page_phone_photo.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/real_accommodation_page_phone_photo.jpg"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "details": "length=697",
+                "key": "plain_text_present",
+                "passed": true
+              },
+              {
+                "details": "Accommodation extraction should now return plain text, not JSON.",
+                "key": "plain_text_not_json",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "attempts": [
+              {
+                "failureMode": "none",
+                "outputPreview": "Student Information\nACCOMMODATIONS\nSetting / Scheduling\nTeacher Directions\nStudent Response\nOrganization / Study Skills\nPersonal Care / Equipment\n\n[unclear]\n[unclear]\n[unclear]\n[unclear]\n[unclear]\n[unclear]\nNone\nNone\nNone\nNone\nNone\nNone\nNon",
+                "passLabel": "full",
+                "runtimeMs": 7446
+              },
+              {
+                "failureMode": "none",
+                "outputPreview": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone",
+                "passLabel": "focused_recovery_tile_left",
+                "runtimeMs": 5750
+              },
+              {
+                "failureMode": "none",
+                "outputPreview": "TEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\n\nORGANIZATION / STUDY SKILLS\nGraphic",
+                "passLabel": "focused_recovery_tile_middle",
+                "runtimeMs": 1375
+              },
+              {
+                "failureMode": "none",
+                "outputPreview": "SPEECH-TO-TEXT application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT\nNone",
+                "passLabel": "focused_recovery_tile_right",
+                "runtimeMs": 4158
+              },
+              {
+                "failureMode": "none",
+                "outputPreview": "STUDENT RESPONSE\nSpeech-to-text application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
+                "passLabel": "focused_recovery_tile_student_response_conditions",
+                "runtimeMs": 1365
+              }
+            ],
+            "pipeline": "vision_extract_text",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/v1/chat/completions",
+            "totalTimeoutMs": 600000,
+            "transport": "openai_compatible",
+            "originalAsset": {
+              "bytes": 3806191,
+              "dimensions": {
+                "height": 4000,
+                "width": 3000
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/accommodation_upload/real_accommodation_page_phone_photo.jpg"
+            },
+            "finalAsset": {
+              "bytes": 575772,
+              "dimensions": {
+                "height": 972,
+                "width": 1800
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-UlKPxP/real_accommodation_page_phone_photo-comparison-rotated-cropped.jpg"
+            },
+            "focusedRecoveryTriggered": true,
+            "normalizedAsset": {
+              "bytes": 964586,
+              "dimensions": {
+                "height": 1800,
+                "width": 1350
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-UlKPxP/real_accommodation_page_phone_photo-comparison.jpg"
+            },
+            "photoMode": true,
+            "preprocessRuntimeMs": 725,
+            "draftHealth": {
+              "boilerplateLineCount": 0,
+              "hasModificationsPreamble": false,
+              "isHeadingHeavy": true,
+              "lowSignalLineCount": true,
+              "sectionHeadingCount": 5,
+              "signalLineCount": 0,
+              "totalLineCount": 20
+            },
+            "selectedPassLabel": "focused_recovery_tiled",
+            "extractionPreview": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSPEECH-TO-TEXT applic",
+            "extractionRuntimeMs": 20094,
+            "runtimeMs": 20971,
+            "runnerAttempts": [
+              {
+                "attemptNumber": 1,
+                "durationMs": 21101,
+                "failureMode": "none",
+                "status": "failed"
+              }
+            ],
+            "runnerIsolation": "fresh_process"
+          },
+          "failure_tags": [
+            "lost_condition",
+            "ocr_failure",
+            "overconfident_on_unclear_text"
+          ],
+          "field": {
+            "checks": [
+              {
+                "details": "extended time, tests, 2 days",
+                "key": "accommodation_extended_time_found",
+                "passed": true
+              },
+              {
+                "details": "small group, seat away, distractions, noise",
+                "key": "accommodation_reduced_distraction_setting_found",
+                "passed": true
+              },
+              {
+                "details": "speech-to-text, application",
+                "key": "accommodation_speech_to_text_found",
+                "passed": true
+              },
+              {
+                "details": "no penalty, spelling, except, spelling task",
+                "key": "accommodation_spelling_mechanics_flexibility_found",
+                "passed": true
+              },
+              {
+                "details": "no penalty, grammar, unless, grammar task",
+                "key": "accommodation_other_found",
+                "passed": true
+              },
+              {
+                "details": "calculator, except, calculation tests",
+                "key": "accommodation_calculator_use_found",
+                "passed": true
+              },
+              {
+                "details": "Student Information",
+                "key": "must_include_Student Information",
+                "passed": false
+              },
+              {
+                "details": "Student Name",
+                "key": "must_include_Student Name",
+                "passed": false
+              },
+              {
+                "details": "Date of Birth",
+                "key": "must_include_Date of Birth",
+                "passed": false
+              },
+              {
+                "details": "Meeting Date",
+                "key": "must_include_Meeting Date",
+                "passed": false
+              },
+              {
+                "details": "Overall Report Card Type",
+                "key": "must_include_Overall Report Card Type",
+                "passed": false
+              },
+              {
+                "details": "Extracted Accommodations Details",
+                "key": "must_include_Extracted Accommodations Details",
+                "passed": false
+              },
+              {
+                "details": "Setting / Scheduling",
+                "key": "must_include_Setting / Scheduling",
+                "passed": true
+              },
+              {
+                "details": "Teacher Directions",
+                "key": "must_include_Teacher Directions",
+                "passed": true
+              },
+              {
+                "details": "Student Response",
+                "key": "must_include_Student Response",
+                "passed": true
+              },
+              {
+                "details": "Organization / Study Skills",
+                "key": "must_include_Organization / Study Skills",
+                "passed": true
+              },
+              {
+                "details": "extended time",
+                "key": "must_include_extended time",
+                "passed": true
+              },
+              {
+                "details": "frequent checks",
+                "key": "must_include_frequent checks",
+                "passed": true
+              },
+              {
+                "details": "speech-to-text",
+                "key": "must_include_speech-to-text",
+                "passed": true
+              },
+              {
+                "details": "grammar",
+                "key": "must_include_grammar",
+                "passed": true
+              },
+              {
+                "details": "calculator",
+                "key": "must_include_calculator",
+                "passed": true
+              },
+              {
+                "details": "multiplication chart",
+                "key": "must_include_multiplication chart",
+                "passed": true
+              },
+              {
+                "details": "graphic organizer",
+                "key": "must_include_graphic organizer",
+                "passed": true
+              },
+              {
+                "details": "teacher-provided notes",
+                "key": "must_include_teacher-provided notes",
+                "passed": true
+              },
+              {
+                "details": "graph paper",
+                "key": "must_include_graph paper",
+                "passed": true
+              },
+              {
+                "details": "assignment modification",
+                "key": "must_not_include_assignment modification",
+                "passed": true
+              },
+              {
+                "details": "Expected a cautious uncertainty marker in the extracted text.",
+                "key": "uncertainty_handling",
+                "passed": false
+              },
+              {
+                "details": "when requested",
+                "key": "condition_reduced_distraction_setting_when requested",
+                "passed": true
+              },
+              {
+                "details": "except on spelling task",
+                "key": "condition_spelling_mechanics_flexibility_except on spelling task",
+                "passed": false
+              },
+              {
+                "details": "unless it is a grammar task",
+                "key": "condition_other_unless it is a grammar task",
+                "passed": false
+              },
+              {
+                "details": "except for calculation tests",
+                "key": "condition_calculator_use_except for calculation tests",
+                "passed": true
+              },
+              {
+                "details": "except on spelling task",
+                "key": "expected_condition_except on spelling task",
+                "passed": false
+              },
+              {
+                "details": "unless it is a grammar task",
+                "key": "expected_condition_unless it is a grammar task",
+                "passed": false
+              },
+              {
+                "details": "except for calculation tests",
+                "key": "expected_condition_except for calculation tests",
+                "passed": true
+              }
+            ],
+            "passed": false,
+            "score": 0.6764705882352942
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": 0.42857142857142855,
+            "field_score": 0.6764705882352942,
+            "hallucination_flagged": 0,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 0
+          },
+          "model": "gemma4:e2b",
+          "output": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSPEECH-TO-TEXT application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT\nSTUDENT RESPONSE",
+          "raw_content": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSPEECH-TO-TEXT application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT\nSTUDENT RESPONSE",
+          "status": "failed"
+        }
+      ],
+      "suite": "accommodation_upload",
+      "summary": {
+        "average_field_score": 0.878,
+        "average_judge_dimensions": {},
+        "average_judge_overall": null,
+        "average_uncertainty_handling_score": 0.8,
+        "case_ids_failed": [
+          "mixed_sections_page",
+          "real_accommodation_page_phone_photo"
+        ],
+        "condition_preservation_score": 0.714,
+        "executed_cases": 5,
+        "failed_cases": 2,
+        "failure_tag_counts": {
+          "hallucinated_accommodation": 1,
+          "lost_condition": 1,
+          "ocr_failure": 1,
+          "overconfident_on_unclear_text": 1
+        },
+        "hallucination_rate": 0.2,
+        "incomplete_image_handling_score": null,
+        "pass_rate": 0.6,
+        "passed_cases": 3,
+        "skipped_cases": 0,
+        "total_cases": 5
+      }
+    }
+  ]
+}

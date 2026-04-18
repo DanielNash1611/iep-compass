@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-import { buildGemmaSystemPrompt, buildGemmaUserPrompt } from '../../src/lib/analysis/prompt.ts'
 import { parseAnalysisResult } from '../../src/lib/schema/analysisSchema.ts'
 import { evalCases } from './cases.mjs'
 
@@ -11,6 +10,34 @@ const EXPLICIT_JUDGE_MODEL = process.env.GEMMA_EVAL_JUDGE_MODEL?.trim()
   || process.env.VITE_GEMMA_FALLBACK_MODEL?.trim()
 const SUGGESTED_JUDGE_MODEL = 'gemma3:27b'
 const DEFAULT_PROXY_TARGET = process.env.GEMMA_PROXY_TARGET?.trim() || 'http://127.0.0.1:11434'
+
+function buildGemmaSystemPrompt() {
+  return [
+    'You are IEP Compass, a structured analysis system for accommodation relevance mapping.',
+    'Focus on the student-first core result and keep any parent or teacher notes secondary.',
+    'Only reference accommodations explicitly found in the supplied IEP excerpt.',
+    'Never invent a new accommodation, answer the assignment, or give legal advice.',
+    'Keep the reasoning cautious, grounded, and source-based.',
+    'Return valid JSON only.',
+  ].join('\n')
+}
+
+function buildGemmaUserPrompt(request) {
+  return [
+    `Task title: ${request.taskTitle || 'Untitled task'}`,
+    `Task context tags: ${
+      request.contextTags.length > 0 ? request.contextTags.join(', ') : 'none supplied'
+    }`,
+    '',
+    'Full IEP excerpt:',
+    request.iepSource.text,
+    '',
+    'Task description:',
+    request.taskSource.text,
+    '',
+    'Use only the excerpted accommodations and keep the output aligned with the schema.',
+  ].join('\n')
+}
 
 const judgeResultSchema = z.object({
   absoluteApplicabilityClaim: z.boolean(),
@@ -274,7 +301,7 @@ function buildJudgePrompt(evalCase, analysisResult) {
     '',
     'Scenario:',
     `- Task title: ${evalCase.request.taskTitle}`,
-    `- Role emphasis: ${evalCase.request.role}`,
+    '- Audience focus: student-first core analysis with optional parent and teacher sidecars',
     `- Context tags: ${evalCase.request.contextTags.join(', ') || 'none'}`,
     '',
     'IEP excerpt:',

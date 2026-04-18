@@ -1,0 +1,37 @@
+{
+  "suite": "assignment_upload",
+  "id": "math_assignment",
+  "label": "Math assignment with computation and due date",
+  "image_path": "scripts/evals/image/fixtures/assignment_upload/math_assignment.png",
+  "notes": [
+    "Checks math computation signals that matter for accommodation matching later."
+  ],
+  "expected": {
+    "document_type": "assignment_page",
+    "assignment_type": "math_assignment",
+    "must_detect_requirements": [
+      {
+        "type": "math_computation",
+        "text_keywords": ["long division"]
+      },
+      {
+        "type": "formatting_requirement",
+        "text_keywords": ["show your work"]
+      },
+      {
+        "type": "deadline",
+        "text_keywords": ["tomorrow"]
+      }
+    ],
+    "must_detect_grading_factors": [],
+    "must_include_keywords": [
+      "12",
+      "long division",
+      "tomorrow"
+    ],
+    "must_not_include": [
+      "essay"
+    ],
+    "requires_uncertainty": false
+  }
+}

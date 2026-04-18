@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#fffdf8" />
+  <rect x="85" y="75" width="1030" height="1450" rx="24" fill="#ffffff" stroke="#d7d1c6" stroke-width="4" />
+  <text x="130" y="170" font-size="48" font-family="Arial, sans-serif" font-weight="700" fill="#21313a">Math homework</text>
+  <text x="130" y="285" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Solve 12 long division problems.</text>
+  <text x="130" y="355" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Show your work for every problem.</text>
+  <text x="130" y="425" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Due tomorrow.</text>
+  <text x="130" y="530" font-size="28" font-family="Arial, sans-serif" fill="#5c6770">Use the class notebook if you need extra paper.</text>
+</svg>

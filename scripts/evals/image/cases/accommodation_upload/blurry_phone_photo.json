@@ -1,0 +1,36 @@
+{
+  "suite": "accommodation_upload",
+  "id": "blurry_phone_photo",
+  "label": "Blurry phone photo with partial clarity",
+  "image_path": "scripts/evals/image/fixtures/accommodation_upload/blurry_phone_photo.png",
+  "notes": [
+    "Synthetic blurred page to test OCR and uncertainty handling."
+  ],
+  "expected": {
+    "document_type": "iep_accommodation_page",
+    "expected_accommodations": [
+      {
+        "normalized_type": "speech_to_text",
+        "category": "assistive_technology",
+        "label_keywords": ["speech-to-text"],
+        "source_evidence_keywords": ["long written responses"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "preferential_seating",
+        "category": "setting",
+        "label_keywords": ["preferential seating"],
+        "source_evidence_keywords": ["near direct instruction"],
+        "conditions": []
+      }
+    ],
+    "must_include_keywords": [
+      "speech-to-text"
+    ],
+    "conditions": [],
+    "must_not_include": [
+      "calculator"
+    ],
+    "requires_uncertainty": true
+  }
+}

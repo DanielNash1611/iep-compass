@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#fffdf9" />
+  <rect x="80" y="80" width="1040" height="1440" rx="24" fill="#ffffff" stroke="#ddd7cb" stroke-width="4" />
+  <text x="130" y="180" font-size="50" font-family="Arial, sans-serif" font-weight="700" fill="#21313a">Writing accommodations</text>
+  <text x="130" y="300" font-size="31" font-family="Arial, sans-serif" fill="#21313a">Spelling errors will not reduce score except when spelling</text>
+  <text x="130" y="345" font-size="31" font-family="Arial, sans-serif" fill="#21313a">is part of the rubric or directly assessed.</text>
+  <text x="130" y="455" font-size="31" font-family="Arial, sans-serif" fill="#21313a">Speech-to-text permitted for multi-paragraph writing tasks.</text>
+  <text x="130" y="565" font-size="28" font-family="Arial, sans-serif" fill="#5c6770">Use reviewed teacher rubric language when available.</text>
+</svg>

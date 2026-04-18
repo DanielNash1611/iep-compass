@@ -8,20 +8,38 @@ import { exampleScenarios } from './data/examples'
 import { TaskSetupFields } from './features/input/TaskSetupFields'
 import { ResultsView } from './features/results/ResultsView'
 import { SourceEditor } from './features/source/SourceEditor'
+import {
+  clearPersistedIepSource,
+  hasPersistedIepSource,
+  loadPersistedIepSource,
+  persistIepSource,
+} from './features/source/localSourceStorage'
 import { SourceReviewPanel } from './features/source/SourceReviewPanel'
 import {
   buildEffectiveSourceText,
+  getAttachmentSourceText,
+  getPrimaryTaskTraits,
   hasUsableSourceText,
+  mergeSourceTextBlock,
+  normalizeDocumentDraft,
 } from './features/source/sourceText'
 import {
+  readGemmaDocumentPlan,
+  runGemmaDocumentReading,
+  runGemmaIepTextReading,
+} from './features/upload/gemmaOcr'
+import {
+  createUploadedAttachment,
+  loadLocalTextAttachment,
+  refreshAttachmentNotes,
   revokeAttachmentPreview,
-  toUploadedAttachment,
 } from './features/upload/fileUtils'
 import { createAnalysisAdapter } from './lib/analysis'
+import { hasUncertaintyMarkers } from './lib/text/uncertaintyMarkers'
 import type {
   AnalysisExecution,
-  Role,
   SourceMaterial,
+  TaskReviewDraft,
   TaskContext,
   TeacherConcernExecution,
   TeacherConcernRequest,
@@ -30,11 +48,12 @@ import type {
 
 type Screen = 'iep' | 'assignment' | 'results'
 type CorrectionTarget = 'iep' | 'assignment' | null
+type SourceKey = 'iep' | 'task'
 
-const HERO_HIGHLIGHTS: Array<{ icon: AppIconName; text: string }> = [
-  { icon: 'shield', text: 'Grounded only in your reviewed source materials' },
-  { icon: 'notebook', text: 'Built for real classwork, quizzes, and homework' },
-  { icon: 'star', text: 'Easy to scan on a phone before class or after school' },
+const HERO_GUIDEPOINTS: Array<{ icon: AppIconName; text: string }> = [
+  { icon: 'notebook', text: 'Paste only the approved accommodation wording you want to rely on.' },
+  { icon: 'assignment', text: 'Add the task or worksheet details next, not the answer.' },
+  { icon: 'results', text: 'Get a quick map of what may apply, what to say, and what to confirm.' },
 ]
 
 const STEP_CONFIG: Array<{
@@ -45,20 +64,20 @@ const STEP_CONFIG: Array<{
 }> = [
   {
     id: 'iep',
-    label: 'IEP details',
-    helper: 'Approved supports only',
+    label: 'Review accommodations',
+    helper: 'Approved IEP wording',
     icon: 'compass',
   },
   {
     id: 'assignment',
-    label: 'Assignment details',
-    helper: 'Task clues and classroom context',
+    label: 'Add task',
+    helper: 'Assignment or quiz details',
     icon: 'assignment',
   },
   {
     id: 'results',
-    label: 'Results',
-    helper: 'Checkpoint cards and source trail',
+    label: 'Check next steps',
+    helper: 'What may apply here',
     icon: 'results',
   },
 ]
@@ -70,18 +89,18 @@ const TRUST_BOUNDARIES: Array<{
 }> = [
   {
     icon: 'shield',
-    title: 'Approved supports only',
-    detail: 'We only point to accommodations that appear in the source materials you provide.',
+    title: 'Approved accommodations only',
+    detail: 'We only point to accommodations that appear in the reviewed source materials you provide.',
   },
   {
     icon: 'waypoint',
-    title: 'Support, not answer-giving',
-    detail: 'IEP Compass helps check access supports. It does not complete the assignment itself.',
+    title: 'Accommodations, not answer-giving',
+    detail: 'IEP Compass checks access accommodations. It does not do the classwork itself.',
   },
   {
     icon: 'source',
-    title: 'Session-local uploads',
-    detail: 'Uploads stay local during this MVP so families can review materials before sharing anything else.',
+    title: 'Stays local in this session',
+    detail: 'Uploads stay local during the session so families can review materials before sharing anything else.',
   },
 ]
 
@@ -99,6 +118,10 @@ function createBlankSource(): SourceMaterial {
     attachments: [],
     text: '',
   }
+}
+
+function getRestoredIepSource() {
+  return loadPersistedIepSource() ?? createBlankSource()
 }
 
 function copySource(source: SourceMaterial): SourceMaterial {
@@ -132,15 +155,35 @@ function getAnalysisSource(source: SourceMaterial): SourceMaterial {
   }
 }
 
+function getAnalysisTaskTraits(source: SourceMaterial): TaskReviewDraft | null {
+  return getPrimaryTaskTraits(source)
+}
+
+function scrollToTop() {
+  document.scrollingElement?.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: 'smooth',
+  })
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: 'smooth',
+  })
+}
+
 export default function App() {
   const [analysisAdapter] = useState(() => createAnalysisAdapter())
   const [screen, setScreen] = useState<Screen>('iep')
   const [activeExampleId, setActiveExampleId] = useState<string | null>(null)
-  const [role, setRole] = useState<Role>('student')
   const [contextTags, setContextTags] = useState<TaskContext[]>([])
   const [taskTitle, setTaskTitle] = useState('')
   const [teacherConcern, setTeacherConcern] = useState('')
-  const [iepSource, setIepSource] = useState<SourceMaterial>(createBlankSource)
+  const [hasSavedIepOnDevice, setHasSavedIepOnDevice] = useState(() =>
+    hasPersistedIepSource(),
+  )
+  const [shouldPersistIepSource, setShouldPersistIepSource] = useState(true)
+  const [iepSource, setIepSource] = useState<SourceMaterial>(getRestoredIepSource)
   const [taskSource, setTaskSource] = useState<SourceMaterial>(createBlankSource)
   const [analysis, setAnalysis] = useState<AnalysisExecution | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
@@ -158,7 +201,6 @@ export default function App() {
     useState<SourceMaterial>(createBlankSource)
   const [correctionTaskSource, setCorrectionTaskSource] =
     useState<SourceMaterial>(createBlankSource)
-  const [correctionRole, setCorrectionRole] = useState<Role>('student')
   const [correctionTaskTitle, setCorrectionTaskTitle] = useState('')
   const [correctionTeacherConcern, setCorrectionTeacherConcern] = useState('')
   const [correctionContextTags, setCorrectionContextTags] = useState<
@@ -169,6 +211,7 @@ export default function App() {
   const teacherConcernRunIdRef = useRef(0)
 
   const modelPlan = analysisAdapter.getModelPlan()
+  const documentPlan = readGemmaDocumentPlan()
 
   function clearTeacherConcernState() {
     teacherConcernRunIdRef.current += 1
@@ -188,7 +231,12 @@ export default function App() {
     clearTeacherConcernState()
   }
 
-  function replaceIepSource(nextSource: SourceMaterial) {
+  function replaceIepSource(
+    nextSource: SourceMaterial,
+    options: { persist?: boolean } = {},
+  ) {
+    const { persist = true } = options
+    setShouldPersistIepSource(persist)
     setIepSource((current) => {
       revokeRemovedAttachments(current.attachments, nextSource.attachments)
       return nextSource
@@ -213,7 +261,6 @@ export default function App() {
       return copySource(taskSource)
     })
 
-    setCorrectionRole(role)
     setCorrectionTaskTitle(taskTitle)
     setCorrectionTeacherConcern(teacherConcern)
     setCorrectionContextTags(contextTags)
@@ -230,6 +277,15 @@ export default function App() {
   }, [correctionIepSource, correctionTaskSource, iepSource, taskSource])
 
   useEffect(() => {
+    if (!shouldPersistIepSource) {
+      // Example scenarios stay ephemeral so a sample never overwrites saved family data.
+      return
+    }
+
+    setHasSavedIepOnDevice(persistIepSource(iepSource))
+  }, [iepSource, shouldPersistIepSource])
+
+  useEffect(() => {
     return () => {
       latestSourcesRef.current
         .flatMap((source) => source.attachments)
@@ -237,54 +293,472 @@ export default function App() {
     }
   }, [])
 
-  async function appendFilesToMainSource(
-    sourceKey: 'iep' | 'task',
-    files: File[],
-  ) {
-    const nextAttachments = await Promise.all(
-      files.map((file) => toUploadedAttachment(file)),
-    )
+  useEffect(() => {
+    scrollToTop()
+  }, [screen])
 
-    if (sourceKey === 'iep') {
-      setIepSource((current) => ({
-        ...current,
-        attachments: [...current.attachments, ...nextAttachments],
-      }))
-    } else {
-      setTaskSource((current) => ({
-        ...current,
-        attachments: [...current.attachments, ...nextAttachments],
-      }))
-    }
-
+  function markMainSourceChanged() {
     setActiveExampleId(null)
     setAnalysisError(null)
     clearTeacherConcernState()
   }
 
+  function updateMainIepText(nextValue: string) {
+    setShouldPersistIepSource(true)
+    setIepSource((current) => ({ ...current, text: nextValue }))
+    markMainSourceChanged()
+  }
+
+  function updateAttachmentList(
+    attachments: UploadedAttachment[],
+    attachmentId: string,
+    updater: (attachment: UploadedAttachment) => UploadedAttachment,
+  ) {
+    return attachments.map((attachment) =>
+      attachment.id === attachmentId ? updater(attachment) : attachment,
+    )
+  }
+
+  function updateMainSource(
+    sourceKey: SourceKey,
+    updater: (current: SourceMaterial) => SourceMaterial,
+  ) {
+    if (sourceKey === 'iep') {
+      setShouldPersistIepSource(true)
+      setIepSource(updater)
+      return
+    }
+
+    setTaskSource(updater)
+  }
+
+  function updateCorrectionSource(
+    sourceKey: SourceKey,
+    updater: (current: SourceMaterial) => SourceMaterial,
+  ) {
+    if (sourceKey === 'iep') {
+      setCorrectionIepSource(updater)
+      return
+    }
+
+    setCorrectionTaskSource(updater)
+  }
+
+  function patchMainAttachment(
+    sourceKey: SourceKey,
+    attachmentId: string,
+    updater: (attachment: UploadedAttachment) => UploadedAttachment,
+    shouldReset = true,
+  ) {
+    updateMainSource(sourceKey, (current) => ({
+      ...current,
+      attachments: updateAttachmentList(current.attachments, attachmentId, updater),
+    }))
+
+    if (shouldReset) {
+      markMainSourceChanged()
+    }
+  }
+
+  function patchCorrectionAttachment(
+    sourceKey: SourceKey,
+    attachmentId: string,
+    updater: (attachment: UploadedAttachment) => UploadedAttachment,
+  ) {
+    updateCorrectionSource(sourceKey, (current) => ({
+      ...current,
+      attachments: updateAttachmentList(current.attachments, attachmentId, updater),
+    }))
+  }
+
+  async function appendFilesToMainSource(sourceKey: SourceKey, files: File[]) {
+    const nextAttachments = files.map((file) => createUploadedAttachment(file))
+
+    updateMainSource(sourceKey, (current) => ({
+      ...current,
+      attachments: [...current.attachments, ...nextAttachments],
+    }))
+    markMainSourceChanged()
+
+    await Promise.all(
+      nextAttachments
+        .filter((attachment) => attachment.kind === 'text')
+        .map(async (attachment) => {
+          const loadedAttachment = await loadLocalTextAttachment(attachment)
+
+          patchMainAttachment(
+            sourceKey,
+            attachment.id,
+            () => loadedAttachment,
+            false,
+          )
+        }),
+    )
+  }
+
   async function appendFilesToCorrectionSource(
-    sourceKey: 'iep' | 'task',
+    sourceKey: SourceKey,
     files: File[],
   ) {
-    const nextAttachments = await Promise.all(
-      files.map((file) => toUploadedAttachment(file)),
+    const nextAttachments = files.map((file) => createUploadedAttachment(file))
+
+    updateCorrectionSource(sourceKey, (current) => ({
+      ...current,
+      attachments: [...current.attachments, ...nextAttachments],
+    }))
+
+    await Promise.all(
+      nextAttachments
+        .filter((attachment) => attachment.kind === 'text')
+        .map(async (attachment) => {
+          const loadedAttachment = await loadLocalTextAttachment(attachment)
+
+          patchCorrectionAttachment(sourceKey, attachment.id, () => loadedAttachment)
+        }),
+    )
+  }
+
+  async function runMainAttachmentInterpretation(
+    sourceKey: SourceKey,
+    attachmentId: string,
+  ) {
+    const source = sourceKey === 'iep' ? iepSource : taskSource
+    const attachment = source.attachments.find(
+      (candidate) => candidate.id === attachmentId,
     )
 
-    if (sourceKey === 'iep') {
-      setCorrectionIepSource((current) => ({
+    if (!attachment) {
+      return
+    }
+
+    patchMainAttachment(sourceKey, attachmentId, (current) =>
+      refreshAttachmentNotes({
         ...current,
-        attachments: [...current.attachments, ...nextAttachments],
-      }))
-    } else {
-      setCorrectionTaskSource((current) => ({
+        readError: undefined,
+        readNotes: [],
+        status: 'interpret_running',
+      }),
+    )
+
+    try {
+      if (sourceKey === 'iep') {
+        const readingResult = await runGemmaIepTextReading(attachment)
+
+        patchMainAttachment(
+          sourceKey,
+          attachmentId,
+          (current) =>
+            refreshAttachmentNotes({
+              ...current,
+              confidenceFlags: undefined,
+              documentDraft: undefined,
+              documentKind: 'iep_accommodations',
+              extractedText: readingResult.extractedText,
+              rawTranscript: undefined,
+              readContainsUnclearText: hasUncertaintyMarkers(readingResult.extractedText),
+              readError: undefined,
+              readMethod: readingResult.readMethod,
+              readNotes: [
+                `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
+                'Review this extracted accommodations text before adding it to the source trail.',
+              ],
+              pageCount: readingResult.pageCount,
+              processedPageCount: readingResult.processedPageCount,
+              reviewedText: undefined,
+              status: 'review_ready',
+            }),
+          false,
+        )
+
+        return
+      }
+
+      const readingResult = await runGemmaDocumentReading(attachment, sourceKey)
+
+      patchMainAttachment(
+        sourceKey,
+        attachmentId,
+        (current) =>
+          refreshAttachmentNotes({
+            ...current,
+            confidenceFlags: readingResult.documentResult.confidenceFlags,
+            documentDraft: normalizeDocumentDraft(
+              readingResult.documentResult.reviewDraft,
+            ),
+            documentKind: readingResult.documentResult.documentKind,
+            rawTranscript: readingResult.documentResult.rawTranscript,
+            readContainsUnclearText:
+              readingResult.documentResult.confidenceFlags.containsUnclearText,
+            readError: undefined,
+            readMethod: readingResult.readMethod,
+            readNotes: [
+              `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
+              ...readingResult.documentResult.notes,
+            ],
+            pageCount: readingResult.pageCount,
+            processedPageCount: readingResult.processedPageCount,
+            reviewedText: undefined,
+            status: 'review_ready',
+          }),
+        false,
+      )
+    } catch (error) {
+      patchMainAttachment(
+        sourceKey,
+        attachmentId,
+        (current) =>
+          refreshAttachmentNotes({
+            ...current,
+            readError:
+              error instanceof Error
+                ? error.message
+                : 'We could not interpret enough of this file clearly.',
+            reviewedText: undefined,
+            status: 'failed',
+          }),
+        false,
+      )
+    }
+  }
+
+  async function runCorrectionAttachmentInterpretation(
+    sourceKey: SourceKey,
+    attachmentId: string,
+  ) {
+    const source = sourceKey === 'iep' ? correctionIepSource : correctionTaskSource
+    const attachment = source.attachments.find(
+      (candidate) => candidate.id === attachmentId,
+    )
+
+    if (!attachment) {
+      return
+    }
+
+    patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
+      refreshAttachmentNotes({
         ...current,
-        attachments: [...current.attachments, ...nextAttachments],
+        readError: undefined,
+        readNotes: [],
+        status: 'interpret_running',
+      }),
+    )
+
+    try {
+      if (sourceKey === 'iep') {
+        const readingResult = await runGemmaIepTextReading(attachment)
+
+        patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
+          refreshAttachmentNotes({
+            ...current,
+            confidenceFlags: undefined,
+            documentDraft: undefined,
+            documentKind: 'iep_accommodations',
+            extractedText: readingResult.extractedText,
+            rawTranscript: undefined,
+            readContainsUnclearText: hasUncertaintyMarkers(readingResult.extractedText),
+            readError: undefined,
+            readMethod: readingResult.readMethod,
+            readNotes: [
+              `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
+              'Review this extracted accommodations text before adding it to the source trail.',
+            ],
+            pageCount: readingResult.pageCount,
+            processedPageCount: readingResult.processedPageCount,
+            reviewedText: undefined,
+            status: 'review_ready',
+          }),
+        )
+
+        return
+      }
+
+      const readingResult = await runGemmaDocumentReading(attachment, sourceKey)
+
+      patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
+        refreshAttachmentNotes({
+          ...current,
+          confidenceFlags: readingResult.documentResult.confidenceFlags,
+          documentDraft: normalizeDocumentDraft(
+            readingResult.documentResult.reviewDraft,
+          ),
+          documentKind: readingResult.documentResult.documentKind,
+          rawTranscript: readingResult.documentResult.rawTranscript,
+          readContainsUnclearText:
+            readingResult.documentResult.confidenceFlags.containsUnclearText,
+          readError: undefined,
+          readMethod: readingResult.readMethod,
+          readNotes: [
+            `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
+            ...readingResult.documentResult.notes,
+          ],
+          pageCount: readingResult.pageCount,
+          processedPageCount: readingResult.processedPageCount,
+          reviewedText: undefined,
+          status: 'review_ready',
+        }),
+      )
+    } catch (error) {
+      patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
+        refreshAttachmentNotes({
+          ...current,
+          readError:
+            error instanceof Error
+              ? error.message
+              : 'We could not interpret enough of this file clearly.',
+          reviewedText: undefined,
+          status: 'failed',
+        }),
+      )
+    }
+  }
+
+  function updateMainAttachmentTextDraft(
+    sourceKey: SourceKey,
+    attachmentId: string,
+    nextValue: string,
+  ) {
+    patchMainAttachment(sourceKey, attachmentId, (attachment) =>
+      refreshAttachmentNotes({
+        ...attachment,
+        extractedText:
+          attachment.status === 'included' ? attachment.extractedText : nextValue,
+        reviewedText:
+          attachment.status === 'included' ? nextValue : attachment.reviewedText,
+      }),
+    )
+  }
+
+  function updateCorrectionAttachmentTextDraft(
+    sourceKey: SourceKey,
+    attachmentId: string,
+    nextValue: string,
+  ) {
+    patchCorrectionAttachment(sourceKey, attachmentId, (attachment) =>
+      refreshAttachmentNotes({
+        ...attachment,
+        extractedText:
+          attachment.status === 'included' ? attachment.extractedText : nextValue,
+        reviewedText:
+          attachment.status === 'included' ? nextValue : attachment.reviewedText,
+      }),
+    )
+  }
+
+  function updateMainAttachmentDocumentDraft(
+    sourceKey: SourceKey,
+    attachmentId: string,
+    nextDraft: UploadedAttachment['documentDraft'],
+  ) {
+    patchMainAttachment(sourceKey, attachmentId, (attachment) =>
+      refreshAttachmentNotes({
+        ...attachment,
+        documentDraft: normalizeDocumentDraft(nextDraft),
+      }),
+    )
+  }
+
+  function updateCorrectionAttachmentDocumentDraft(
+    sourceKey: SourceKey,
+    attachmentId: string,
+    nextDraft: UploadedAttachment['documentDraft'],
+  ) {
+    patchCorrectionAttachment(sourceKey, attachmentId, (attachment) =>
+      refreshAttachmentNotes({
+        ...attachment,
+        documentDraft: normalizeDocumentDraft(nextDraft),
+      }),
+    )
+  }
+
+  function includeMainAttachmentSource(sourceKey: SourceKey, attachmentId: string) {
+    let includedSourceText = ''
+
+    patchMainAttachment(sourceKey, attachmentId, (attachment) => {
+      const reviewedText =
+        (attachment.reviewedText ?? attachment.extractedText ?? '').trim()
+          ? attachment.reviewedText ?? attachment.extractedText
+          : undefined
+      const nextAttachment = refreshAttachmentNotes({
+        ...attachment,
+        reviewedText,
+        status:
+          attachment.documentDraft?.sourceSummaryText?.trim()
+          || reviewedText?.trim()
+            ? 'included'
+            : 'reference_only',
+      })
+
+      includedSourceText = getAttachmentSourceText(nextAttachment)
+      return nextAttachment
+    })
+
+    if (sourceKey === 'iep' && includedSourceText) {
+      updateMainSource(sourceKey, (current) => ({
+        ...current,
+        text: mergeSourceTextBlock(current.text, includedSourceText),
       }))
     }
   }
 
-  function removeMainAttachment(sourceKey: 'iep' | 'task', attachmentId: string) {
+  function includeCorrectionAttachmentSource(
+    sourceKey: SourceKey,
+    attachmentId: string,
+  ) {
+    let includedSourceText = ''
+
+    patchCorrectionAttachment(sourceKey, attachmentId, (attachment) => {
+      const reviewedText =
+        (attachment.reviewedText ?? attachment.extractedText ?? '').trim()
+          ? attachment.reviewedText ?? attachment.extractedText
+          : undefined
+      const nextAttachment = refreshAttachmentNotes({
+        ...attachment,
+        reviewedText,
+        status:
+          attachment.documentDraft?.sourceSummaryText?.trim()
+          || reviewedText?.trim()
+            ? 'included'
+            : 'reference_only',
+      })
+
+      includedSourceText = getAttachmentSourceText(nextAttachment)
+      return nextAttachment
+    })
+
+    if (sourceKey === 'iep' && includedSourceText) {
+      updateCorrectionSource(sourceKey, (current) => ({
+        ...current,
+        text: mergeSourceTextBlock(current.text, includedSourceText),
+      }))
+    }
+  }
+
+  function keepMainAttachmentReference(sourceKey: SourceKey, attachmentId: string) {
+    patchMainAttachment(sourceKey, attachmentId, (attachment) =>
+      refreshAttachmentNotes({
+        ...attachment,
+        reviewedText: undefined,
+        status: 'reference_only',
+      }),
+    )
+  }
+
+  function keepCorrectionAttachmentReference(
+    sourceKey: SourceKey,
+    attachmentId: string,
+  ) {
+    patchCorrectionAttachment(sourceKey, attachmentId, (attachment) =>
+      refreshAttachmentNotes({
+        ...attachment,
+        reviewedText: undefined,
+        status: 'reference_only',
+      }),
+    )
+  }
+
+  function removeMainAttachment(sourceKey: SourceKey, attachmentId: string) {
     if (sourceKey === 'iep') {
+      setShouldPersistIepSource(true)
       setIepSource((current) => {
         const attachmentToRemove = current.attachments.find(
           (attachment) => attachment.id === attachmentId,
@@ -325,10 +799,7 @@ export default function App() {
     clearTeacherConcernState()
   }
 
-  function removeCorrectionAttachment(
-    sourceKey: 'iep' | 'task',
-    attachmentId: string,
-  ) {
+  function removeCorrectionAttachment(sourceKey: SourceKey, attachmentId: string) {
     const retainedIds = new Set(
       (sourceKey === 'iep' ? iepSource.attachments : taskSource.attachments).map(
         (attachment) => attachment.id,
@@ -379,17 +850,19 @@ export default function App() {
       return
     }
 
-    replaceIepSource({
-      attachments: [],
-      text: nextExample.iepExcerpt,
-    })
+    replaceIepSource(
+      {
+        attachments: [],
+        text: nextExample.iepExcerpt,
+      },
+      { persist: false },
+    )
     replaceTaskSource({
       attachments: [],
       text: nextExample.taskText,
     })
     cancelPendingAnalysis()
     setActiveExampleId(nextExample.id)
-    setRole(nextExample.role)
     setContextTags(nextExample.contextTags)
     setTaskTitle(nextExample.taskTitle)
     setTeacherConcern(nextExample.teacherConcern ?? '')
@@ -403,7 +876,6 @@ export default function App() {
       revokeRemovedAttachments(current.attachments, [])
       return createBlankSource()
     })
-    setCorrectionRole(nextExample.role)
     setCorrectionTaskTitle(nextExample.taskTitle)
     setCorrectionTeacherConcern(nextExample.teacherConcern ?? '')
     setCorrectionContextTags(nextExample.contextTags)
@@ -413,7 +885,7 @@ export default function App() {
 
   function resetAllState() {
     cancelPendingAnalysis()
-    replaceIepSource(createBlankSource())
+    replaceIepSource(getRestoredIepSource())
     replaceTaskSource(createBlankSource())
 
     setCorrectionIepSource((current) => {
@@ -425,14 +897,12 @@ export default function App() {
       return createBlankSource()
     })
 
-    setRole('student')
     setContextTags([])
     setTaskTitle('')
     setTeacherConcern('')
     setActiveExampleId(null)
     setAnalysis(null)
     setAnalysisError(null)
-    setCorrectionRole('student')
     setCorrectionTaskTitle('')
     setCorrectionTeacherConcern('')
     setCorrectionContextTags([])
@@ -443,7 +913,6 @@ export default function App() {
   function buildTeacherConcernRequest(
     nextIepSource: SourceMaterial,
     nextTaskSource: SourceMaterial,
-    nextRole: Role,
     nextTaskTitle: string,
     nextTeacherConcern: string,
     nextContextTags: TaskContext[],
@@ -457,7 +926,7 @@ export default function App() {
     return {
       contextTags: nextContextTags,
       iepSource: getAnalysisSource(nextIepSource),
-      role: nextRole,
+      taskTraits: getAnalysisTaskTraits(nextTaskSource),
       taskTitle: nextTaskTitle.trim(),
       taskSource: getAnalysisSource(nextTaskSource),
       teacherConcern: trimmedConcern,
@@ -467,7 +936,6 @@ export default function App() {
   async function runPrimaryAnalysis(
     nextIepSource: SourceMaterial,
     nextTaskSource: SourceMaterial,
-    nextRole: Role,
     nextTaskTitle: string,
     nextContextTags: TaskContext[],
   ) {
@@ -484,7 +952,7 @@ export default function App() {
       const nextAnalysis = await analysisAdapter.analyze({
         contextTags: nextContextTags,
         iepSource: getAnalysisSource(nextIepSource),
-        role: nextRole,
+        taskTraits: getAnalysisTaskTraits(nextTaskSource),
         taskTitle: nextTaskTitle.trim(),
         taskSource: getAnalysisSource(nextTaskSource),
       })
@@ -553,38 +1021,25 @@ export default function App() {
     const didGenerate = await runPrimaryAnalysis(
       iepSource,
       taskSource,
-      role,
       taskTitle,
       contextTags,
     )
-
     if (!didGenerate) {
       return
     }
-
-    void runTeacherConcernFollowUp(
-      buildTeacherConcernRequest(
-        iepSource,
-        taskSource,
-        role,
-        taskTitle,
-        teacherConcern,
-        contextTags,
-      ),
-    )
   }
 
   async function handleRegenerateFromCorrection() {
     const nextIepSource = correctionIepSource
     const nextTaskSource = correctionTaskSource
-    const nextRole = correctionRole
     const nextTaskTitle = correctionTaskTitle
     const nextTeacherConcern = correctionTeacherConcern
     const nextContextTags = correctionContextTags
 
-    replaceIepSource(nextIepSource)
+    replaceIepSource(nextIepSource, {
+      persist: shouldPersistIepSource,
+    })
     replaceTaskSource(nextTaskSource)
-    setRole(nextRole)
     setTaskTitle(nextTaskTitle)
     setTeacherConcern(nextTeacherConcern)
     setContextTags(nextContextTags)
@@ -594,25 +1049,12 @@ export default function App() {
     const didGenerate = await runPrimaryAnalysis(
       nextIepSource,
       nextTaskSource,
-      nextRole,
       nextTaskTitle,
       nextContextTags,
     )
-
     if (!didGenerate) {
       return
     }
-
-    void runTeacherConcernFollowUp(
-      buildTeacherConcernRequest(
-        nextIepSource,
-        nextTaskSource,
-        nextRole,
-        nextTaskTitle,
-        nextTeacherConcern,
-        nextContextTags,
-      ),
-    )
   }
 
   async function handleTeacherConcernReview() {
@@ -624,12 +1066,26 @@ export default function App() {
       buildTeacherConcernRequest(
         iepSource,
         taskSource,
-        role,
         taskTitle,
         teacherConcern,
         contextTags,
       ),
     )
+  }
+
+  function clearSavedIepFromDevice() {
+    clearPersistedIepSource()
+    setHasSavedIepOnDevice(false)
+    cancelPendingAnalysis()
+    replaceIepSource(createBlankSource())
+    setActiveExampleId(null)
+    setAnalysis(null)
+    setAnalysisError(null)
+    setCorrectionIepSource((current) => {
+      revokeRemovedAttachments(current.attachments, [])
+      return createBlankSource()
+    })
+    clearTeacherConcernState()
   }
 
   const canContinueToAssignment = hasUsableSourceText(iepSource)
@@ -647,6 +1103,13 @@ export default function App() {
     hasUsableSourceText(correctionIepSource) &&
     hasUsableSourceText(correctionTaskSource) &&
     Boolean(correctionTaskTitle.trim())
+  const showOptionalTaskSetup =
+    contextTags.length > 0 ||
+    Boolean(teacherConcern.trim())
+  const showCorrectionOptionalTaskSetup =
+    correctionContextTags.length > 0 ||
+    Boolean(correctionTeacherConcern.trim())
+  const isPreviewingExampleIep = !shouldPersistIepSource
 
   return (
     <div className="app-shell">
@@ -672,10 +1135,21 @@ export default function App() {
                 <div className="app-header__headline">
                   <h1>IEP Compass</h1>
                   <p className="app-header__lede">
-                    Let&apos;s start with the approved IEP details. Then add the
-                    assignment so we can map out what may apply, what to check
-                    first, and why.
+                    Start with the approved IEP wording. Then add the assignment
+                    so we can map out what may apply, what to ask for, and what
+                    still needs a quick check.
                   </p>
+
+                  <ul className="hero-guide-list">
+                    {HERO_GUIDEPOINTS.map((point) => (
+                      <li key={point.text}>
+                        <span className="hero-guide-list__icon" aria-hidden="true">
+                          <AppIcon name={point.icon} />
+                        </span>
+                        <span>{point.text}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div className="hero-compass-card" aria-hidden="true">
@@ -695,7 +1169,7 @@ export default function App() {
                   </div>
                   <div className="hero-compass-card__note hero-compass-card__note--top">
                     <AppIcon name="notebook" className="button-icon button-icon--sm" />
-                    Start with approved supports
+                    Start with approved accommodations
                   </div>
                   <div className="hero-compass-card__note hero-compass-card__note--bottom">
                     <AppIcon name="results" className="button-icon button-icon--sm" />
@@ -704,41 +1178,20 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="hero-highlight-list">
-                {HERO_HIGHLIGHTS.map((highlight) => (
-                  <div
-                    key={highlight.text}
-                    className={`hero-highlight hero-highlight--${highlight.icon}`}
-                  >
-                    <span className="hero-highlight__icon" aria-hidden="true">
-                      <AppIcon name={highlight.icon} />
-                    </span>
-                    <span>{highlight.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <aside className="app-header__aside">
-              <p className="app-header__aside-label">Grounded boundaries</p>
-              <p className="app-header__aside-copy">
-                We keep the guidance encouraging, but we stay inside a clear
-                trust lane the whole time.
-              </p>
-              <ul className="trust-list">
+              <div className="hero-trust-strip" aria-label="Grounded boundaries">
                 {TRUST_BOUNDARIES.map((boundary) => (
-                  <li key={boundary.title} className="trust-list__item">
-                    <span className="trust-list__icon" aria-hidden="true">
+                  <div key={boundary.title} className="hero-trust-item">
+                    <span className="hero-trust-item__icon" aria-hidden="true">
                       <AppIcon name={boundary.icon} />
                     </span>
                     <div>
                       <strong>{boundary.title}</strong>
                       <p>{boundary.detail}</p>
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-            </aside>
+              </div>
+            </div>
           </header>
         ) : (
           <header className="app-header app-header--compact">
@@ -746,7 +1199,7 @@ export default function App() {
               <div className="app-header__compact-copy">
                 <span className="eyebrow eyebrow--hero">
                   <AppIcon name="waypoint" className="button-icon button-icon--sm" />
-                  Guided accommodation journey
+                  Guided accommodation check
                 </span>
                 <h1>IEP Compass</h1>
               </div>
@@ -771,10 +1224,10 @@ export default function App() {
               (step.id === 'iep' && (screen === 'assignment' || screen === 'results')) ||
               (step.id === 'assignment' && screen === 'results')
             const stepStatus = isComplete
-              ? 'Checkpoint reached'
+              ? 'Done'
               : isActive
-                ? 'You are here'
-                : 'Coming up'
+                ? 'Now'
+                : 'Up next'
 
             return (
               <div
@@ -806,8 +1259,8 @@ export default function App() {
             <>
               <SectionCard
                 eyebrow="Waypoint 1"
-                title="Let’s start with the approved IEP details"
-                description="Paste the accommodation wording you want us to rely on, then add files only if they help confirm the source trail."
+                title="Start with the approved accommodation wording"
+                description="Paste the IEP lines you want the app to rely on. Backup files are optional if they help confirm the source trail."
                 icon={<AppIcon name="notebook" />}
                 footer={
                   <div className="screen-actions">
@@ -818,84 +1271,130 @@ export default function App() {
                       onClick={() => setScreen('assignment')}
                     >
                       <AppIcon name="assignment" className="button-icon" />
-                      Next: add the assignment
+                      Next: add the task
                     </button>
                   </div>
                 }
               >
                 <SourceEditor
                   attachments={iepSource.attachments}
-                  textLabel="IEP accommodations excerpt"
+                  documentPlan={documentPlan}
+                  children={
+                    <div className="local-save-note">
+                      <div className="local-save-note__copy">
+                        <span className="eyebrow">
+                          <AppIcon name="shield" className="button-icon button-icon--sm" />
+                          {isPreviewingExampleIep
+                            ? 'Sample details only'
+                            : hasSavedIepOnDevice
+                            ? 'Saved on this device'
+                            : 'Local-only IEP details'}
+                        </span>
+                        <p className="field-message">
+                          {isPreviewingExampleIep
+                            ? hasSavedIepOnDevice
+                              ? 'This preview does not replace the saved IEP on this device. Start over to bring the saved wording back. Assignment details and uploaded files are not saved here.'
+                              : 'This preview is just for practice and will not be saved on this device. Assignment details and uploaded files are not saved here.'
+                            : hasSavedIepOnDevice
+                            ? 'The approved IEP wording on this screen comes back automatically in this browser. Paste new wording here any time to replace it. Uploaded IEP files and assignment details are not saved here.'
+                            : 'When you add approved IEP wording here, it stays only in this browser. Paste new wording here any time to replace it later. Uploaded IEP files and assignment details are not saved here.'}
+                        </p>
+                      </div>
+
+                      {hasSavedIepOnDevice ? (
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          onClick={clearSavedIepFromDevice}
+                        >
+                          Clear saved IEP
+                        </button>
+                      ) : null}
+                    </div>
+                  }
+                  textHelp="Keep this to the approved wording you want cited back in the results. If you have several accommodations, a short list is easier to scan than a long paragraph."
+                  textLabel="Approved IEP wording"
                   textName="iepExcerpt"
                   textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
                   textValue={iepSource.text}
-                  onTextChange={(nextValue) => {
-                    setIepSource((current) => ({ ...current, text: nextValue }))
-                    setActiveExampleId(null)
-                    setAnalysisError(null)
-                    clearTeacherConcernState()
-                  }}
+                  onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
+                    updateMainAttachmentDocumentDraft('iep', attachmentId, nextDraft)
+                  }
+                  onAttachmentTextDraftChange={(attachmentId, nextValue) =>
+                    updateMainAttachmentTextDraft('iep', attachmentId, nextValue)
+                  }
+                  onKeepAttachmentReference={(attachmentId) =>
+                    keepMainAttachmentReference('iep', attachmentId)
+                  }
+                  onRunAttachmentInterpretation={(attachmentId) =>
+                    runMainAttachmentInterpretation('iep', attachmentId)
+                  }
+                  onTextChange={updateMainIepText}
+                  onUseAttachmentSource={(attachmentId) =>
+                    includeMainAttachmentSource('iep', attachmentId)
+                  }
                   onChooseFiles={(files) => appendFilesToMainSource('iep', files)}
                   onRemoveAttachment={(attachmentId) =>
                     removeMainAttachment('iep', attachmentId)
                   }
-                  uploadGuidance="Upload photos, screenshots, PDFs, or text files that help confirm the approved IEP wording. Images and PDFs stay as reference points unless their text is reviewed."
-                  emptyState="No IEP files added yet. Bring in anything that helps confirm the approved support list."
+                  uploadEmptyBadge="Recommended first"
+                  uploadGuidance="Use photos, screenshots, PDFs, or text files if that is the easiest way to bring in the approved IEP wording. After review, included file details can count in the source trail."
+                  uploadSummaryTitle="Start with a photo or file"
+                  uploadsFirst
+                  emptyState="No files yet. Skip this if typing the IEP wording is easier."
                   textFootnote={
                     !canContinueToAssignment ? (
                       <p className="field-message">
-                        Add reviewed IEP text before moving on. Text from
-                        uploaded files can also count once extracted.
+                        Add at least one reviewed accommodation before moving on.
+                        Reviewed upload details from files can also count.
                       </p>
                     ) : null
                   }
                 />
-              </SectionCard>
-
-              <SectionCard
-                eyebrow="Optional"
-                title="Try a sample journey first"
-                description="Use a realistic scenario to preview the flow before you enter a real student’s materials."
-                icon={<AppIcon name="star" />}
-              >
-                <details className="sample-panel">
-                  <summary className="sample-panel__summary">
+                <details className="optional-panel">
+                  <summary className="optional-panel__summary">
                     <span className="summary-label">
                       <AppIcon name="spark" className="button-icon button-icon--sm" />
-                      Open sample scenarios
+                      Prefer a preview first?
                     </span>
-                    <span className="meta-badge">Quick fill</span>
+                    <span className="meta-badge">Load a sample</span>
                   </summary>
 
-                  <div className="example-grid">
-                    {exampleScenarios.map((example) => {
-                      const isActive = example.id === activeExampleId
+                  <div className="optional-panel__body">
+                    <p className="field-message">
+                      Use a realistic scenario to preview the flow before you enter
+                      a real student&apos;s materials.
+                    </p>
 
-                      return (
-                        <button
-                          key={example.id}
-                          className={`example-card${
-                            isActive ? ' example-card--active' : ''
-                          }`}
-                          type="button"
-                          onClick={() => applyExample(example.id)}
-                        >
-                          <div>
-                            <h3 className="example-card__title">{example.title}</h3>
-                            <p className="example-card__summary">{example.summary}</p>
-                          </div>
+                    <div className="example-grid">
+                      {exampleScenarios.map((example) => {
+                        const isActive = example.id === activeExampleId
 
-                          <div className="example-card__footer">
-                            <span className="mini-chip">{example.role}</span>
-                            {example.contextTags.slice(0, 2).map((tag) => (
-                              <span key={tag} className="mini-chip">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </button>
-                      )
-                    })}
+                        return (
+                          <button
+                            key={example.id}
+                            className={`example-card${
+                              isActive ? ' example-card--active' : ''
+                            }`}
+                            type="button"
+                            onClick={() => applyExample(example.id)}
+                          >
+                            <div>
+                              <h3 className="example-card__title">{example.title}</h3>
+                              <p className="example-card__summary">{example.summary}</p>
+                            </div>
+
+                            <div className="example-card__footer">
+                              {example.contextTags.slice(0, 2).map((tag) => (
+                                <span key={tag} className="mini-chip">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </details>
               </SectionCard>
@@ -906,8 +1405,8 @@ export default function App() {
             <>
               <SectionCard
                 eyebrow="Waypoint 2"
-                title="Now add the assignment details"
-                description="Describe the task, worksheet, quiz, or assessment so we can check which approved supports may matter here."
+                title="Add the assignment, quiz, or worksheet"
+                description="Start with the task title and directions. Add extra tags or one school question only if they make this task clearer."
                 icon={<AppIcon name="assignment" />}
                 footer={
                   <div className="screen-actions screen-actions--split">
@@ -931,132 +1430,146 @@ export default function App() {
                       ) : (
                         <>
                           <AppIcon name="results" className="button-icon" />
-                          Map the supports
+                          Check what may apply
                         </>
                       )}
                     </button>
                   </div>
                 }
               >
+                <div className="field-label">
+                  <span className="field-label__title">Task title</span>
+                  <p className="field-label__help">
+                    Keep this short so it is easy to spot later.
+                  </p>
+                  <input
+                    className="text-input"
+                    name="taskTitle"
+                    placeholder="Example: Personal narrative essay"
+                    value={taskTitle}
+                    onChange={(event) => {
+                      setTaskTitle(event.target.value)
+                      setActiveExampleId(null)
+                      setAnalysisError(null)
+                      clearTeacherConcernState()
+                    }}
+                  />
+                </div>
+
                 <SourceEditor
                   attachments={taskSource.attachments}
-                  textLabel="Assignment, worksheet, or quiz details"
+                  documentPlan={documentPlan}
+                  textHelp="Paste directions or summarize what the student is being asked to do. Keep this to the task itself, not the answer."
+                  textLabel="Task directions or worksheet details"
                   textName="taskText"
                   textPlaceholder="Paste directions, summarize a worksheet photo, or upload a text file with the assignment details."
                   textValue={taskSource.text}
+                  onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
+                    updateMainAttachmentDocumentDraft('task', attachmentId, nextDraft)
+                  }
+                  onAttachmentTextDraftChange={(attachmentId, nextValue) =>
+                    updateMainAttachmentTextDraft('task', attachmentId, nextValue)
+                  }
+                  onKeepAttachmentReference={(attachmentId) =>
+                    keepMainAttachmentReference('task', attachmentId)
+                  }
+                  onRunAttachmentInterpretation={(attachmentId) =>
+                    runMainAttachmentInterpretation('task', attachmentId)
+                  }
                   onTextChange={(nextValue) => {
                     setTaskSource((current) => ({ ...current, text: nextValue }))
                     setActiveExampleId(null)
                     setAnalysisError(null)
                     clearTeacherConcernState()
                   }}
+                  onUseAttachmentSource={(attachmentId) =>
+                    includeMainAttachmentSource('task', attachmentId)
+                  }
                   onChooseFiles={(files) => appendFilesToMainSource('task', files)}
                   onRemoveAttachment={(attachmentId) =>
                     removeMainAttachment('task', attachmentId)
                   }
-                  uploadGuidance="Upload screenshots, photos, PDFs, or text files that support the assignment details. Images and PDFs stay as reference material unless their text is also reviewed."
-                  emptyState="No assignment files added yet. Include them if they help show what the student is actually being asked to do."
-                  textFootnote={
-                    <div className="stacked-copy">
-                      <p className="field-message">
-                        Model plan: {modelPlan.primaryLabel} first, then{' '}
-                        {modelPlan.fallbackLabel}.
-                        {modelPlan.liveConfigured
-                          ? ` ${modelPlan.runtimeLabel} is configured for live analysis.`
-                          : ' No endpoint is configured, so the app will use structured demo analysis.'}
-                      </p>
-                      <p className="field-message">
-                        Browser-first Gemma 4 testing now lives in a separate card
-                        below, so it does not replace the main IEP Compass flow.
-                      </p>
-                    </div>
-                  }
-                >
-                  <div className="field-label">
-                    <span className="field-label__title">Task title</span>
-                    <input
-                      className="text-input"
-                      name="taskTitle"
-                      placeholder="Example: Personal narrative essay"
-                      value={taskTitle}
-                      onChange={(event) => {
-                        setTaskTitle(event.target.value)
+                  uploadGuidance="Add screenshots, photos, PDFs, or text files only if they help show what the student is actually being asked to do. Image and PDF uploads can be interpreted into a structured task draft before analysis."
+                  emptyState="No task files yet. Skip this if the typed task summary already covers what matters."
+                />
+
+                <details className="optional-panel" open={showOptionalTaskSetup}>
+                  <summary className="optional-panel__summary">
+                    <span className="summary-label">
+                      <AppIcon name="waypoint" className="button-icon button-icon--sm" />
+                      Helpful extras
+                    </span>
+                    <span className="meta-badge">
+                      {showOptionalTaskSetup ? 'Added' : 'Use only if helpful'}
+                    </span>
+                  </summary>
+
+                  <div className="optional-panel__body">
+                    <label className="textarea-label">
+                      <span className="field-label__title">School staff question</span>
+                      <textarea
+                        className="textarea-input textarea-input--compact"
+                        name="teacherConcern"
+                        placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
+                        value={teacherConcern}
+                        onChange={(event) => {
+                          updateMainTeacherConcern(event.target.value)
+                          setActiveExampleId(null)
+                          setAnalysisError(null)
+                        }}
+                      />
+                      <span className="field-label__help">
+                        Add this only if there is one school question you want to
+                        check after the main accommodation map.
+                      </span>
+                    </label>
+
+                    <TaskSetupFields
+                      contextTags={contextTags}
+                      onContextToggle={(nextContext) => {
+                        setContextTags((current) =>
+                          current.includes(nextContext)
+                            ? current.filter((contextTag) => contextTag !== nextContext)
+                            : [...current, nextContext],
+                        )
                         setActiveExampleId(null)
                         setAnalysisError(null)
                         clearTeacherConcernState()
                       }}
                     />
                   </div>
+                </details>
 
-                  <label className="textarea-label">
-                    <span className="field-label__title">Optional teacher concern</span>
-                    <textarea
-                      className="textarea-input textarea-input--compact"
-                      name="teacherConcern"
-                      placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
-                      value={teacherConcern}
-                      onChange={(event) => {
-                        updateMainTeacherConcern(event.target.value)
-                        setActiveExampleId(null)
-                        setAnalysisError(null)
-                      }}
-                    />
-                    <span className="field-label__help">
-                      Add this if there is a specific question you want the final
-                      screen to check after the main support pass.
+                <details className="optional-panel optional-panel--testing">
+                  <summary className="optional-panel__summary">
+                    <span className="summary-label">
+                      <AppIcon name="spark" className="button-icon button-icon--sm" />
+                      Testing and model notes
                     </span>
-                  </label>
+                    <span className="meta-badge">Secondary</span>
+                  </summary>
 
-                  <TaskSetupFields
-                    contextTags={contextTags}
-                    onContextToggle={(nextContext) => {
-                      setContextTags((current) =>
-                        current.includes(nextContext)
-                          ? current.filter((contextTag) => contextTag !== nextContext)
-                          : [...current, nextContext],
-                      )
-                      setActiveExampleId(null)
-                      setAnalysisError(null)
-                      clearTeacherConcernState()
-                    }}
-                    onRoleChange={(nextRole) => {
-                      setRole(nextRole)
-                      setActiveExampleId(null)
-                      setAnalysisError(null)
-                      clearTeacherConcernState()
-                    }}
-                    role={role}
-                  />
-                </SourceEditor>
-              </SectionCard>
-
-              <SectionCard
-                eyebrow="Optional testing"
-                title="Test the browser path without leaving the app"
-                description="Use this only to verify the Gemma 4 browser flow and your local backup while we keep the main student-facing UX intact."
-                tone="soft"
-                icon={<AppIcon name="spark" />}
-              >
-                <BrowserGemmaApp localModelPlan={modelPlan} />
+                  <div className="optional-panel__body stacked-copy">
+                    <p className="field-message">
+                      Model plan: {modelPlan.primaryLabel} first, then{' '}
+                      {modelPlan.fallbackLabel}.
+                      {modelPlan.liveConfigured
+                        ? ` ${modelPlan.runtimeLabel} is configured for live analysis.`
+                        : ' No endpoint is configured, so the app will use structured demo analysis.'}
+                    </p>
+                    <p className="field-message">
+                      This testing surface is separate from the main student-facing
+                      flow so it does not add extra steps to the core journey.
+                    </p>
+                    <BrowserGemmaApp localModelPlan={modelPlan} />
+                  </div>
+                </details>
               </SectionCard>
             </>
           ) : null}
 
           {screen === 'results' ? (
             <>
-              <SectionCard
-                eyebrow="Waypoint 3"
-                title={taskTitle.trim() || 'Assignment check-in'}
-                description="Here’s the guided support map for this task. Start with the checkpoint cards below, then open the deeper review only if you need it."
-                tone="accent"
-                icon={<AppIcon name="results" />}
-              >
-                <p className="results-priority-note">
-                  These recommendations are tied to this specific assignment or
-                  assessment, not to school in general.
-                </p>
-              </SectionCard>
-
               {correctionTarget === 'iep' ? (
                 <SectionCard
                   eyebrow="Correct details"
@@ -1086,7 +1599,7 @@ export default function App() {
                         ) : (
                           <>
                             <AppIcon name="results" className="button-icon" />
-                            Regenerate support map
+                            Regenerate accommodation map
                           </>
                         )}
                       </button>
@@ -1095,15 +1608,32 @@ export default function App() {
                 >
                   <SourceEditor
                     attachments={correctionIepSource.attachments}
-                    textLabel="IEP accommodations excerpt"
+                    documentPlan={documentPlan}
+                    textHelp="Fix the approved wording here if the first pass missed something important or cited the wrong detail."
+                    textLabel="Approved IEP wording"
                     textName="correctionIepExcerpt"
                     textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
                     textValue={correctionIepSource.text}
+                    onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
+                      updateCorrectionAttachmentDocumentDraft('iep', attachmentId, nextDraft)
+                    }
+                    onAttachmentTextDraftChange={(attachmentId, nextValue) =>
+                      updateCorrectionAttachmentTextDraft('iep', attachmentId, nextValue)
+                    }
+                    onKeepAttachmentReference={(attachmentId) =>
+                      keepCorrectionAttachmentReference('iep', attachmentId)
+                    }
+                    onRunAttachmentInterpretation={(attachmentId) =>
+                      runCorrectionAttachmentInterpretation('iep', attachmentId)
+                    }
                     onTextChange={(nextValue) =>
                       setCorrectionIepSource((current) => ({
                         ...current,
                         text: nextValue,
                       }))
+                    }
+                    onUseAttachmentSource={(attachmentId) =>
+                      includeCorrectionAttachmentSource('iep', attachmentId)
                     }
                     onChooseFiles={(files) =>
                       appendFilesToCorrectionSource('iep', files)
@@ -1111,8 +1641,11 @@ export default function App() {
                     onRemoveAttachment={(attachmentId) =>
                       removeCorrectionAttachment('iep', attachmentId)
                     }
-                    uploadGuidance="Update the IEP materials here if you missed a detail or want to swap in a better supporting file."
-                    emptyState="No IEP files added for this correction draft."
+                    uploadEmptyBadge="Recommended first"
+                    uploadGuidance="Use a photo, screenshot, PDF, or text file if that is the easiest way to correct the IEP wording."
+                    uploadSummaryTitle="Start with a photo or file"
+                    uploadsFirst
+                    emptyState="No files in this correction draft yet."
                   />
                 </SectionCard>
               ) : null}
@@ -1121,7 +1654,7 @@ export default function App() {
                 <SectionCard
                   eyebrow="Correct details"
                   title="Update the assignment source trail"
-                  description="Refine the assignment details, role, or context tags, then regenerate from the corrected version."
+                  description="Refine the assignment details, helpful tags, or school question, then regenerate from the corrected version."
                   icon={<AppIcon name="assignment" />}
                   footer={
                     <div className="screen-actions screen-actions--split">
@@ -1146,24 +1679,65 @@ export default function App() {
                         ) : (
                           <>
                             <AppIcon name="results" className="button-icon" />
-                            Regenerate support map
+                            Regenerate accommodation map
                           </>
                         )}
                       </button>
                     </div>
                   }
                 >
+                  <div className="field-label">
+                    <span className="field-label__title">Task title</span>
+                    <p className="field-label__help">
+                      Update the title too if the original label was vague or off.
+                    </p>
+                    <input
+                      className="text-input"
+                      name="correctionTaskTitle"
+                      placeholder="Example: Personal narrative essay"
+                      value={correctionTaskTitle}
+                      onChange={(event) =>
+                        setCorrectionTaskTitle(event.target.value)
+                      }
+                    />
+                  </div>
+
                   <SourceEditor
                     attachments={correctionTaskSource.attachments}
-                    textLabel="Assignment, worksheet, or quiz details"
+                    documentPlan={documentPlan}
+                    textHelp="Tighten the task wording here so the results match what the student is actually being asked to do."
+                    textLabel="Task directions or worksheet details"
                     textName="correctionTaskText"
                     textPlaceholder="Paste directions, summarize a worksheet photo, or upload a text file with the assignment details."
                     textValue={correctionTaskSource.text}
+                    onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
+                      updateCorrectionAttachmentDocumentDraft(
+                        'task',
+                        attachmentId,
+                        nextDraft,
+                      )
+                    }
+                    onAttachmentTextDraftChange={(attachmentId, nextValue) =>
+                      updateCorrectionAttachmentTextDraft(
+                        'task',
+                        attachmentId,
+                        nextValue,
+                      )
+                    }
+                    onKeepAttachmentReference={(attachmentId) =>
+                      keepCorrectionAttachmentReference('task', attachmentId)
+                    }
+                    onRunAttachmentInterpretation={(attachmentId) =>
+                      runCorrectionAttachmentInterpretation('task', attachmentId)
+                    }
                     onTextChange={(nextValue) =>
                       setCorrectionTaskSource((current) => ({
                         ...current,
                         text: nextValue,
                       }))
+                    }
+                    onUseAttachmentSource={(attachmentId) =>
+                      includeCorrectionAttachmentSource('task', attachmentId)
                     }
                     onChooseFiles={(files) =>
                       appendFilesToCorrectionSource('task', files)
@@ -1171,64 +1745,66 @@ export default function App() {
                     onRemoveAttachment={(attachmentId) =>
                       removeCorrectionAttachment('task', attachmentId)
                     }
-                    uploadGuidance="Swap in a clearer worksheet photo, upload a better file, or update the written task description before regenerating."
-                    emptyState="No assignment files added for this correction draft."
+                    uploadGuidance="Swap in a clearer worksheet photo or file only if it helps show the corrected task details."
+                    emptyState="No task files in this correction draft yet."
+                  />
+
+                  <details
+                    className="optional-panel"
+                    open={showCorrectionOptionalTaskSetup}
                   >
-                    <div className="field-label">
-                      <span className="field-label__title">Task title</span>
-                      <input
-                        className="text-input"
-                        name="correctionTaskTitle"
-                        placeholder="Example: Personal narrative essay"
-                        value={correctionTaskTitle}
-                        onChange={(event) =>
-                          setCorrectionTaskTitle(event.target.value)
-                        }
+                    <summary className="optional-panel__summary">
+                      <span className="summary-label">
+                        <AppIcon name="waypoint" className="button-icon button-icon--sm" />
+                        Helpful extras
+                      </span>
+                      <span className="meta-badge">
+                        {showCorrectionOptionalTaskSetup ? 'Added' : 'Optional'}
+                      </span>
+                    </summary>
+
+                    <div className="optional-panel__body">
+                      <label className="textarea-label">
+                        <span className="field-label__title">School staff question</span>
+                        <textarea
+                          className="textarea-input textarea-input--compact"
+                          name="correctionTeacherConcern"
+                          placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
+                          value={correctionTeacherConcern}
+                          onChange={(event) =>
+                            setCorrectionTeacherConcern(event.target.value)
+                          }
+                        />
+                      </label>
+
+                      <TaskSetupFields
+                        contextTags={correctionContextTags}
+                        onContextToggle={(nextContext) => {
+                          setCorrectionContextTags((current) =>
+                            current.includes(nextContext)
+                              ? current.filter(
+                                  (contextTag) => contextTag !== nextContext,
+                                )
+                              : [...current, nextContext],
+                          )
+                        }}
                       />
                     </div>
-
-                    <label className="textarea-label">
-                      <span className="field-label__title">Optional teacher concern</span>
-                      <textarea
-                        className="textarea-input textarea-input--compact"
-                        name="correctionTeacherConcern"
-                        placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
-                        value={correctionTeacherConcern}
-                        onChange={(event) =>
-                          setCorrectionTeacherConcern(event.target.value)
-                        }
-                      />
-                    </label>
-
-                    <TaskSetupFields
-                      contextTags={correctionContextTags}
-                      onContextToggle={(nextContext) => {
-                        setCorrectionContextTags((current) =>
-                          current.includes(nextContext)
-                            ? current.filter(
-                                (contextTag) => contextTag !== nextContext,
-                              )
-                            : [...current, nextContext],
-                        )
-                      }}
-                      onRoleChange={setCorrectionRole}
-                      role={correctionRole}
-                    />
-                  </SourceEditor>
+                  </details>
                 </SectionCard>
               ) : null}
 
               {isAnalyzing ? (
                 <SectionCard
                   eyebrow="Working"
-                  title="Building the support map"
+                  title="Building the accommodation map"
                   description="The results screen stays in place while IEP Compass checks the latest source materials."
                   icon={<AppIcon name="compass" />}
                 >
                   <div className="loading-card">
-                    <LoadingIndicator label="Checking the task against the approved supports" />
+                    <LoadingIndicator label="Checking the task against the approved accommodations" />
                     <p>
-                      We&apos;re only using the approved supports visible in the
+                      We&apos;re only using the approved accommodations visible in the
                       current source trail.
                     </p>
                   </div>
@@ -1263,92 +1839,104 @@ export default function App() {
               ) : null}
 
               {analysis ? (
-                <ResultsView
-                  analysis={analysis}
-                  role={role}
-                />
+                <ResultsView analysis={analysis} />
               ) : null}
 
               {analysis ? (
                 <SectionCard
-                  eyebrow="Teacher concern"
-                  title="Ask a focused follow-up"
-                  description="Add or revise a concern here if there is one specific classroom question you want checked next."
+                  eyebrow="Optional follow-up"
+                  title="Check one school question"
+                  description="Use this only if you want help thinking through one question about how an accommodation may be used."
                   icon={<AppIcon name="teacher" />}
                 >
-                  <div className="teacher-concern-stack">
-                    <label className="textarea-label">
-                      <span className="field-label__title">Teacher concern</span>
-                      <textarea
-                        className="textarea-input textarea-input--compact"
-                        name="resultsTeacherConcern"
-                        placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
-                        value={teacherConcern}
-                        onChange={(event) => {
-                          updateMainTeacherConcern(event.target.value)
-                        }}
-                      />
-                    </label>
+                  <details
+                    className="optional-panel"
+                    open={Boolean(teacherConcern.trim()) || Boolean(teacherConcernAnalysis)}
+                  >
+                    <summary className="optional-panel__summary">
+                      <span className="summary-label">
+                        <AppIcon name="quote" className="button-icon button-icon--sm" />
+                        Add one question to check
+                      </span>
+                      <span className="meta-badge">
+                        {teacherConcernAnalysis ? 'Reviewed' : 'Optional'}
+                      </span>
+                    </summary>
 
-                    <div className="screen-actions screen-actions--split">
-                      <p className="review-note">
-                        This follow-up runs separately from the main checkpoint
-                        cards so it can answer the concern directly.
-                      </p>
+                    <div className="optional-panel__body teacher-concern-stack">
+                      <label className="textarea-label">
+                        <span className="field-label__title">School staff question</span>
+                        <textarea
+                          className="textarea-input textarea-input--compact"
+                          name="resultsTeacherConcern"
+                          placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
+                          value={teacherConcern}
+                          onChange={(event) => {
+                            updateMainTeacherConcern(event.target.value)
+                          }}
+                        />
+                      </label>
 
-                      <button
-                        className="action-button action-button--secondary"
-                        type="button"
-                        disabled={!canAddressTeacherConcern || isTeacherConcernAnalyzing}
-                        onClick={() => void handleTeacherConcernReview()}
-                      >
-                        {isTeacherConcernAnalyzing ? (
-                          <LoadingIndicator label="Addressing concern" size="sm" />
-                        ) : (
-                          <>
-                            <AppIcon name="quote" className="button-icon" />
-                            Check this concern
-                          </>
-                        )}
-                      </button>
-                    </div>
+                      <div className="screen-actions screen-actions--split">
+                        <p className="review-note">
+                          This runs separately from the main accommodation map so it can
+                          think through one school question at a time.
+                        </p>
 
-                    {teacherConcernError ? (
-                      <p className="field-message field-message--warning">
-                        {teacherConcernError}
-                      </p>
-                    ) : null}
-
-                    {teacherConcernAnalysis ? (
-                      <div className="teacher-concern-response">
-                        <div className="teacher-concern-response__header">
-                          <h3>Focused answer</h3>
-                          <span className="meta-badge">
-                            {
-                              TEACHER_CONCERN_VERDICT_LABELS[
-                                teacherConcernAnalysis.result.verdict
-                              ]
-                            }
-                          </span>
-                        </div>
-
-                        <div className="results-detail-block">
-                          <h3>Concern</h3>
-                          <p>{teacherConcernAnalysis.result.concern}</p>
-                        </div>
-
-                        <div className="results-detail-block">
-                          <h3>Evaluation</h3>
-                          <p>{teacherConcernAnalysis.result.guidance}</p>
-                        </div>
-
-                        <div className="results-detail-block">
-                          <h3>How to explain it</h3>
-                          <p>{teacherConcernAnalysis.result.suggestedResponse}</p>
-                        </div>
+                        <button
+                          className="action-button action-button--secondary"
+                          type="button"
+                          disabled={!canAddressTeacherConcern || isTeacherConcernAnalyzing}
+                          onClick={() => void handleTeacherConcernReview()}
+                        >
+                          {isTeacherConcernAnalyzing ? (
+                            <LoadingIndicator label="Checking follow-up" size="sm" />
+                          ) : (
+                            <>
+                              <AppIcon name="quote" className="button-icon" />
+                              Check this question
+                            </>
+                          )}
+                        </button>
                       </div>
-                    ) : null}
-                  </div>
+
+                      {teacherConcernError ? (
+                        <p className="field-message field-message--warning">
+                          {teacherConcernError}
+                        </p>
+                      ) : null}
+
+                      {teacherConcernAnalysis ? (
+                        <div className="teacher-concern-response">
+                          <div className="teacher-concern-response__header">
+                            <h3>Focused answer</h3>
+                            <span className="meta-badge">
+                              {
+                                TEACHER_CONCERN_VERDICT_LABELS[
+                                  teacherConcernAnalysis.result.verdict
+                                ]
+                              }
+                            </span>
+                          </div>
+
+                          <div className="results-detail-block">
+                            <h3>Question</h3>
+                            <p>{teacherConcernAnalysis.result.concern}</p>
+                          </div>
+
+                          <div className="results-detail-block">
+                            <h3>What it suggests</h3>
+                            <p>{teacherConcernAnalysis.result.guidance}</p>
+                          </div>
+
+                          <div className="results-detail-block">
+                            <h3>How to explain it</h3>
+                            <p>{teacherConcernAnalysis.result.suggestedResponse}</p>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </details>
                 </SectionCard>
               ) : null}
 
@@ -1378,7 +1966,7 @@ export default function App() {
                         <SourceReviewPanel
                           eyebrow="Source materials"
                           title="Assignment source"
-                          description="These are the task details the app uses to explain why a listed support may matter here."
+                          description="These are the task details the app uses to explain why a listed accommodation may matter here."
                           source={taskSource}
                         />
                       </div>

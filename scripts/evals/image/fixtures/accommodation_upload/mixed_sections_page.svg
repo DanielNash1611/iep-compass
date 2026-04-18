@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#fffdf8" />
+  <rect x="80" y="70" width="1040" height="1460" rx="26" fill="#ffffff" stroke="#d6d0c4" stroke-width="4" />
+  <text x="130" y="165" font-size="46" font-family="Arial, sans-serif" font-weight="700" fill="#21313a">IEP page 4</text>
+  <text x="130" y="265" font-size="30" font-family="Arial, sans-serif" font-weight="700" fill="#2f6e62">Goals</text>
+  <text x="165" y="330" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Reading fluency goal: improve oral reading rate.</text>
+  <text x="130" y="440" font-size="30" font-family="Arial, sans-serif" font-weight="700" fill="#2f6e62">Services</text>
+  <text x="165" y="505" font-size="28" font-family="Arial, sans-serif" fill="#21313a">30 minutes weekly counseling.</text>
+  <text x="130" y="615" font-size="30" font-family="Arial, sans-serif" font-weight="700" fill="#2f6e62">Accommodations</text>
+  <text x="165" y="680" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Chunked directions for multi-step assignments.</text>
+  <text x="165" y="760" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Short breaks allowed during extended class tasks.</text>
+</svg>

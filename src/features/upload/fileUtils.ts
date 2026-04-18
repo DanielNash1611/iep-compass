@@ -1,4 +1,8 @@
-import type { AttachmentKind, UploadedAttachment } from '../../types/analysis'
+import type {
+  AttachmentKind,
+  AttachmentStatus,
+  UploadedAttachment,
+} from '../../types/analysis'
 
 function inferAttachmentKind(file: File): AttachmentKind {
   if (file.type.startsWith('image/')) {
@@ -32,43 +36,104 @@ function formatFileSize(sizeInBytes: number) {
   return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export async function toUploadedAttachment(
-  file: File,
-): Promise<UploadedAttachment> {
-  const kind = inferAttachmentKind(file)
-
-  let extractedText: string | undefined
-  let previewUrl: string | undefined
-
-  if (kind === 'text') {
-    extractedText = await file.text()
+function buildPdfProgressNote(attachment: UploadedAttachment) {
+  if (attachment.kind !== 'pdf' || !attachment.processedPageCount) {
+    return null
   }
+
+  if (
+    typeof attachment.pageCount === 'number' &&
+    attachment.pageCount > attachment.processedPageCount
+  ) {
+    return `This phase read the first ${attachment.processedPageCount} of ${attachment.pageCount} pages.`
+  }
+
+  return `Read ${attachment.processedPageCount} ${
+    attachment.processedPageCount === 1 ? 'page' : 'pages'
+  } in this phase.`
+}
+
+function buildStatusNotes(
+  attachment: UploadedAttachment,
+  status: AttachmentStatus,
+) {
+  switch (status) {
+    case 'text_ready':
+      return [
+        'Text file read locally and ready for the source trail.',
+      ]
+    case 'interpret_ready':
+      return attachment.kind === 'pdf'
+        ? [
+            'Ready for structured document reading with Gemma 4 when you choose it.',
+            'This phase interprets up to the first 3 PDF pages.',
+          ]
+        : [
+            'Ready for structured document reading with Gemma 4 when you choose it.',
+            'Run this only if you want the visible document details reviewed here.',
+          ]
+    case 'interpret_running':
+      return [
+        `Interpreting the visible document with Gemma 4${
+          attachment.kind === 'pdf' ? ' from the first PDF pages' : ''
+        }.`,
+      ]
+    case 'review_ready':
+      return [
+        'Structured document draft is ready. Review it before using it in the source trail.',
+        buildPdfProgressNote(attachment),
+        ...(attachment.readContainsUnclearText
+          ? ['Some wording was unclear, blank, or redacted and was preserved honestly in the extracted text.']
+          : []),
+        ...(attachment.readNotes ?? []),
+      ].filter(Boolean) as string[]
+    case 'included':
+      return [
+        'Reviewed upload details are included in this source trail.',
+        buildPdfProgressNote(attachment),
+        ...(attachment.readContainsUnclearText
+          ? ['A few unclear, blank, or redacted spots were preserved so the source stays honest.']
+          : []),
+        ...(attachment.readNotes ?? []),
+      ].filter(Boolean) as string[]
+    case 'reference_only':
+      return [
+        'This file stays as a reference only and is not part of the source trail.',
+        buildPdfProgressNote(attachment),
+      ].filter(Boolean) as string[]
+    case 'failed':
+      return [
+        attachment.readError ||
+          (attachment.kind === 'text'
+            ? 'We could not read this text file locally.'
+            : 'We could not interpret enough of this file clearly in this phase.'),
+        attachment.kind === 'pdf'
+          ? 'You can keep it as a reference, paste the needed wording, or upload a shorter excerpt.'
+          : 'You can keep it as a reference and type the important wording below.',
+      ]
+    default:
+      return ['This file stays as a reference in this phase.']
+  }
+}
+
+export function refreshAttachmentNotes(
+  attachment: UploadedAttachment,
+): UploadedAttachment {
+  return {
+    ...attachment,
+    notes: buildStatusNotes(attachment, attachment.status),
+  }
+}
+
+export function createUploadedAttachment(file: File): UploadedAttachment {
+  const kind = inferAttachmentKind(file)
+  let previewUrl: string | undefined
 
   if (kind === 'image') {
     previewUrl = URL.createObjectURL(file)
   }
 
-  const notes =
-    kind === 'text'
-      ? [
-          'Text files are ready for review and can be pasted into the task box if needed.',
-        ]
-      : kind === 'image'
-        ? [
-            'Image preview is ready.',
-            'The MVP keeps image analysis explicit, so paste or review the key task text before running the result.',
-          ]
-        : kind === 'pdf'
-          ? [
-              'PDF uploaded successfully.',
-              'This MVP does not extract PDF text automatically, so review the document and paste the needed details.',
-            ]
-          : [
-              'This file type is stored only as a reference preview in the MVP.',
-            ]
-
-  return {
-    extractedText,
+  const attachment: UploadedAttachment = {
     file,
     fileType: file.type,
     id:
@@ -77,11 +142,60 @@ export async function toUploadedAttachment(
         : `${file.name}-${file.lastModified}`,
     kind,
     name: file.name,
-    notes,
+    notes: [],
     previewUrl,
     sizeLabel: formatFileSize(file.size),
     status:
-      kind === 'text' ? 'ready' : kind === 'other' ? 'manual_review_needed' : 'preview_only',
+      kind === 'text'
+        ? 'interpret_running'
+        : kind === 'image' || kind === 'pdf'
+          ? 'interpret_ready'
+          : 'reference_only',
+  }
+
+  return refreshAttachmentNotes(attachment)
+}
+
+export async function loadLocalTextAttachment(
+  attachment: UploadedAttachment,
+): Promise<UploadedAttachment> {
+  if (attachment.kind !== 'text') {
+    return attachment
+  }
+
+  try {
+    const extractedText = await attachment.file.text()
+    const trimmedText = extractedText.trim()
+
+    if (!trimmedText) {
+      return refreshAttachmentNotes({
+        ...attachment,
+        extractedText: '',
+        readError: 'This text file did not contain readable text.',
+        readMethod: 'plain_text_file',
+        reviewedText: undefined,
+        status: 'failed',
+      })
+    }
+
+    return refreshAttachmentNotes({
+      ...attachment,
+      extractedText,
+      readError: undefined,
+      readMethod: 'plain_text_file',
+      reviewedText: extractedText,
+      status: 'included',
+    })
+  } catch (error) {
+    return refreshAttachmentNotes({
+      ...attachment,
+      readError:
+        error instanceof Error
+          ? error.message
+          : 'We could not read this text file locally.',
+      reviewedText: undefined,
+      status: 'failed',
+    })
   }
 }
 

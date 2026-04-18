@@ -2,9 +2,12 @@ import type {
   AnalysisResult,
   TeacherConcernEvaluation,
 } from '../lib/schema/analysisSchema'
-
-export const roles = ['student', 'parent', 'teacher'] as const
-export type Role = (typeof roles)[number]
+import type {
+  DocumentConfidenceFlags,
+  DocumentKind,
+  StructuredDocumentDraft,
+  TaskReviewDraft,
+} from '../lib/schema/ocrSchema'
 
 export const taskContexts = [
   'timed',
@@ -18,9 +21,24 @@ export const taskContexts = [
 export type TaskContext = (typeof taskContexts)[number]
 
 export type AttachmentKind = 'image' | 'pdf' | 'text' | 'other'
-export type AttachmentStatus = 'ready' | 'preview_only' | 'manual_review_needed'
+export type AttachmentStatus =
+  | 'text_ready'
+  | 'interpret_ready'
+  | 'interpret_running'
+  | 'review_ready'
+  | 'included'
+  | 'reference_only'
+  | 'failed'
+
+export type AttachmentReadMethod =
+  | 'gemma4_image'
+  | 'gemma4_pdf_pages'
+  | 'plain_text_file'
 
 export interface UploadedAttachment {
+  confidenceFlags?: DocumentConfidenceFlags
+  documentDraft?: StructuredDocumentDraft
+  documentKind?: DocumentKind
   extractedText?: string
   file: File
   fileType: string
@@ -28,7 +46,15 @@ export interface UploadedAttachment {
   kind: AttachmentKind
   name: string
   notes: string[]
+  rawTranscript?: string
+  readContainsUnclearText?: boolean
+  readError?: string
+  readMethod?: AttachmentReadMethod
+  readNotes?: string[]
+  pageCount?: number
+  processedPageCount?: number
   previewUrl?: string
+  reviewedText?: string
   sizeLabel: string
   status: AttachmentStatus
 }
@@ -41,7 +67,7 @@ export interface SourceMaterial {
 export interface AnalysisRequest {
   contextTags: TaskContext[]
   iepSource: SourceMaterial
-  role: Role
+  taskTraits?: TaskReviewDraft | null
   taskTitle: string
   teacherConcern?: string
   taskSource: SourceMaterial
@@ -69,3 +95,5 @@ export interface TeacherConcernExecution {
   meta: AnalysisMeta
   result: TeacherConcernEvaluation
 }
+
+export type { TaskReviewDraft }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#fffdf8" />
+  <rect x="85" y="75" width="1030" height="1450" rx="24" fill="#ffffff" stroke="#d7d1c6" stroke-width="4" />
+  <text x="130" y="170" font-size="48" font-family="Arial, sans-serif" font-weight="700" fill="#21313a">Essay rubric: ecosystems</text>
+  <text x="130" y="280" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Write a 5 paragraph essay on ecosystems.</text>
+  <text x="130" y="350" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Due Friday.</text>
+  <text x="130" y="455" font-size="30" font-family="Arial, sans-serif" font-weight="700" fill="#2f6e62">Final score factors</text>
+  <text x="165" y="525" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Organization</text>
+  <text x="165" y="585" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Supporting evidence</text>
+  <text x="165" y="645" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Grammar</text>
+  <text x="165" y="705" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Spelling</text>
+  <text x="130" y="820" font-size="28" font-family="Arial, sans-serif" fill="#5c6770">Grammar and spelling count toward the final score.</text>
+</svg>

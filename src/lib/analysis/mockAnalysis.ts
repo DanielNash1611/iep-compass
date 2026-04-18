@@ -1,6 +1,7 @@
 import {
   parseAnalysisResult,
   parseTeacherConcernEvaluation,
+  type AnalysisResult,
   type AccommodationConfidence,
 } from '../schema/analysisSchema.ts'
 import type {
@@ -20,6 +21,7 @@ type AccommodationCategory =
   | 'chunked_directions'
   | 'reduced_distraction'
   | 'text_to_speech'
+  | 'calculator_use'
   | 'graphic_organizer'
   | 'spelling_flexibility'
   | 'check_ins'
@@ -35,8 +37,9 @@ const CATEGORY_LABELS: Record<AccommodationCategory, string> = {
   extended_time: 'Extended time',
   chunked_directions: 'Chunked or clarified directions',
   reduced_distraction: 'Reduced-distraction setting',
-  text_to_speech: 'Text-to-speech support',
-  graphic_organizer: 'Graphic organizer support',
+  text_to_speech: 'Text-to-speech accommodation',
+  calculator_use: 'Calculator use',
+  graphic_organizer: 'Graphic organizer accommodation',
   spelling_flexibility: 'Do not grade spelling when spelling is not the target skill',
   check_ins: 'Check-ins before or during work',
   other: 'IEP accommodation',
@@ -59,6 +62,10 @@ const CATEGORY_PATTERNS: Array<{
   {
     category: 'text_to_speech',
     pattern: /(text-to-speech|read aloud|audio support)/i,
+  },
+  {
+    category: 'calculator_use',
+    pattern: /(use of calculator|calculator( use)?( except| unless| for))/i,
   },
   {
     category: 'graphic_organizer',
@@ -201,7 +208,17 @@ function extractAccommodationCandidates(iepExcerpt: string) {
     .split('\n')
     .flatMap((line) => line.split(/[;•]/))
     .map((line) => line.trim())
-    .filter((line) => line.length > 6 && !/approved accommodations excerpt/i.test(line))
+    .filter(
+      (line) =>
+        line.length > 6
+        && !/approved accommodations excerpt/i.test(line)
+        && !/^(student name|district|dob|meeting date|learning disability or profile wording|modifications)\s*:/i.test(
+          line,
+        )
+        && !/^(setting\s*\/\s*scheduling|teacher directions|student response|self-regulation|organization\s*\/\s*study skills|personal care\s*\/\s*equipment)\s*:?$/i.test(
+          line,
+        ),
+    )
 
   const uniqueLines = Array.from(new Set(rawLines))
 
@@ -238,9 +255,7 @@ function extractAccommodationCandidates(iepExcerpt: string) {
 
 function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisRequest) {
   const taskText = normalizeText(
-    `${request.taskTitle} ${request.taskSource.text} ${
-      request.teacherConcern ?? ''
-    } ${request.contextTags.join(' ')}`.trim(),
+    `${request.taskTitle} ${request.taskSource.text} ${request.contextTags.join(' ')}`.trim(),
   )
   const needContext = deriveNeedContext(request.iepSource.text)
 
@@ -260,8 +275,8 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
           'The task reads like a timed quiz or assessment, which matches when extra time is usually written to apply.',
         confidence: 'likely_relevant' as const,
         implementationNotes: [
-          'Confirm the time adjustment before the task begins so expectations stay clear.',
-          'Keep the accommodation focused on access to the task, not extra help with answers.',
+          'Ask before the task starts how your extra time will work.',
+          'Use the extra time for the same task, not for hints or answer help.',
         ],
         plainLanguage:
           'More time can reduce speed pressure so the student can show what they know without rushing.',
@@ -294,8 +309,8 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
           'The task includes several directions or multiple steps, which matches the type of task where chunked directions are typically used.',
         confidence: 'likely_relevant' as const,
         implementationNotes: [
-          'Break directions into shorter chunks before the student gets started.',
-          'Pause after each chunk to make sure the next step is clear.',
+          'Ask if the directions can be broken into smaller parts.',
+          'Check each part before moving to the next step.',
         ],
         plainLanguage:
           'Smaller chunks can make a dense set of instructions easier to follow without changing the task itself.',
@@ -321,8 +336,8 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
           'The task sounds like focused work or an assessment setting, which is when a lower-distraction environment is most often considered.',
         confidence: 'possibly_relevant' as const,
         implementationNotes: [
-          'If the task is high-stakes or attention-heavy, confirm whether a quieter setting is available.',
-          'Use this support to reduce distraction, not to change what the student is expected to do.',
+          'Ask if there is a quieter place if the room feels distracting.',
+          'This accommodation changes the setting, not the work you are expected to do.',
         ],
         plainLanguage:
           'A quieter setting can lower distraction during attention-heavy assessments or independent work.',
@@ -343,18 +358,18 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
       if (readingComprehensionTask) {
         return {
           applicationReason:
-            'The IEP lists audio support, but this task appears to measure reading itself, so that boundary needs confirmation first.',
+            'The IEP lists an audio accommodation, but this task appears to measure reading itself, so that boundary needs confirmation first.',
           confidence: 'unclear_confirm' as const,
           implementationNotes: [
-            'Confirm what the task is measuring before using audio support on reading-heavy assessments.',
-            'If the support applies only to non-reading-comprehension work, staff should verify the boundary first.',
+            'Ask what skill this task is measuring before using the audio accommodation here.',
+            'If the audio accommodation is only for non-reading tasks, check that boundary first.',
           ],
           plainLanguage:
-            'Audio support may help with directions or access, but this task may also measure reading itself.',
+            'The audio accommodation may help with directions or access, but this task may also measure reading itself.',
           whyItMayMatter:
             needContext.includes('dyslexia')
-              ? 'Audio support may still matter for access, but using it on a reading-comprehension task could change what the assignment is intended to measure.'
-              : 'Audio support may still matter for access, but this task could also be measuring reading skill directly.',
+              ? 'The audio accommodation may still matter for access, but using it on a reading-comprehension task could change what the assignment is intended to measure.'
+              : 'The audio accommodation may still matter for access, but this task could also be measuring reading skill directly.',
         }
       }
 
@@ -374,18 +389,83 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
 
       return {
         applicationReason:
-          'The task appears to rely on printed directions or handout text, which matches when text-to-speech support often applies outside reading-comprehension testing.',
+          'The task appears to rely on printed directions or handout text, which matches when a text-to-speech accommodation often applies outside reading-comprehension testing.',
         confidence: 'likely_relevant' as const,
         implementationNotes: [
-          'Use text-to-speech for directions or content that is not measuring reading comprehension.',
-          'Confirm the support before the student begins if the task format is new.',
+          'Ask if audio can be used for the directions or handout text.',
+          'Check the setup before you begin if this task format is new.',
         ],
         plainLanguage:
-          'Audio support can make printed directions or content more accessible when the task is not testing reading itself.',
+          'An audio accommodation can make printed directions or content more accessible when the task is not testing reading itself.',
         whyItMayMatter:
           needContext.includes('dyslexia') || needContext.includes('auditory')
-            ? 'If sound-symbol processing is part of the student profile, audio support can remove a decoding barrier so the task measures the intended content.'
-            : 'Audio support can remove a reading-access barrier when the task is really about the content, not decoding print.',
+            ? 'If sound-symbol processing is part of the student profile, the audio accommodation can remove a decoding barrier so the task measures the intended content.'
+            : 'The audio accommodation can remove a reading-access barrier when the task is really about the content, not decoding print.',
+      }
+    }
+
+    case 'calculator_use': {
+      const calculatorBlockedByCalculationTest =
+        includesAny(candidate.normalized, [
+          /except for calculation tests?/,
+          /unless .*calculation tests?/,
+        ])
+
+      const taskLooksLikeCalculationTest =
+        request.taskTraits?.calculationFocus === 'calculation_focused'
+        || includesAny(taskText, [
+          /calculation test/,
+          /math facts/,
+          /arithmetic fluency/,
+          /compute/,
+          /show your calculations/,
+        ])
+
+      if (calculatorBlockedByCalculationTest && taskLooksLikeCalculationTest) {
+        return {
+          applicationReason:
+            'The IEP line allows calculator use except on calculation tests, and this task still looks like it may be measuring calculation skill directly.',
+          confidence: 'unclear_confirm' as const,
+          implementationNotes: [
+            'Ask whether this task is being treated as a calculation test before using a calculator.',
+            'If the teacher says the task is measuring calculation skill directly, confirm the boundary first.',
+          ],
+          plainLanguage:
+            'Calculator use is listed, but this task may fall inside the calculation-test exception.',
+          whyItMayMatter:
+            'The accommodation may still apply on many math tasks, but calculation-test boundaries need a quick check before anyone assumes it fits here.',
+        }
+      }
+
+      const geometryReasoningTask =
+        request.taskTraits?.calculationFocus === 'not_calculation_focused'
+        || includesAny(taskText, [
+          /geometry/,
+          /composite figures?/,
+          /\barea\b/,
+          /perimeter/,
+          /diagram/,
+          /spatial/,
+        ])
+
+      if (!geometryReasoningTask && !/math/.test(taskText)) {
+        return null
+      }
+
+      return {
+        applicationReason:
+          geometryReasoningTask
+            ? 'The reviewed task details point to geometry or figure-based reasoning work rather than a pure calculation test, which makes the calculator line look more likely to fit.'
+            : 'The task still appears math-related, so calculator use may fit depending on whether the teacher considers it a calculation-focused test.',
+        confidence: geometryReasoningTask ? 'likely_relevant' as const : 'possibly_relevant' as const,
+        implementationNotes: [
+          'Ask how calculator use is supposed to work on this specific math task before you begin.',
+          'If the teacher says the page is not a calculation test, this accommodation may fit without changing the goal of the work.',
+        ],
+        plainLanguage:
+          'Calculator use may fit here if the page is checking geometry thinking or figure work instead of straight calculation fluency.',
+        whyItMayMatter:
+          'A calculator can reduce arithmetic load so the task stays focused on the math concept being measured, but the calculation-test boundary still matters.',
       }
     }
 
@@ -413,8 +493,8 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
           'The task includes planning or structured writing, which matches when an organizer is commonly used.',
         confidence: 'likely_relevant' as const,
         implementationNotes: [
-          'Offer a planning frame or organizer before the student starts writing.',
-          'Keep the organizer focused on structure, not on supplying the content of the response.',
+          'Ask for the organizer before you start writing.',
+          'Use it to plan your ideas, not to fill in the answer for you.',
         ],
         plainLanguage:
           'An organizer can help the student plan their ideas and keep track of multi-part directions.',
@@ -444,8 +524,8 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
             'This accommodation may be relevant, but spelling is still named in the rubric or task notes, so the source does not fully settle whether spelling is being measured or just marked for feedback.',
           confidence: 'possibly_relevant' as const,
           implementationNotes: [
-            'Teachers can still mark spelling mistakes for feedback or revision without automatically making spelling a grading penalty.',
-            'Because spelling appears in the rubric or task notes, staff should confirm whether spelling is a core skill being measured or only a feedback point before treating this accommodation as settled.',
+            'Ask how spelling feedback and grading will work on this task.',
+            'Because spelling is mentioned here, check whether it is a main skill being graded or just feedback.',
           ],
           plainLanguage:
             `This accommodation may fit, but since spelling is still mentioned here, staff should check whether spelling is a main grading target or mainly feedback while the grade stays centered on ${writingTargets}.`,
@@ -461,8 +541,8 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
           'The accommodation specifically says spelling should not count when spelling is not the skill being measured, and this task reads like a content-focused writing assignment rather than a spelling assessment.',
         confidence: 'likely_relevant' as const,
         implementationNotes: [
-          'Teachers can still mark spelling mistakes for feedback and revision.',
-          'The grade should stay anchored to the rubric categories the assignment is actually measuring.',
+          'Ask how spelling feedback and grading will work before you turn it in.',
+          'This accommodation is about keeping the grade on the main writing goal, not ignoring spelling feedback.',
         ],
         plainLanguage:
           'Spelling can still be corrected, but it should not lower the grade if the assignment is grading ideas, organization, or analysis instead.',
@@ -489,8 +569,8 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
           'The task includes independent or multi-step work, which matches when check-ins are usually written to apply.',
         confidence: 'likely_relevant' as const,
         implementationNotes: [
-          'Schedule a quick check-in before independent work starts and again during longer tasks.',
-          'Use the check-in to confirm understanding of the next step rather than to answer the work.',
+          'Ask for a quick check-in before you begin and during longer work.',
+          'Use the check-in to make sure the next step is clear, not to get the answer.',
         ],
         plainLanguage:
           'A quick check-in can help the student start independently and catch confusion before it grows.',
@@ -516,14 +596,14 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
 
       return {
         applicationReason:
-          'The support is listed in the IEP excerpt, but the current task details are too general to show exactly how it would apply here.',
+          'The accommodation is listed in the IEP excerpt, but the current task details are too general to show exactly how it would apply here.',
         confidence: 'unclear_confirm' as const,
         implementationNotes: [
-          'The support is listed in the excerpt, but the task details do not show exactly how it would be used here.',
-          'Confirm with staff before assuming it does or does not apply.',
+          'The task details do not show exactly how this accommodation would work here yet.',
+          'Check with school staff before assuming it does or does not apply.',
         ],
         plainLanguage:
-          'This support is listed in the excerpt, but the current task description is too general to map it confidently.',
+          'This accommodation is listed in the excerpt, but the current task description is too general to map it confidently.',
         whyItMayMatter:
           'There may still be an access reason behind the accommodation, but the current information is not specific enough to explain it responsibly.',
       }
@@ -561,6 +641,8 @@ function buildNotRelevantReason(candidate: AccommodationCandidate) {
       return 'Nothing in the draft clearly points to an assessment or a quiet-setting need yet.'
     case 'text_to_speech':
       return 'The task description does not clearly show a reading-access need outside the task being measured.'
+    case 'calculator_use':
+      return 'The current details do not clearly show whether this math task sits outside a calculation-test boundary.'
     case 'graphic_organizer':
       return 'The current details do not clearly show planning or structured writing demands.'
     case 'spelling_flexibility':
@@ -568,38 +650,27 @@ function buildNotRelevantReason(candidate: AccommodationCandidate) {
     case 'check_ins':
       return 'The task does not obviously require an independent-work check-in from the current description.'
     default:
-      return 'This support is in the excerpt, but the current task description does not show a clear connection.'
+      return 'This accommodation is in the excerpt, but the current task description does not show a clear connection.'
   }
 }
 
-function buildSummary(
-  request: AnalysisRequest,
-  relevantCount: number,
-  topNames: string[],
-) {
-  const rolePrefix =
-    request.role === 'student'
-      ? 'For this task, the supports from your excerpt'
-      : request.role === 'parent'
-        ? 'For this task, the supports from the excerpt'
-        : 'For this task, the approved supports in the excerpt'
-
+function buildStudentStartHere(relevantCount: number, topNames: string[]) {
   if (relevantCount === 0) {
-    return `${rolePrefix} do not show a clear match yet. That usually means the task details are still thin or the connection needs staff confirmation.`
+    return 'Nothing looks like a clear match yet. Add a little more about the task, then check again or ask school staff to help you confirm it.'
   }
 
   const leadingNames = topNames.slice(0, 2).join(' and ')
 
-  return `${rolePrefix} point most clearly to ${leadingNames}. The result stays cautious about anything that depends on what the task is measuring or what staff still need to confirm.`
+  return `Start with ${leadingNames}. These look like the strongest matches for this task. Anything less settled is marked so you know what to double-check.`
 }
 
 function buildStudentAdvocacy(topNames: string[]) {
   if (topNames.length === 0) {
     return {
       suggestedScript:
-        'I am not sure which support fits this task yet. Can we look at my IEP accommodations and confirm before I start?',
+        'I am not sure which accommodation fits this task yet. Can we look at my IEP accommodations and confirm before I start?',
       alternativeScripts: [
-        'Can we double-check which of my approved supports applies here before I begin?',
+        'Can we double-check which of my approved accommodations applies here before I begin?',
         'I want to make sure I use my approved accommodations the right way for this task.',
       ],
     }
@@ -608,12 +679,65 @@ function buildStudentAdvocacy(topNames: string[]) {
   const topSupport = topNames[0]
 
   return {
-    suggestedScript: `I think my ${topSupport.toLowerCase()} support may matter for this task. Can we confirm it before I start?`,
+    suggestedScript: `I think my ${topSupport.toLowerCase()} accommodation may matter for this task. Can we confirm it before I start?`,
     alternativeScripts: [
       `My IEP lists ${topSupport.toLowerCase()}. Can we set that up before I begin?`,
-      'Can we check which of my approved supports applies here so I can get started the right way?',
+      'Can we check which of my approved accommodations applies here so I can get started the right way?',
     ],
   }
+}
+
+function buildParentGuidance(
+  topNames: string[],
+  relevantAccommodations: AnalysisResult['relevantAccommodations'],
+) {
+  const uncertainNames = relevantAccommodations
+    .filter((item) => item.confidence !== 'likely_relevant')
+    .map((item) => item.name)
+
+  const summary =
+    topNames.length === 0
+      ? 'If a grown-up is helping, the current task details still look too thin to call. It may help to gather a little more detail before making assumptions.'
+      : 'If a grown-up is helping, they can coach the setup while still leaving room for the student to use their own words first.'
+
+  const coachNotes = [
+    topNames.length > 0
+      ? `Start by helping the student check the setup for ${joinWithAnd(topNames.slice(0, 2))}.`
+      : 'Use the IEP wording and the task details together before deciding how to help.',
+    'Let the student use the script first if they can, then step in to help with logistics if needed.',
+    uncertainNames.length > 0
+      ? `For ${joinWithAnd(uncertainNames.slice(0, 2))}, treat it as a check-first item until school staff confirm the boundary.`
+      : 'Keep the conversation focused on access to the task, not on making the work easier than intended.',
+  ]
+
+  return { coachNotes, summary }
+}
+
+function buildTeacherGuidance(
+  relevantAccommodations: AnalysisResult['relevantAccommodations'],
+) {
+  const likelyNames = relevantAccommodations
+    .filter((item) => item.confidence === 'likely_relevant')
+    .map((item) => item.name)
+  const uncertainNames = relevantAccommodations
+    .filter((item) => item.confidence !== 'likely_relevant')
+    .map((item) => item.name)
+  const summary =
+    relevantAccommodations.length === 0
+      ? 'School staff may need a quick check before any accommodation is treated as active for this task.'
+      : 'School staff can use these notes to keep the accommodation aligned with the task, what is being measured, and any setup details that still need confirmation.'
+
+  const staffNotes = [
+    likelyNames.length > 0
+      ? `${joinWithAnd(likelyNames.slice(0, 2))} appear worth checking early for setup on this task.`
+      : 'No accommodation looks clearly settled yet from the current task details.',
+    uncertainNames.length > 0
+      ? `${joinWithAnd(uncertainNames.slice(0, 2))} still appear boundary-sensitive, so confirmation may be needed before treating them as active.`
+      : 'The remaining listed accommodations do not add an extra confirmation flag from the current task details.',
+    'Keep the accommodation focused on access to the task, not on giving answers or changing the learning target.',
+  ]
+
+  return { staffNotes, summary }
 }
 
 function buildTeacherConcernEvaluation(
@@ -684,7 +808,7 @@ function buildTeacherConcernEvaluation(
       guidance:
         'The teacher concern appears reasonable because the task may be measuring the same skill that the accommodation could change.',
       suggestedResponse:
-        'It may be appropriate to agree with the concern for this task and confirm the boundary with special education staff before applying the support.',
+        'It may be appropriate to agree with the concern for this task and confirm the boundary with special education staff before applying the accommodation.',
       verdict: 'supports_teacher_concern' as const,
     }
   }
@@ -694,7 +818,7 @@ function buildTeacherConcernEvaluation(
     guidance:
       'The concern is understandable, but the current materials do not fully settle the issue one way or the other.',
     suggestedResponse:
-      'Use the cited IEP language and the task rubric together, then confirm with staff if the teacher still has concerns about whether the support changes the skill being measured.',
+      'Use the cited IEP language and the task rubric together, then confirm with staff if the teacher still has concerns about whether the accommodation changes the skill being measured.',
     verdict: 'mixed_needs_context' as const,
   }
 }
@@ -730,7 +854,7 @@ export function runTeacherConcernAnalysis(request: TeacherConcernRequest) {
 }
 
 export function runDeterministicAnalysis(request: AnalysisRequest) {
-  // Safety-sensitive: every cited support must come directly from the pasted IEP excerpt.
+  // Safety-sensitive: every cited accommodation must come directly from the pasted IEP excerpt.
   const candidates = extractAccommodationCandidates(request.iepSource.text)
 
   const relevantAccommodations = candidates
@@ -777,27 +901,34 @@ export function runDeterministicAnalysis(request: AnalysisRequest) {
     ...request.taskSource.attachments,
   ]
 
-  if (attachments.some((attachment) => attachment.status !== 'ready')) {
+  if (
+    attachments.some(
+      (attachment) =>
+        !attachment.documentDraft?.sourceSummaryText?.trim()
+        && !attachment.reviewedText?.trim() &&
+        attachment.kind !== 'text',
+    )
+  ) {
     boundaries.push(
-      'Uploaded images and PDFs are treated as reference materials unless the reviewed text is also provided or a multimodal endpoint is configured.',
+      'Uploaded images and PDFs stay as reference materials unless their reviewed document details are added to the source trail.',
     )
   }
 
-  const teacherReminders = relevantAccommodations
-    .flatMap((item) => item.implementationNotes)
-    .concat(
-      relevantAccommodations.some((item) => item.confidence === 'unclear_confirm')
-        ? ['At least one support needs staff confirmation before it is treated as active for this task.']
-        : [],
-    )
+  const studentAdvocacy = buildStudentAdvocacy(topNames)
+  const studentStartHere = buildStudentStartHere(relevantAccommodations.length, topNames)
+  const parentGuidance = buildParentGuidance(topNames, relevantAccommodations)
+  const teacherGuidance = buildTeacherGuidance(relevantAccommodations)
 
   return parseAnalysisResult({
     boundaries,
+    parentGuidance,
+    studentGuidance: {
+      alternativeScripts: studentAdvocacy.alternativeScripts,
+      startHere: studentStartHere,
+      suggestedScript: studentAdvocacy.suggestedScript,
+    },
     notObviouslyRelevant,
     relevantAccommodations,
-    studentAdvocacy: buildStudentAdvocacy(topNames),
-    summary: buildSummary(request, relevantAccommodations.length, topNames),
-    teacherConcernEvaluation: buildTeacherConcernEvaluation(request, topNames),
-    teacherReminders: Array.from(new Set(teacherReminders)),
+    teacherGuidance,
   })
 }

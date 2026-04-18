@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <defs>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="2.2" />
+    </filter>
+  </defs>
+  <rect width="1200" height="1600" fill="#e7ddd2" />
+  <g transform="rotate(-3 600 800)">
+    <rect x="110" y="90" width="980" height="1370" rx="18" fill="#fffefb" stroke="#cfc5b9" stroke-width="4" />
+    <g filter="url(#blur)">
+      <text x="170" y="220" font-size="46" font-family="Arial, sans-serif" font-weight="700" fill="#21313a">Accommodation Summary</text>
+      <text x="170" y="335" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Speech-to-text may be used for long written responses.</text>
+      <text x="170" y="425" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Preferential seating near direct instruction.</text>
+      <text x="170" y="515" font-size="28" font-family="Arial, sans-serif" fill="#21313a">Teacher notes on page edge are partly cut off.</text>
+    </g>
+  </g>
+</svg>

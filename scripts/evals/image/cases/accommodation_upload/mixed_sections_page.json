@@ -1,0 +1,38 @@
+{
+  "suite": "accommodation_upload",
+  "id": "mixed_sections_page",
+  "label": "Mixed page with goals, services, and accommodations",
+  "image_path": "scripts/evals/image/fixtures/accommodation_upload/mixed_sections_page.png",
+  "notes": [
+    "Checks whether the model extracts accommodations without hallucinating goals or service minutes."
+  ],
+  "expected": {
+    "document_type": "iep_accommodation_page",
+    "expected_accommodations": [
+      {
+        "normalized_type": "chunked_instructions",
+        "category": "instruction",
+        "label_keywords": ["chunked"],
+        "source_evidence_keywords": ["multi-step assignments"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "breaks",
+        "category": "attention",
+        "label_keywords": ["breaks"],
+        "source_evidence_keywords": ["extended class tasks"],
+        "conditions": []
+      }
+    ],
+    "must_include_keywords": [
+      "chunked",
+      "breaks"
+    ],
+    "conditions": [],
+    "must_not_include": [
+      "reading fluency goal",
+      "30 minutes weekly counseling"
+    ],
+    "requires_uncertainty": false
+  }
+}

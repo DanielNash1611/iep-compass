@@ -17,7 +17,6 @@ function toRequest(scenario) {
       attachments: [],
       text: scenario.iepExcerpt,
     },
-    role: scenario.role,
     taskSource: {
       attachments: [],
       text: scenario.taskText,
@@ -102,7 +101,6 @@ export const evalCases = [
 - Text-to-speech for non-reading-comprehension tasks only.
 - Student has dyslexia that affects decoding and reading fluency.`,
       },
-      role: 'teacher',
       taskSource: {
         attachments: [],
         text: `Students will independently read two grade-level passages in class and answer short written questions about main idea and evidence. The benchmark is meant to measure reading comprehension from print within one class period.`,
@@ -139,7 +137,6 @@ export const evalCases = [
 - Teacher check-ins during multi-step work to confirm the student is on track.
 - Student has auditory processing needs that make it hard to hold several spoken directions at once.`,
       },
-      role: 'parent',
       taskSource: {
         attachments: [],
         text: `The student is starting a science lab with five spoken steps, a short setup demonstration, and a written conclusion. The class will move quickly once materials are handed out, and the student needs to keep track of the sequence independently.`,
@@ -172,7 +169,6 @@ export const evalCases = [
 - Extended time for quizzes, tests, and timed classroom tasks.
 - Student has a specific learning disability in math calculation and processing-speed needs that make it harder to finish multi-step computation under time pressure.`,
       },
-      role: 'student',
       taskSource: {
         attachments: [],
         text: `Tomorrow's math quiz is 15 minutes long and includes 10 multi-step decimal and fraction problems. Students have to show their work for each item before time runs out.`,

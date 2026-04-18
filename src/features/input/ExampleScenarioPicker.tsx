@@ -52,7 +52,6 @@ export function ExampleScenarioPicker({
               </div>
 
               <div className="example-card__footer">
-                <span className="mini-chip">{example.role}</span>
                 {example.contextTags.slice(0, 2).map((tag) => (
                   <span key={tag} className="mini-chip">
                     {tag}

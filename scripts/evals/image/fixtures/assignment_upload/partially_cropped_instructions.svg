@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="950" viewBox="0 0 1200 950">
+  <rect width="1200" height="950" fill="#efe5db" />
+  <g transform="rotate(-2 600 475)">
+    <rect x="70" y="40" width="1060" height="980" rx="24" fill="#fffef9" stroke="#d6ccc0" stroke-width="4" />
+    <text x="125" y="155" font-size="46" font-family="Arial, sans-serif" font-weight="700" fill="#21313a">Science project instructions</text>
+    <text x="125" y="270" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Create a tri-fold display about a local ecosystem.</text>
+    <text x="125" y="340" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Include at least three sources in your research notes.</text>
+    <text x="125" y="410" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Bring a draft outline to class next week.</text>
+    <text x="125" y="920" font-size="30" font-family="Arial, sans-serif" fill="#21313a">The bottom of the page is cut off in this photo.</text>
+  </g>
+</svg>

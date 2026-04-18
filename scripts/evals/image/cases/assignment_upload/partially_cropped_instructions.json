@@ -1,0 +1,29 @@
+{
+  "suite": "assignment_upload",
+  "id": "partially_cropped_instructions",
+  "label": "Partially cropped project instructions",
+  "image_path": "scripts/evals/image/fixtures/assignment_upload/partially_cropped_instructions.png",
+  "notes": [
+    "Tests incomplete-image handling and resistance to invented deadlines."
+  ],
+  "expected": {
+    "document_type": "assignment_page",
+    "assignment_type": "project",
+    "must_detect_requirements": [
+      {
+        "type": "research",
+        "text_keywords": ["three sources"]
+      }
+    ],
+    "must_detect_grading_factors": [],
+    "must_include_keywords": [
+      "science project",
+      "three sources"
+    ],
+    "must_not_include": [
+      "friday",
+      "monday"
+    ],
+    "requires_uncertainty": true
+  }
+}

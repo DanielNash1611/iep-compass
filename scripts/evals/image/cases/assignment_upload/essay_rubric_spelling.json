@@ -1,0 +1,41 @@
+{
+  "suite": "assignment_upload",
+  "id": "essay_rubric_spelling",
+  "label": "Essay rubric with spelling explicitly graded",
+  "image_path": "scripts/evals/image/fixtures/assignment_upload/essay_rubric_spelling.png",
+  "notes": [
+    "Tests assignment type, rubric factors, and spelling-mechanics extraction."
+  ],
+  "expected": {
+    "document_type": "assignment_rubric",
+    "assignment_type": "essay",
+    "must_detect_requirements": [
+      {
+        "type": "written_output",
+        "text_keywords": ["5 paragraph essay"]
+      },
+      {
+        "type": "spelling_mechanics",
+        "text_keywords": ["spelling", "count"]
+      },
+      {
+        "type": "deadline",
+        "text_keywords": ["friday"]
+      }
+    ],
+    "must_detect_grading_factors": [
+      "organization",
+      "supporting evidence",
+      "grammar",
+      "spelling"
+    ],
+    "must_include_keywords": [
+      "ecosystems",
+      "friday"
+    ],
+    "must_not_include": [
+      "group presentation"
+    ],
+    "requires_uncertainty": false
+  }
+}

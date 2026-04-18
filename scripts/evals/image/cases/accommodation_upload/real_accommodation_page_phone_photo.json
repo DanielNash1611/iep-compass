@@ -1,0 +1,96 @@
+{
+  "suite": "accommodation_upload",
+  "id": "real_accommodation_page_phone_photo",
+  "label": "Real accommodations page phone photo",
+  "image_path": "scripts/evals/image/fixtures/accommodation_upload/real_accommodation_page_phone_photo.jpg",
+  "notes": [
+    "Real phone photo of an accommodations form page.",
+    "The page is rotated, slightly shadowed, and only some rows are cleanly legible.",
+    "This case should reward extracting the clearly visible accommodations while preserving uncertainty on the harder sections."
+  ],
+  "expected": {
+    "document_type": "iep_accommodation_page",
+    "expected_accommodations": [
+      {
+        "normalized_type": "extended_time",
+        "category": "timing",
+        "label_keywords": ["extended time"],
+        "source_evidence_keywords": ["tests", "2 days"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "reduced_distraction_setting",
+        "category": "setting",
+        "label_keywords": ["small group", "seat away"],
+        "source_evidence_keywords": ["distractions", "noise"],
+        "conditions": [
+          "when requested"
+        ]
+      },
+      {
+        "normalized_type": "speech_to_text",
+        "category": "assistive_technology",
+        "label_keywords": ["speech-to-text"],
+        "source_evidence_keywords": ["application"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "spelling_mechanics_flexibility",
+        "category": "writing",
+        "label_keywords": ["no penalty", "spelling"],
+        "source_evidence_keywords": ["except", "spelling task"],
+        "conditions": [
+          "except on spelling task"
+        ]
+      },
+      {
+        "normalized_type": "other",
+        "category": "writing",
+        "label_keywords": ["no penalty", "grammar"],
+        "source_evidence_keywords": ["unless", "grammar task"],
+        "conditions": [
+          "unless it is a grammar task"
+        ]
+      },
+      {
+        "normalized_type": "calculator_use",
+        "category": "math",
+        "label_keywords": ["calculator"],
+        "source_evidence_keywords": ["except", "calculation tests"],
+        "conditions": [
+          "except for calculation tests"
+        ]
+      }
+    ],
+    "must_include_keywords": [
+      "Student Information",
+      "Student Name",
+      "Date of Birth",
+      "Meeting Date",
+      "Overall Report Card Type",
+      "Extracted Accommodations Details",
+      "Setting / Scheduling",
+      "Teacher Directions",
+      "Student Response",
+      "Organization / Study Skills",
+      "extended time",
+      "frequent checks",
+      "speech-to-text",
+      "grammar",
+      "calculator",
+      "multiplication chart",
+      "graphic organizer",
+      "teacher-provided notes",
+      "graph paper"
+    ],
+    "conditions": [
+      "except on spelling task",
+      "unless it is a grammar task",
+      "except for calculation tests"
+    ],
+    "must_not_include": [
+      "assignment modification"
+    ],
+    "requires_uncertainty": true
+  }
+}

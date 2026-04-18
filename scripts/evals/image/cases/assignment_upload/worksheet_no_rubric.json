@@ -1,0 +1,33 @@
+{
+  "suite": "assignment_upload",
+  "id": "worksheet_no_rubric",
+  "label": "Worksheet with no rubric",
+  "image_path": "scripts/evals/image/fixtures/assignment_upload/worksheet_no_rubric.png",
+  "notes": [
+    "Checks that the model does not invent grading factors when none are visible."
+  ],
+  "expected": {
+    "document_type": "assignment_page",
+    "assignment_type": "worksheet",
+    "must_detect_requirements": [
+      {
+        "type": "written_output",
+        "text_keywords": ["complete both sides"]
+      },
+      {
+        "type": "multi_step_instructions",
+        "text_keywords": ["show each step"]
+      }
+    ],
+    "must_detect_grading_factors": [],
+    "must_include_keywords": [
+      "fractions",
+      "both sides"
+    ],
+    "must_not_include": [
+      "rubric",
+      "spelling"
+    ],
+    "requires_uncertainty": false
+  }
+}

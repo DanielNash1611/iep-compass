@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#fffdf8" />
+  <rect x="85" y="75" width="1030" height="1450" rx="24" fill="#ffffff" stroke="#d7d1c6" stroke-width="4" />
+  <text x="130" y="170" font-size="48" font-family="Arial, sans-serif" font-weight="700" fill="#21313a">Fractions practice worksheet</text>
+  <text x="130" y="290" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Complete both sides of the worksheet.</text>
+  <text x="130" y="360" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Show each step for every fractions problem.</text>
+  <text x="130" y="430" font-size="30" font-family="Arial, sans-serif" fill="#21313a">Circle any item you want to review tomorrow.</text>
+  <text x="130" y="540" font-size="28" font-family="Arial, sans-serif" fill="#5c6770">No rubric is shown on this page.</text>
+</svg>

@@ -11,12 +11,20 @@ interface UploadPanelProps {
 
 function formatStatusLabel(attachment: UploadedAttachment) {
   switch (attachment.status) {
-    case 'ready':
+    case 'text_ready':
       return 'Text ready'
-    case 'preview_only':
-      return 'Preview only'
+    case 'interpret_ready':
+      return 'Ready to interpret'
+    case 'interpret_running':
+      return 'Reading document'
+    case 'review_ready':
+      return 'Review document draft'
+    case 'included':
+      return 'Included'
+    case 'reference_only':
+      return 'Reference only'
     default:
-      return 'Manual review needed'
+      return 'Could not interpret'
   }
 }
 
@@ -47,7 +55,7 @@ export function UploadPanel({
       <div className="field-stack">
         <p className="upload-guidance">
           Files are treated as sensitive by default. This MVP previews uploads and
-          keeps analysis grounded in the reviewed text.
+          keeps analysis grounded in the reviewed text or structured upload draft.
         </p>
 
         <div className="upload-actions">

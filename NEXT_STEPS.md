@@ -1,0 +1,187 @@
+# Next Steps
+
+## Recently Completed
+
+- Tried one shared narrow follow-up tile for the real phone photo’s student-response condition lines:
+  - added a shared `student_response_conditions` recovery tile in both the browser app path and the comparison harness
+  - added a tighter shared prompt variant for that tile that explicitly preserves exception wording and forbids a heading-only answer
+  - taught the tile merge helper to prefer richer same-accommodation lines when the follow-up tile returns fuller condition text
+- Re-ran checks and evals for the condition-focused tile:
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+  - isolated `real_accommodation_page_phone_photo` improved slightly from `field=0.647` to `field=0.676`
+  - the full lighter-model comparison suite still held at `pass_rate=0.6`, with `average_field_score=0.878`
+  - the extra tile now succeeds consistently, but it still does not recover the missing condition wording well enough to improve condition preservation on the real case
+- Corrected the lighter `gemma4:e2b` comparison tile-cropping math and retuned the shared recovery tiles upward:
+  - fixed the Node `sips` recovery-tile crop path to use the shared tile coordinates directly instead of the broken centered-offset math
+  - moved the shared recovery tiles higher on the accommodations table so both the app path and the comparison harness focus more on the filled accommodation rows and less on the lower blank/self-regulation area
+- Re-ran checks and evals after the tile-crop fix:
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+  - isolated `real_accommodation_page_phone_photo` improved again from `field=0.387` to `field=0.647`
+  - the full lighter-model comparison suite still held at `pass_rate=0.6`, but `average_field_score` improved to `0.872` and condition preservation improved to `0.714`
+  - `mixed_sections_page` stayed flat at `field=0.714`, so the shared tile retune did not worsen the known hallucination guardrail case
+  - the real phone-photo case still fails, but all three tiled recovery passes now succeed and the selected output remains `focused_recovery_tiled`
+- Tried the next shared-path recovery step for the lighter `gemma4:e2b` phone-photo case:
+  - added shared tiled recovery geometry for the upright accommodations crop
+  - generated matching recovery tiles in both the browser app path and the comparison harness
+  - merged successful tile drafts deterministically into one synthetic `focused_recovery_tiled` candidate instead of feeding three overlapping drafts into selection
+  - kept the older whole-crop recovery as a fallback only when every tile attempt fails
+- Re-ran checks and evals for tiled recovery:
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+  - isolated `real_accommodation_page_phone_photo` improved from `field=0.355` to `field=0.387`
+  - the full lighter-model comparison suite stayed at `pass_rate=0.6`, with `average_field_score=0.82`
+  - `mixed_sections_page` stayed flat at `field=0.714`, so the tile work did not worsen the known hallucination guardrail case
+  - the real phone-photo case now consistently selects `focused_recovery_tiled`, but the right-side tile still fails and the overall result remains far below the target
+- Added a targeted real-photo lift for the lighter `gemma4:e2b` accommodation path:
+  - shared a photo-mode preprocessing policy between the app reader and the comparison harness
+  - tightened the shared accommodation prompts to ignore modifications/preamble and prefer faint accommodation lines with `[unclear]`
+  - added draft-health scoring so heading-only or modifications-heavy drafts do not beat better recovery drafts
+  - changed the hard-photo flow to run the first pass on the original image and the focused recovery on the normalized image
+  - made focused recovery best-effort so runtime/transport failures fall back to the successful first pass instead of zeroing the whole case
+  - added selected-pass diagnostics so the reports now show whether the final text came from the original full pass or the normalized recovery pass
+  - added a rotated upright recovery asset plus an upper-page crop for hard phone photos so the lighter comparison path can target the accommodations table instead of the lower modifications grid
+- Re-ran checks for the real-photo lift:
+  - `npm run lint`, `npm run test`, and `npm run build` all passed
+  - the completed comparison run still kept `blurry_phone_photo`, `clear_typed_document`, and `exception_language` passing
+  - the real phone-photo case still needs more work, but the isolated lighter-model result improved from `field=0.033` to `field=0.355` after the shared rotation/crop recovery path
+  - the full lighter-model comparison suite still held at `pass_rate=0.6`, with no return to the earlier suite-level runtime hard failures
+- Tightened the lighter `gemma4:e2b` accommodation comparison path without changing the 31B default target:
+  - aligned the comparison requests more closely with the live app plain-text image-reading path
+  - switched the local comparison transport to the app-style OpenAI-compatible `/v1/chat/completions` path instead of the local Ollama SDK stream path
+  - added fresh-process-per-case execution plus one retry only for runtime or transport failures
+  - added per-pass and per-case diagnostics so stream/runtime failures are easier to distinguish from ordinary extraction misses
+- Re-ran the lighter-model accommodation comparison after the stability pass:
+  - the suite improved from `pass_rate=0.0` to `pass_rate=0.6`
+  - the previous real-case stream-finish hard failure disappeared in the full suite
+  - the real phone-photo case still fails on extraction quality, but now the single-case run matches the suite more closely instead of drifting sharply
+- Unified the accommodation image-extraction prompt across the app and the Gemma 4 31B eval harness so both flows now use the same direct-paste text format, exception-preservation rules, and uncertainty markers.
+- Shared uncertainty-marker detection between the accommodation eval and the review UI so `[unclear]`, `[blank]`, and `[redacted]` all drive the same cautious UX and scoring behavior.
+- Split the user-facing app model config from the eval model config so the app explicitly prefers the lighter Gemma model while image evals stay pinned to Gemma 4 31B.
+- Added an explicit lighter-model accommodation baseline command and baseline report location so the current app path can be snapshotted without changing the default 31B eval target.
+- Clarified the image-eval workflow naming so Gemma 4 31B remains the only default eval source of truth and the lighter `gemma4:e2b` run is documented as a production comparison only.
+- Ran prompt and preprocessing tuning loops against the lighter app-model accommodation baseline:
+  - preserving original 1600px PNG fixtures helped the synthetic accommodation cases
+  - a lighter anti-copy prompt improved some short synthetic pages
+  - the smaller model is still noisy enough that single-run baseline scores can swing sharply, especially on the real phone photo
+- Ran additional lighter-model baseline loops with short-page retries and phone-photo preprocessing:
+  - isolated single-case runs can produce materially better accommodation extraction than the same case inside the full sequential suite
+  - the local `gemma4:e2b` accommodation baseline still shows strong cross-case instability in sequential multimodal eval runs
+  - the real phone-photo case can reach `field=0.794` in isolation, but the full suite often degrades or hard-fails later in the run
+- Switched the accommodation image eval suite to the same plain-text extraction flow the app now uses, instead of grading accommodation JSON output.
+- Simplified the accommodation-upload reader so IEP image/PDF interpretation now returns plain reviewable accommodation text instead of a structured IEP JSON draft.
+- Routed IEP upload reviews through the existing text-review textarea flow so the extracted accommodation text can be edited and included directly in the source trail.
+- Switched the local Gemma 4 31B image-eval transport to the official `ollama` JS SDK while keeping the two-step extraction-then-structure flow intact.
+- Shifted the Gemma 4 31B image-eval adapter to the intended two-step path:
+  - freeform image extraction first
+  - structured JSON conversion second
+  - kept the image input isolated to the extraction stage instead of forcing one-shot vision-to-JSON
+- Added pipeline-level eval diagnostics for extraction vs. structuring runtime so real-case failures are easier to localize.
+- Added a dedicated Gemma 4 31B image-eval harness for document reading:
+  - separate accommodation-upload and assignment-upload suites
+  - strict structured-output schemas for both image interpretation targets
+  - deterministic checks, failure tags, and optional rubric/judge scoring
+  - fixture-backed starter cases plus JSON and Markdown reporting
+- Kept the image-eval model path explicit and separate from the normal E2B user-facing flow.
+- Shifted student-facing terminology from `supports` to `accommodations` across the main flow, generated guidance, and trust-language copy so the product matches the language families and schools already use.
+- Tightened review-facing copy and interaction details from browser comments:
+  - replaced `Private in this MVP` with user-facing privacy language
+  - reframed file uploads as a normal input path instead of a backup-only path
+  - made the voice dictation recording state more obvious on mobile
+- Reordered the IEP step so photo/file intake can appear before typed text, with stronger “start here” wording for document reading.
+
+- Replaced the OCR-first upload path with structured document reading for image/PDF uploads:
+  - image/PDF review now classifies the document, preserves a raw transcript, and builds a structured draft
+  - IEP uploads now group accommodations by visible sections and keep disability/profile wording separate when it is actually visible
+  - assignment uploads now build a task description plus explicit traits like subject, work type, timing, and calculation focus
+  - only reviewed structured upload details now join the source trail
+- Updated the main source-review UI for structured document drafts:
+  - renamed the image/PDF action to `Interpret with Gemma 4`
+  - replaced the OCR textarea path with structured IEP/task review cards
+  - added raw transcript disclosure panels as secondary grounding details
+- Updated the analysis handoff to use normalized document summaries plus reviewed task traits from uploads.
+- Extended the deterministic mapper to recognize calculator accommodations with cautious geometry/not-calculation-test reasoning.
+- Shifted step 3 to a student-first structure:
+  - removed visible audience selection from the main flow
+  - made the main results path student-facing by default
+  - added parent and teacher guidance as secondary sidecar cards
+- Split analysis output into explicit guidance blocks:
+  - `studentGuidance`
+  - `parentGuidance`
+  - `teacherGuidance`
+- Kept the separate school-question follow-up as an optional on-demand panel instead of auto-running it with the main result.
+- Added a step-transition scroll reset so continuing through the main flow returns to the top of the screen on phone-sized layouts.
+- Added browser-local IEP persistence:
+  - versioned local storage for the main approved IEP text
+  - automatic restore on return visits
+  - explicit “Clear saved IEP” control separate from “Start over”
+  - preview examples stay temporary so they do not overwrite a family’s saved IEP
+- Final UX polish pass on the main IEP Compass flow.
+- Simplified the landing and step flow so required actions show up before optional ones.
+- Moved backup files, role/context details, teacher follow-ups, and Gemma testing behind calmer secondary panels.
+- Reworked results into a clearer sequence: strongest matches first, confirm-later items second, then advocacy and implementation guidance.
+- Repurposed this file from a GitHub-only note into the project’s active progress tracker.
+- Added a review-first document reading path:
+  - local text-file reading for `.txt` and `.md`
+  - manual Gemma 4 OCR for images
+  - first-3-pages PDF OCR through rendered page images
+  - reviewed upload text is now the only attachment text that can reach analysis
+- Saved the OCR implementation plan at `docs/roadmap/document-reading-plan.md`.
+
+## Current Focus
+
+- Determine why the student-response condition-focused tile still returns weaker wording than the visible crop supports on the real phone photo.
+- Determine whether the next real-photo lift should merge a stronger line-level selector, a different condition-tile prompt, or one more crop specifically for the left-column "when requested" line.
+- Determine why the real accommodation phone-photo case still runs extremely slowly in stage-1 extraction even on the official Ollama SDK path.
+- Determine how to get the lighter `gemma4:e2b` real phone-photo case from “successful first draft plus unstable recovery” to a consistently high-scoring result.
+- Determine why the real accommodation phone-photo case still under-extracts on the lighter app-aligned comparison path now that the major sequential runtime drift is reduced.
+- Run the new Gemma 4 31B image evals against real IEP photos, real rubric screenshots, and more difficult phone captures.
+- Validate that the live app review experience feels as clear as the passing eval now that the accommodation prompt and uncertainty handling are shared.
+- Validate the new structured document-reading prompts on real IEP forms, worksheet photos, and quiz pages.
+- Check whether the structured review UI stays scannable on phone screens when an IEP upload has many sections.
+- Tune task-trait inference so geometry/reasoning pages are handled cautiously without overcalling calculation boundaries.
+- Validate the new student-first copy with real middle school task scenarios and watch for any wording that still feels adult or abstract.
+- Test whether the secondary grown-up sidecars feel helpful without crowding the main phone flow.
+- Validate the polished flow in real usage with students, parents, and teacher-style scenarios.
+- Validate structured document-reading quality and clarity on real worksheet photos, screenshots, and IEP excerpts.
+- Keep tuning copy density and scanability on phone screens.
+
+## Up Next
+
+- Inspect why the condition-focused tile still collapses exception wording even though the crop visibly contains the full student-response lines.
+- Decide whether the next pass should be a line-level merge heuristic or a left-column condition-follow-up tile for "when requested" before any broader prompt rewrite.
+- Replace or expand the starter synthetic eval fixtures with redacted real-world uploads that cover skew, handwriting, dense forms, and multi-page page-order issues.
+- Inspect the real-phone-photo first-pass output now that recovery failures no longer erase it, and decide whether the next lift should be a shorter photo-specific first prompt, a different normalized target size, or a crop/tiling experiment.
+- Use the new selected-pass diagnostics to target the real-photo failure mode directly; the current verified full-pass output is still collapsing into `MODIFICATIONS` boilerplate before it reaches accommodation rows.
+- Decide whether the next real-photo lift should split the upright accommodations crop into smaller column/section tiles, because the lighter model still under-reads the full accommodations table even after rotation and top-cropping.
+- Compare the remaining failed lighter-model cases against the saved per-pass diagnostics to decide whether the next fix should target mixed-section filtering, real-photo preprocessing, or prompt tightening.
+- Compare prompt revisions against the new failure-tag summaries to improve condition preservation, deadline extraction, and incomplete-image handling.
+- Test the new structured IEP extraction against more real accommodation forms, especially cases with profile wording, multi-page PDFs, and empty sections.
+- Test assignment interpretation on more math, reading, and writing pages so the task-description and trait defaults stay grounded.
+- Decide whether the raw transcript disclosure should stay collapsed by default everywhere or become visible more often in correction flows.
+- Test the new student, parent, and teacher guidance blocks on more scenarios and tighten any note that sounds too directive or too formal.
+- Check whether the optional school-question panel wording feels clear enough for families without sounding like a compliance workflow.
+- Test the revised results flow on more example scenarios and tighten any wording that still feels dense.
+- Test structured document-reading failure states, low-confidence handling, and remote-endpoint disclosure copy with realistic uploads.
+- Decide whether reviewed IEP upload text needs a later opt-in local restore path, or whether uploads should stay session-only for privacy and simplicity.
+- Decide whether the next pass should focus on better PDF controls, photo cleanup, or document-reading prompt tuning.
+- Create the GitHub remote and publish the repo when the local polish pass is accepted.
+
+## Later / Backlog
+
+- Better photo capture and cropping for assignment uploads.
+- Saved accommodation profiles with explicit consent.
+- Richer audience sidecars only if they stay grounded in the same source facts and remain visually secondary to the student path.
+- Separate document-reading model selection only if quality testing shows it should differ from the analysis model.
+- Multi-model eval comparison once the Gemma 4 31B baseline is stable enough to benchmark against alternatives.
+
+## Open Questions
+
+- Is the remaining real-photo timeout specific to Ollama's API/runtime behavior for long multimodal generations, or do we still need a more aggressive preprocessing or tiling step before stage-1 extraction?
+- Now that the lighter-model comparison no longer hard-fails on the real case, is the next limiter original-photo scale, camera blur, or the app-style single-pass extraction itself?
+- Which real-world upload failure mode should drive the next image-eval batch first: camera blur, crop/partial capture, dense accommodation tables, or multi-page PDFs?
+- Does the structured IEP review need a faster bulk-edit affordance for long forms, or are section-by-section textareas enough on a phone?
+- Should assignment uploads keep only one interpreted task-traits draft active at a time when several files are attached, or should later passes merge multiple task pages?
+- Are the new parent/teacher sidecars still a little too visible on very small phone screens, or do they feel secondary enough now?
+- Which student-facing result labels test best with middle school students: “check first,” “worth confirming,” or an even simpler pair?
+- Is the current text-only IEP persistence enough for most families, or do they expect reviewed upload text to come back too?
+- Should the on-device Gemma testing surface remain inside the assignment step long-term or move to a dedicated developer/testing area?
+- Is the current document-reading wording clear enough that families understand when upload details were reviewed versus kept as reference only?

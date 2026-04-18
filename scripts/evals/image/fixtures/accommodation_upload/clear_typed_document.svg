@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#fffdf8" />
+  <rect x="70" y="70" width="1060" height="1460" rx="28" fill="#ffffff" stroke="#d8d2c6" stroke-width="4" />
+  <text x="120" y="170" font-size="52" font-family="Arial, sans-serif" font-weight="700" fill="#22313a">Classroom Accommodations</text>
+  <text x="120" y="235" font-size="28" font-family="Arial, sans-serif" fill="#5c6770">Student name: not shown on this page</text>
+  <text x="120" y="330" font-size="34" font-family="Arial, sans-serif" font-weight="700" fill="#2f6e62">Approved accommodations</text>
+  <text x="150" y="420" font-size="30" font-family="Arial, sans-serif" fill="#21313a">1. Extended time on quizzes and tests (time and a half).</text>
+  <text x="150" y="500" font-size="30" font-family="Arial, sans-serif" fill="#21313a">2. Small-group / reduced distraction setting for tests.</text>
+  <text x="150" y="580" font-size="30" font-family="Arial, sans-serif" fill="#21313a">3. Directions may be read aloud when needed.</text>
+  <text x="120" y="700" font-size="28" font-family="Arial, sans-serif" fill="#5c6770">Reviewed at annual meeting.</text>
+</svg>

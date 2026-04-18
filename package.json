@@ -9,12 +9,18 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test --experimental-strip-types scripts/tests/*.test.mjs",
-    "evals:gemma": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/run.mjs"
+    "evals:gemma": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/run.mjs",
+    "evals:gemma:image": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts",
+    "evals:gemma:image:accommodation": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite accommodation_upload",
+    "evals:gemma:image:compare:app": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite accommodation_upload --model gemma4:e2b --fresh-process-per-case --runtime-retries 1 --json scripts/evals/image/baselines/app-gemma4-e2b-accommodation-baseline.json --md scripts/evals/image/baselines/app-gemma4-e2b-accommodation-baseline.md",
+    "evals:gemma:image:assignment": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite assignment_upload"
   },
   "dependencies": {
     "@fontsource/manrope": "^5.2.8",
     "@fontsource/newsreader": "^5.2.10",
     "@mediapipe/tasks-genai": "^0.10.27",
+    "ollama": "^0.6.3",
+    "pdfjs-dist": "^5.6.205",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zod": "^4.3.6"

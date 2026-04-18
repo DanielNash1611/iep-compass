@@ -27,29 +27,52 @@ export const teacherConcernEvaluationSchema = z.object({
   ]),
 })
 
-export const analysisResultSchema = z.object({
+export const skippedAccommodationSchema = z.object({
+  name: z.string(),
+  reason: z.string(),
+})
+
+export const coreAnalysisResultSchema = z.object({
   boundaries: z.array(z.string()),
-  notObviouslyRelevant: z.array(
-    z.object({
-      name: z.string(),
-      reason: z.string(),
-    }),
-  ),
+  notObviouslyRelevant: z.array(skippedAccommodationSchema),
   relevantAccommodations: z.array(relevantAccommodationSchema),
-  studentAdvocacy: z.object({
-    alternativeScripts: z.array(z.string()),
-    suggestedScript: z.string(),
-  }),
+})
+
+export const studentGuidanceSchema = z.object({
+  alternativeScripts: z.array(z.string()),
+  startHere: z.string(),
+  suggestedScript: z.string(),
+})
+
+export const parentGuidanceSchema = z.object({
+  coachNotes: z.array(z.string()),
   summary: z.string(),
-  teacherConcernEvaluation: teacherConcernEvaluationSchema.nullable(),
-  teacherReminders: z.array(z.string()),
+})
+
+export const teacherGuidanceSchema = z.object({
+  staffNotes: z.array(z.string()),
+  summary: z.string(),
+})
+
+export const analysisResultSchema = coreAnalysisResultSchema.extend({
+  parentGuidance: parentGuidanceSchema,
+  studentGuidance: studentGuidanceSchema,
+  teacherGuidance: teacherGuidanceSchema,
 })
 
 export type AccommodationConfidence = z.infer<typeof confidenceSchema>
+export type CoreAnalysisResult = z.infer<typeof coreAnalysisResultSchema>
 export type AnalysisResult = z.infer<typeof analysisResultSchema>
+export type ParentGuidance = z.infer<typeof parentGuidanceSchema>
+export type StudentGuidance = z.infer<typeof studentGuidanceSchema>
+export type TeacherGuidance = z.infer<typeof teacherGuidanceSchema>
 export type TeacherConcernEvaluation = z.infer<
   typeof teacherConcernEvaluationSchema
 >
+
+export function parseCoreAnalysisResult(input: unknown) {
+  return coreAnalysisResultSchema.parse(input)
+}
 
 export function parseAnalysisResult(input: unknown) {
   return analysisResultSchema.parse(input)

@@ -13,7 +13,11 @@ interface PreviewReviewPanelProps {
 }
 
 function hasPreviewOnlyAttachments(attachments: UploadedAttachment[]) {
-  return attachments.some((attachment) => attachment.status !== 'ready')
+  return attachments.some(
+    (attachment) =>
+      !attachment.reviewedText?.trim()
+      && !attachment.documentDraft?.sourceSummaryText?.trim(),
+  )
 }
 
 export function PreviewReviewPanel({
@@ -37,7 +41,7 @@ export function PreviewReviewPanel({
     <SectionCard
       eyebrow="Step 4"
       title="Review the analysis draft before you run it"
-      description="This checkpoint keeps the flow explicit: review the text, preview the uploads, then ask for a structured support map."
+      description="This checkpoint keeps the flow explicit: review the typed text, confirm any structured upload drafts, then ask for a structured accommodation map."
     >
       <div className="review-checklist">
         <div className="review-check">
@@ -70,7 +74,7 @@ export function PreviewReviewPanel({
             <strong>Task description</strong>
             <p>
               {taskText.trim()
-                ? 'Task details are present, so the app can explain why a support may matter.'
+                ? 'Task details are present, so the app can explain why an accommodation may matter.'
                 : 'Paste or describe the worksheet, quiz, or assignment before analyzing.'}
             </p>
           </div>
@@ -102,7 +106,7 @@ export function PreviewReviewPanel({
 
         <p className="review-note">
           {hasPreviewOnlyAttachments(attachments)
-            ? 'Uploaded images and PDFs are previewed now. For the MVP, paste or review the key task text before analyzing unless a multimodal endpoint is configured.'
+            ? 'Some uploads are still reference-only. Review and include any structured upload details you want in the source trail before analyzing.'
             : 'Uploads are optional. The app can still run on pasted text alone.'}
         </p>
       </div>

@@ -29,6 +29,36 @@ That is deliberate. The app is wired for the official asset, but it will not pre
 - The browser path is the primary competition path.
 - A local endpoint can be configured as a backup for development testing only.
 
+## Image Eval Loop
+
+The repo also includes a dedicated image-interpretation eval harness for document-reading work.
+
+Important separation:
+
+- the normal user-facing experience may use the E2B path
+- image evals intentionally target **Gemma 4 31B** by default so vision quality can be measured directly against that model
+- the 31B image eval is the primary quality target
+- the lighter app model should only be run as a production comparison against that target
+
+Useful commands:
+
+```bash
+npm run evals:gemma:image
+npm run evals:gemma:image:accommodation
+npm run evals:gemma:image:assignment
+npm run evals:gemma:image:compare:app
+npm run evals:gemma:image -- --case essay_rubric_spelling
+npm run evals:gemma:image -- --json tmp/image-evals.json --md tmp/image-evals.md
+```
+
+See `scripts/evals/image/README.md` for case format, fixtures, scoring, and reporting details.
+
+Comparison-path note:
+
+- `npm run evals:gemma:image:compare:app` now runs the lighter `gemma4:e2b` accommodation suite in fresh per-case processes with one retry only for runtime or transport failures.
+- That comparison path is meant to mirror the current app request shape more closely and reduce sequential local multimodal drift.
+- The default 31B image eval target and local 31B transport behavior remain unchanged.
+
 ## Exact Model Asset Requirement
 
 Use the official Gemma 4 E2B browser asset:
@@ -73,6 +103,7 @@ cp .env.example .env.local
 
 Available variables:
 
+- `VITE_GEMMA_APP_MODEL`
 - `VITE_GEMMA4_WEB_MODEL_PATH`
 - `VITE_MEDIAPIPE_WASM_ROOT`
 - `VITE_GEMMA_BASE_URL`
@@ -81,18 +112,32 @@ Available variables:
 - `VITE_GEMMA_FALLBACK_MODEL`
 - `VITE_GEMMA_MULTIMODAL`
 - `GEMMA_PROXY_TARGET`
+- `GEMMA_IMAGE_EVAL_BASE_URL`
+- `GEMMA_IMAGE_EVAL_API_KEY`
+- `GEMMA_IMAGE_EVAL_MODEL`
+- `GEMMA_IMAGE_EVAL_JUDGE_MODE`
+- `GEMMA_IMAGE_EVAL_JUDGE_MODEL`
+- `GEMMA_IMAGE_EVAL_INACTIVITY_TIMEOUT_MS`
+- `GEMMA_IMAGE_EVAL_TIMEOUT_MS`
 
 Default values:
 
 - `VITE_GEMMA4_WEB_MODEL_PATH=/models/gemma-4-E2B-it-web.task`
 - `VITE_MEDIAPIPE_WASM_ROOT=https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.27/wasm`
 - `VITE_GEMMA_BASE_URL=/api/ollama`
+- `VITE_GEMMA_APP_MODEL=gemma4:e2b`
 - `VITE_GEMMA_PRIMARY_MODEL=gemma4:e2b`
 - `GEMMA_PROXY_TARGET=http://127.0.0.1:11434`
+- `GEMMA_IMAGE_EVAL_MODEL=gemma4:31b`
+- `GEMMA_IMAGE_EVAL_JUDGE_MODE=off`
+- `GEMMA_IMAGE_EVAL_INACTIVITY_TIMEOUT_MS=180000`
+- `GEMMA_IMAGE_EVAL_TIMEOUT_MS=600000`
 
 Local backup notes:
 
 - `VITE_GEMMA_BASE_URL` is optional and exists only for development fallback testing.
+- `VITE_GEMMA_APP_MODEL` is the explicit user-facing app model knob and should stay on the lighter Gemma model unless you are intentionally testing something else.
+- `VITE_GEMMA_PRIMARY_MODEL` remains as a legacy fallback for older local setups, but the app prefers `VITE_GEMMA_APP_MODEL` when it is present.
 - With the default Vite proxy, `/api/ollama` forwards to `http://127.0.0.1:11434/v1`.
 - This backup path is helpful when browser inference is blocked on a device, but it is not the competition delivery path.
 

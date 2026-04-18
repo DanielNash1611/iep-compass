@@ -3,7 +3,7 @@
 **Owner:** Daniel Nash  
 **Product Type:** IEP-aware accommodation guidance web app  
 **Primary Platform:** Responsive web app optimized for phone first, with strong laptop/Chromebook support  
-**Status:** Ready for implementation in Codex
+**Status:** MVP implemented locally with a final UX polish pass completed on April 15, 2026
 
 ---
 
@@ -26,6 +26,25 @@ The app should feel:
 - calm
 - trustworthy
 - practical
+
+## 1A. Implementation Status Notes
+
+The current local implementation now reflects these product-direction decisions:
+
+- The main experience stays a three-step, phone-first web flow:
+  - review approved IEP wording
+  - add assignment or worksheet details
+  - check likely supports and next steps
+- Required inputs now appear before optional ones so the flow feels guided instead of form-heavy.
+- Backup files, extra context, teacher follow-up questions, and browser Gemma testing live behind secondary disclosure panels instead of crowding the main path.
+- Results are grouped into:
+  - strongest matches to check first
+  - items worth confirming
+  - advocacy language
+  - implementation reminders
+  - deeper review and boundaries
+- The browser-first Gemma surface remains a secondary testing tool, not the primary student-facing experience.
+- Document-reading quality work now has a separate Gemma 4 31B image-eval loop so upload interpretation can be measured independently from the normal E2B product path.
 
 ---
 
@@ -192,6 +211,12 @@ IEP Compass is not:
 
 ## 12. Core Workflow
 
+The current implementation should present this as a simple three-step journey:
+
+1. review approved IEP wording
+2. add the task or assignment details
+3. check what may apply and what to do next
+
 ### Input
 User provides:
 - IEP accommodations excerpt
@@ -231,32 +256,41 @@ The system returns:
 
 ## 13. MVP Output Structure
 
-### Section 1: Plain-Language Summary
-A short explanation of what may matter here.
+### Section 1: Start Here Summary
+A short explanation of what may matter here, written for quick phone scanning.
 
-### Section 2: Potentially Relevant Accommodations
-For each accommodation:
+### Section 2: Strongest Matches To Check First
+Show the clearest support-to-task matches first so the user knows where to start.
+
+### Section 3: Worth Confirming
+Separate less-settled or boundary-sensitive items from the strongest matches.
+
+### Section 4: Per-Accommodation Detail Blocks
+For each accommodation shown in Sections 2 or 3:
 - accommodation name
 - plain-language explanation
-- why it may matter for this task
+- why it may apply
+- what to do next
+- what still needs confirmation
+- source text trail
 - confidence label:
   - likely relevant
   - possibly relevant
   - unclear / confirm with staff
 
-### Section 3: Student Advocacy
+### Section 5: Student Advocacy
 Examples:
 - "I think my extended time accommodation may apply here."
 - "Can we confirm whether I can use my approved support for this section?"
 - "My IEP says I can receive directions in smaller chunks. Can we do that here?"
 
-### Section 4: Teacher Reminders
+### Section 6: Teacher Reminders
 Examples:
 - what the accommodation may look like in practice
 - where to double-check with case manager/special education staff
 - where timing, directions, format, or environment may be relevant
 
-### Section 5: Notes and Boundaries
+### Section 7: Deeper Review, Notes, and Boundaries
 - This is guidance based on the uploaded excerpt.
 - This does not create new accommodations.
 - Confirm with school staff when unclear.

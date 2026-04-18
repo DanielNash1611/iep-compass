@@ -60,11 +60,16 @@ function describeRuntime(baseUrl?: string) {
 }
 
 function readRawConfig() {
+  const primaryModel =
+    import.meta.env.VITE_GEMMA_APP_MODEL?.trim()
+    || import.meta.env.VITE_GEMMA_PRIMARY_MODEL?.trim()
+    || GEMMA_LOCAL_MODEL_ID
+
   return {
     apiKey: import.meta.env.VITE_GEMMA_API_KEY?.trim(),
     baseUrl: import.meta.env.VITE_GEMMA_BASE_URL?.trim(),
     fallbackModel: import.meta.env.VITE_GEMMA_FALLBACK_MODEL?.trim() || undefined,
-    primaryModel: import.meta.env.VITE_GEMMA_PRIMARY_MODEL?.trim() || GEMMA_LOCAL_MODEL_ID,
+    primaryModel,
   }
 }
 
