@@ -91,6 +91,7 @@ function deriveReasoningReminders(
   options: { includeTeacherConcern?: boolean } = {},
 ) {
   const iepText = request.iepSource.text.toLowerCase()
+  const profileContextText = `${request.iepSource.text}\n${request.learningProfile ?? ''}`.toLowerCase()
   const taskText = buildTaskReasoningText(request, options)
   const reminders: string[] = []
 
@@ -105,7 +106,7 @@ function deriveReasoningReminders(
   }
 
   if (
-    /(auditory dyslexia|sound-symbol encoding)/i.test(iepText)
+    /(auditory dyslexia|sound-symbol encoding)/i.test(profileContextText)
     && /(essay|narrative|writing|written response|draft)/i.test(taskText)
   ) {
     reminders.push(
@@ -123,7 +124,7 @@ function deriveReasoningReminders(
   }
 
   if (
-    /(auditory processing|auditory dyslexia)/i.test(iepText)
+    /(auditory processing|auditory dyslexia)/i.test(profileContextText)
     && /(multi-step|steps|directions|lab|sequence|handout)/i.test(taskText)
   ) {
     reminders.push(
@@ -212,6 +213,10 @@ function buildSharedRequestContext(
     excerptSummary.profileContext.length > 0
       ? excerptSummary.profileContext.map((line) => `- ${line}`).join('\n')
       : '- None detected.',
+    '',
+    'Optional learning profile notes from step 1 (user-entered, explanation-only):',
+    request.learningProfile?.trim() || '- None provided.',
+    'Treat these notes as context only. They are not standalone accommodations and do not expand the approved IEP list.',
     '',
     'Task-specific reasoning reminders:',
     reasoningReminders.length > 0

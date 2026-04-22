@@ -178,6 +178,7 @@ export default function App() {
   const [activeExampleId, setActiveExampleId] = useState<string | null>(null)
   const [contextTags, setContextTags] = useState<TaskContext[]>([])
   const [taskTitle, setTaskTitle] = useState('')
+  const [learningProfile, setLearningProfile] = useState('')
   const [teacherConcern, setTeacherConcern] = useState('')
   const [hasSavedIepOnDevice, setHasSavedIepOnDevice] = useState(() =>
     hasPersistedIepSource(),
@@ -899,6 +900,7 @@ export default function App() {
 
     setContextTags([])
     setTaskTitle('')
+    setLearningProfile('')
     setTeacherConcern('')
     setActiveExampleId(null)
     setAnalysis(null)
@@ -914,6 +916,7 @@ export default function App() {
     nextIepSource: SourceMaterial,
     nextTaskSource: SourceMaterial,
     nextTaskTitle: string,
+    nextLearningProfile: string,
     nextTeacherConcern: string,
     nextContextTags: TaskContext[],
   ): TeacherConcernRequest | null {
@@ -926,6 +929,7 @@ export default function App() {
     return {
       contextTags: nextContextTags,
       iepSource: getAnalysisSource(nextIepSource),
+      learningProfile: nextLearningProfile.trim(),
       taskTraits: getAnalysisTaskTraits(nextTaskSource),
       taskTitle: nextTaskTitle.trim(),
       taskSource: getAnalysisSource(nextTaskSource),
@@ -937,6 +941,7 @@ export default function App() {
     nextIepSource: SourceMaterial,
     nextTaskSource: SourceMaterial,
     nextTaskTitle: string,
+    nextLearningProfile: string,
     nextContextTags: TaskContext[],
   ) {
     const runId = analysisRunIdRef.current + 1
@@ -952,6 +957,7 @@ export default function App() {
       const nextAnalysis = await analysisAdapter.analyze({
         contextTags: nextContextTags,
         iepSource: getAnalysisSource(nextIepSource),
+        learningProfile: nextLearningProfile.trim(),
         taskTraits: getAnalysisTaskTraits(nextTaskSource),
         taskTitle: nextTaskTitle.trim(),
         taskSource: getAnalysisSource(nextTaskSource),
@@ -1022,6 +1028,7 @@ export default function App() {
       iepSource,
       taskSource,
       taskTitle,
+      learningProfile,
       contextTags,
     )
     if (!didGenerate) {
@@ -1033,6 +1040,7 @@ export default function App() {
     const nextIepSource = correctionIepSource
     const nextTaskSource = correctionTaskSource
     const nextTaskTitle = correctionTaskTitle
+    const nextLearningProfile = learningProfile
     const nextTeacherConcern = correctionTeacherConcern
     const nextContextTags = correctionContextTags
 
@@ -1050,6 +1058,7 @@ export default function App() {
       nextIepSource,
       nextTaskSource,
       nextTaskTitle,
+      nextLearningProfile,
       nextContextTags,
     )
     if (!didGenerate) {
@@ -1067,6 +1076,7 @@ export default function App() {
         iepSource,
         taskSource,
         taskTitle,
+        learningProfile,
         teacherConcern,
         contextTags,
       ),
@@ -1343,12 +1353,35 @@ export default function App() {
                   uploadsFirst
                   emptyState="No files yet. Skip this if typing the IEP wording is easier."
                   textFootnote={
-                    !canContinueToAssignment ? (
-                      <p className="field-message">
-                        Add at least one reviewed accommodation before moving on.
-                        Reviewed upload details from files can also count.
-                      </p>
-                    ) : null
+                    <>
+                      <label className="textarea-label">
+                        <span className="field-label__title">
+                          Learning profile notes (optional)
+                        </span>
+                        <textarea
+                          className="textarea-input textarea-input--compact"
+                          name="learningProfile"
+                          placeholder="Example: Auditory dyslexia that affects sound-symbol encoding."
+                          value={learningProfile}
+                          onChange={(event) => {
+                            setLearningProfile(event.target.value)
+                            markMainSourceChanged()
+                          }}
+                        />
+                        <span className="field-label__help">
+                          Add only if helpful. This context can guide explanations,
+                          but accommodations still must come from the approved IEP
+                          wording above.
+                        </span>
+                      </label>
+
+                      {!canContinueToAssignment ? (
+                        <p className="field-message">
+                          Add at least one reviewed accommodation before moving on.
+                          Reviewed upload details from files can also count.
+                        </p>
+                      ) : null}
+                    </>
                   }
                 />
                 <details className="optional-panel">

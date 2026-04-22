@@ -2,6 +2,15 @@
 
 ## Recently Completed
 
+- Added an optional step-1 learning profile field so families can note context like auditory dyslexia without changing the accommodation source boundary:
+  - new `Learning profile notes (optional)` input in the step-1 IEP screen
+  - wired the note into analysis requests and prompts as explanation-only context
+  - clarified in prompt context that this field does not create new accommodations or expand the approved IEP list
+- Ran core local checks for the step-1 learning profile addition:
+  - `npm run lint` passed
+  - `npm run test` is currently blocked in this environment because Node does not support `--experimental-strip-types`
+  - `npm run build` passed
+
 - Tried one shared narrow follow-up tile for the real phone photo’s student-response condition lines:
   - added a shared `student_response_conditions` recovery tile in both the browser app path and the comparison harness
   - added a tighter shared prompt variant for that tile that explicitly preserves exception wording and forbids a heading-only answer

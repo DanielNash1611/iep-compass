@@ -257,7 +257,9 @@ function evaluateCandidate(candidate: AccommodationCandidate, request: AnalysisR
   const taskText = normalizeText(
     `${request.taskTitle} ${request.taskSource.text} ${request.contextTags.join(' ')}`.trim(),
   )
-  const needContext = deriveNeedContext(request.iepSource.text)
+  const needContext = deriveNeedContext(
+    `${request.iepSource.text}\n${request.learningProfile ?? ''}`,
+  )
 
   switch (candidate.category) {
     case 'extended_time': {

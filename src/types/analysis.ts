@@ -67,6 +67,7 @@ export interface SourceMaterial {
 export interface AnalysisRequest {
   contextTags: TaskContext[]
   iepSource: SourceMaterial
+  learningProfile?: string
   taskTraits?: TaskReviewDraft | null
   taskTitle: string
   teacherConcern?: string
