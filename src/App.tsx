@@ -387,6 +387,11 @@ export default function App() {
     markMainSourceChanged()
   }
 
+  function updateMainLearningProfile(nextValue: string) {
+    setLearningProfile(nextValue)
+    markMainSourceChanged()
+  }
+
   function updateAttachmentList(
     attachments: UploadedAttachment[],
     attachmentId: string,
@@ -1225,6 +1230,7 @@ export default function App() {
     setActiveExampleId(nextExample.id)
     setContextTags(nextExample.contextTags)
     setTaskTitle(nextExample.taskTitle)
+    setLearningProfile('')
     setTeacherConcern(nextExample.teacherConcern ?? '')
     setAnalysis(null)
     setAnalysisError(null)
@@ -1396,15 +1402,8 @@ export default function App() {
     const didGenerate = await runPrimaryAnalysis(
       iepSource,
       taskSource,
-<<<<<<< ours
       nextTaskTitle,
-=======
-      taskTitle,
       learningProfile,
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
       contextTags,
     )
     if (!didGenerate) {
@@ -1415,16 +1414,9 @@ export default function App() {
   async function handleRegenerateFromCorrection() {
     const nextIepSource = correctionIepSource
     const nextTaskSource = correctionTaskSource
-<<<<<<< ours
     const nextTaskTitle =
       correctionTaskTitle.trim() || deriveTaskTitleFromSource(correctionTaskSource)
-=======
-    const nextTaskTitle = correctionTaskTitle
     const nextLearningProfile = learningProfile
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
     const nextTeacherConcern = correctionTeacherConcern
     const nextContextTags = correctionContextTags
 
@@ -1463,15 +1455,8 @@ export default function App() {
       buildTeacherConcernRequest(
         iepSource,
         taskSource,
-<<<<<<< ours
         effectiveTaskTitle,
-=======
-        taskTitle,
         learningProfile,
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
         teacherConcern,
         contextTags,
       ),
@@ -1751,37 +1736,34 @@ export default function App() {
                   uploadsFirst
                   emptyState="No files yet. Skip this if typing the IEP wording is easier."
                   textFootnote={
-                    <>
-                      <label className="textarea-label">
-                        <span className="field-label__title">
-                          Learning profile notes (optional)
-                        </span>
-                        <textarea
-                          className="textarea-input textarea-input--compact"
-                          name="learningProfile"
-                          placeholder="Example: Auditory dyslexia that affects sound-symbol encoding."
-                          value={learningProfile}
-                          onChange={(event) => {
-                            setLearningProfile(event.target.value)
-                            markMainSourceChanged()
-                          }}
-                        />
-                        <span className="field-label__help">
-                          Add only if helpful. This context can guide explanations,
-                          but accommodations still must come from the approved IEP
-                          wording above.
-                        </span>
-                      </label>
-
-                      {!canContinueToAssignment ? (
-                        <p className="field-message">
-                          Add at least one reviewed accommodation before moving on.
-                          Reviewed upload details from files can also count.
-                        </p>
-                      ) : null}
-                    </>
+                    !canContinueToAssignment ? (
+                      <p className="field-message">
+                        Add at least one reviewed accommodation before moving on.
+                        Reviewed upload details from files can also count.
+                      </p>
+                    ) : null
                   }
                 />
+
+                <label className="textarea-label">
+                  <span className="field-label__title">
+                    Learning disabilities (optional)
+                  </span>
+                  <textarea
+                    className="textarea-input textarea-input--compact"
+                    name="learningProfile"
+                    placeholder="Example: Auditory dyslexia that affects sound-symbol encoding."
+                    value={learningProfile}
+                    onChange={(event) =>
+                      updateMainLearningProfile(event.target.value)
+                    }
+                  />
+                  <span className="field-label__help">
+                    Add only if helpful. This can guide explanations, but
+                    accommodations still must come from the approved IEP wording
+                    above.
+                  </span>
+                </label>
                 <details className="optional-panel">
                   <summary className="optional-panel__summary">
                     <span className="summary-label">
