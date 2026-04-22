@@ -2,8 +2,10 @@
 
 ## Recently Completed
 
-<<<<<<< ours
-<<<<<<< ours
+- Resolved the local/PR conflict markers around the optional learning context work:
+  - kept the newer task-title fallback behavior from reviewed uploads while preserving the learning-profile analysis handoff
+  - moved the optional context field out of the IEP source editor footnote into a standalone Step 1 field labeled `Learning disabilities (optional)`
+  - loading sample previews now clears personal learning-disability notes so old context does not carry into examples
 - Created a project-local Codex environment:
   - added setup for `npm ci` and the ignored `public/models` directory
   - added Codex actions for running the app, build, lint, tests, and the main Gemma image eval suites
@@ -84,9 +86,6 @@
   - added formatter coverage for dense real-form style output and single-section accommodation snippets
   - `npm run test`, `npm run lint`, and `npm run build` all passed
   - targeted `real_accommodation_page_phone_photo` 31B eval still failed, but reached `field=0.879`, `condition_preservation=0.833`, and kept uncertainty handling at `1.000`
-=======
-=======
->>>>>>> theirs
 - Added an optional step-1 learning profile field so families can note context like auditory dyslexia without changing the accommodation source boundary:
   - new `Learning profile notes (optional)` input in the step-1 IEP screen
   - wired the note into analysis requests and prompts as explanation-only context
@@ -96,10 +95,6 @@
   - `npm run test` is currently blocked in this environment because Node does not support `--experimental-strip-types`
   - `npm run build` passed
 
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
 - Tried one shared narrow follow-up tile for the real phone photo’s student-response condition lines:
   - added a shared `student_response_conditions` recovery tile in both the browser app path and the comparison harness
   - added a tighter shared prompt variant for that tile that explicitly preserves exception wording and forbids a heading-only answer
