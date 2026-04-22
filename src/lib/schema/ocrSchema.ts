@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { buildAssignmentFollowUpQuestions } from '../text/assignmentFollowUps.ts'
 
 export const documentKindSchema = z.enum([
   'iep_accommodations',
@@ -7,6 +8,13 @@ export const documentKindSchema = z.enum([
 ])
 
 export const timedStatusSchema = z.enum(['timed', 'untimed', 'unknown'])
+export const accommodationFocusSchema = z.enum([
+  'assignment',
+  'practice',
+  'quiz',
+  'test',
+  'unknown',
+])
 export const calculationFocusSchema = z.enum([
   'calculation_focused',
   'not_calculation_focused',
@@ -19,6 +27,15 @@ export const workTypeSchema = z.enum([
   'practice',
   'classwork',
   'homework',
+  'unknown',
+])
+export const taskDocumentTypeSchema = z.enum([
+  'assignment_details',
+  'assignment_page',
+  'rubric',
+  'worksheet',
+  'quiz',
+  'test',
   'unknown',
 ])
 
@@ -45,13 +62,18 @@ export const iepReviewDraftSchema = z.object({
 })
 
 export const assignmentReviewDraftSchema = z.object({
+  accessRelevantDetails: z.array(z.string()),
+  accommodationFocus: accommodationFocusSchema,
   calculationFocus: calculationFocusSchema,
   evidenceBullets: z.array(z.string()),
+  followUpQuestions: z.array(z.string()),
   sourceSummaryText: z.string(),
   subject: z.string(),
   taskDescription: z.string(),
+  timeLimitMinutes: z.number().nullable(),
   timedStatus: timedStatusSchema,
   topic: z.string(),
+  visibleDocumentType: taskDocumentTypeSchema,
   workType: workTypeSchema,
 })
 
@@ -92,6 +114,7 @@ export const documentReadingResultSchema = z.discriminatedUnion('documentKind', 
 ])
 
 export type CalculationFocus = z.infer<typeof calculationFocusSchema>
+export type AccommodationFocus = z.infer<typeof accommodationFocusSchema>
 export type DocumentConfidenceFlags = z.infer<typeof documentConfidenceFlagsSchema>
 export type DocumentKind = z.infer<typeof documentKindSchema>
 export type DocumentReadingResult = z.infer<typeof documentReadingResultSchema>
@@ -101,6 +124,7 @@ export type StructuredDocumentDraft =
   | z.infer<typeof iepReviewDraftSchema>
   | z.infer<typeof assignmentReviewDraftSchema>
   | z.infer<typeof unknownReviewDraftSchema>
+export type TaskDocumentType = z.infer<typeof taskDocumentTypeSchema>
 export type TaskReviewDraft = z.infer<typeof assignmentReviewDraftSchema>
 export type TimedStatus = z.infer<typeof timedStatusSchema>
 export type UnknownReviewDraft = z.infer<typeof unknownReviewDraftSchema>
@@ -120,12 +144,44 @@ function asBoolean(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : fallback
 }
 
+function asNullableNumber(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsedValue = Number(value)
+
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue
+    }
+  }
+
+  return null
+}
+
+function getRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {}
+}
+
+function field(record: Record<string, unknown>, ...keys: string[]) {
+  for (const key of keys) {
+    if (key in record) {
+      return record[key]
+    }
+  }
+
+  return undefined
+}
+
 function normalizeDocumentKind(value: unknown): DocumentKind | undefined {
   if (typeof value !== 'string') {
     return undefined
   }
 
-  const normalized = value.trim().toLowerCase()
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_')
 
   if (
     normalized === 'iep_accommodations'
@@ -148,6 +204,8 @@ function normalizeDocumentKind(value: unknown): DocumentKind | undefined {
     || normalized === 'assignment_or_test'
     || normalized === 'assignment_quiz'
     || normalized === 'assignment_sheet'
+    || normalized === 'assignment_or_schoolwork'
+    || normalized === 'assignment_or_worksheet'
   ) {
     return 'assignment_or_quiz'
   }
@@ -160,12 +218,14 @@ function normalizeDocumentKind(value: unknown): DocumentKind | undefined {
 }
 
 function inferDocumentKindFromDraft(reviewDraft: unknown): DocumentKind {
-  if (reviewDraft && typeof reviewDraft === 'object') {
-    if ('sections' in reviewDraft) {
+  const draft = getRecord(reviewDraft)
+
+  if (Object.keys(draft).length > 0) {
+    if (field(draft, 'sections', 'accommodationSections', 'accommodation_sections')) {
       return 'iep_accommodations'
     }
 
-    if ('taskDescription' in reviewDraft) {
+    if (field(draft, 'taskDescription', 'task_description', 'task_summary')) {
       return 'assignment_or_quiz'
     }
   }
@@ -177,135 +237,188 @@ function normalizeReviewDraftByKind(
   documentKind: DocumentKind,
   reviewDraft: unknown,
 ): StructuredDocumentDraft {
-  const draft = reviewDraft && typeof reviewDraft === 'object' ? reviewDraft : {}
+  const draft = getRecord(reviewDraft)
 
   if (documentKind === 'iep_accommodations') {
+    const sections = field(
+      draft,
+      'sections',
+      'accommodationSections',
+      'accommodation_sections',
+    )
     const sectionDrafts =
-      'sections' in draft && Array.isArray(draft.sections)
-        ? draft.sections
-            .map((section) => {
-              if (!section || typeof section !== 'object') {
-                return null
-              }
+      Array.isArray(sections)
+        ? sections
+          .map((section) => {
+            const sectionRecord = getRecord(section)
 
-              return {
-                items: asStringArray('items' in section ? section.items : undefined),
-                title: asString('title' in section ? section.title : undefined),
-              }
-            })
-            .filter((section): section is IepSection => section !== null)
+            if (Object.keys(sectionRecord).length === 0) {
+              return null
+            }
+
+            return {
+              items: asStringArray(
+                field(sectionRecord, 'items', 'accommodations', 'supports'),
+              ),
+              title: asString(field(sectionRecord, 'title', 'heading', 'name')),
+            }
+          })
+          .filter((section): section is IepSection => section !== null)
         : []
 
     return {
-      district: asString('district' in draft ? draft.district : undefined),
-      dob: asString('dob' in draft ? draft.dob : undefined),
+      district: asString(field(draft, 'district')),
+      dob: asString(field(draft, 'dob', 'dateOfBirth', 'date_of_birth')),
       learningDisabilityOrProfileText: asStringArray(
-        'learningDisabilityOrProfileText' in draft
-          ? draft.learningDisabilityOrProfileText
-          : undefined,
+        field(
+          draft,
+          'learningDisabilityOrProfileText',
+          'learning_disability_or_profile_text',
+          'profileText',
+          'profile_text',
+        ),
       ),
-      meetingDate: asString('meetingDate' in draft ? draft.meetingDate : undefined),
+      meetingDate: asString(field(draft, 'meetingDate', 'meeting_date')),
       modifications: asStringArray(
-        'modifications' in draft ? draft.modifications : undefined,
+        field(draft, 'modifications'),
       ),
       sections: sectionDrafts,
       sourceSummaryText: asString(
-        'sourceSummaryText' in draft ? draft.sourceSummaryText : undefined,
+        field(draft, 'sourceSummaryText', 'source_summary_text', 'summary'),
       ),
-      studentName: asString('studentName' in draft ? draft.studentName : undefined),
+      studentName: asString(field(draft, 'studentName', 'student_name')),
     }
   }
 
   if (documentKind === 'assignment_or_quiz') {
     const timedStatus =
-      timedStatusSchema.safeParse('timedStatus' in draft ? draft.timedStatus : undefined)
+      timedStatusSchema.safeParse(field(draft, 'timedStatus', 'timed_status'))
         .data ?? 'unknown'
     const workType =
-      workTypeSchema.safeParse('workType' in draft ? draft.workType : undefined).data
+      workTypeSchema.safeParse(field(draft, 'workType', 'work_type')).data
       ?? 'unknown'
     const calculationFocus =
       calculationFocusSchema.safeParse(
-        'calculationFocus' in draft ? draft.calculationFocus : undefined,
+        field(draft, 'calculationFocus', 'calculation_focus'),
       ).data ?? 'mixed_or_unknown'
+    const visibleDocumentType =
+      taskDocumentTypeSchema.safeParse(
+        field(draft, 'visibleDocumentType', 'visible_document_type'),
+      ).data ?? 'unknown'
+    const accommodationFocus =
+      accommodationFocusSchema.safeParse(
+        field(draft, 'accommodationFocus', 'accommodation_focus'),
+      ).data ?? 'unknown'
 
-    return {
+    const normalizedDraft = {
+      accessRelevantDetails: asStringArray(
+        field(draft, 'accessRelevantDetails', 'access_relevant_details'),
+      ),
+      accommodationFocus,
       calculationFocus,
       evidenceBullets: asStringArray(
-        'evidenceBullets' in draft ? draft.evidenceBullets : undefined,
+        field(draft, 'evidenceBullets', 'evidence_bullets', 'evidence'),
+      ),
+      followUpQuestions: asStringArray(
+        field(draft, 'followUpQuestions', 'follow_up_questions'),
       ),
       sourceSummaryText: asString(
-        'sourceSummaryText' in draft ? draft.sourceSummaryText : undefined,
+        field(draft, 'sourceSummaryText', 'source_summary_text', 'task_summary'),
       ),
-      subject: asString('subject' in draft ? draft.subject : undefined),
+      subject: asString(field(draft, 'subject')),
       taskDescription: asString(
-        'taskDescription' in draft ? draft.taskDescription : undefined,
+        field(draft, 'taskDescription', 'task_description', 'task_summary'),
+      ),
+      timeLimitMinutes: asNullableNumber(
+        field(draft, 'timeLimitMinutes', 'time_limit_minutes'),
       ),
       timedStatus,
-      topic: asString('topic' in draft ? draft.topic : undefined),
+      topic: asString(field(draft, 'topic')),
+      visibleDocumentType,
       workType,
+    }
+
+    return {
+      ...normalizedDraft,
+      followUpQuestions: buildAssignmentFollowUpQuestions(normalizedDraft),
     }
   }
 
   return {
     evidenceBullets: asStringArray(
-      'evidenceBullets' in draft ? draft.evidenceBullets : undefined,
+      field(draft, 'evidenceBullets', 'evidence_bullets', 'evidence'),
     ),
     sourceSummaryText: asString(
-      'sourceSummaryText' in draft ? draft.sourceSummaryText : undefined,
+      field(draft, 'sourceSummaryText', 'source_summary_text'),
     ),
-    summary: asString('summary' in draft ? draft.summary : undefined),
+    summary: asString(field(draft, 'summary', 'task_summary')),
   }
 }
 
+function unwrapDocumentReadingEnvelope(input: Record<string, unknown>) {
+  const candidate = field(
+    input,
+    'documentReadingResult',
+    'document_reading_result',
+    'documentResult',
+    'document_result',
+    'result',
+    'output',
+    'data',
+  )
+
+  if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+    return candidate as Record<string, unknown>
+  }
+
+  return input
+}
+
 function normalizeDocumentReadingInput(input: unknown) {
-  if (!input || typeof input !== 'object') {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return input
   }
 
+  const inputRecord = unwrapDocumentReadingEnvelope(input as Record<string, unknown>)
   const draft =
-    'reviewDraft' in input
-      ? (input as { reviewDraft?: unknown }).reviewDraft
-      : undefined
+    field(inputRecord, 'reviewDraft', 'review_draft', 'draft')
 
   const documentKind =
     normalizeDocumentKind(
-      'documentKind' in input
-        ? (input as { documentKind?: unknown }).documentKind
-        : undefined,
+      field(inputRecord, 'documentKind', 'document_kind'),
     ) ?? inferDocumentKindFromDraft(draft)
 
   return {
-    ...input,
+    ...inputRecord,
     confidenceFlags: {
       containsUnclearText: asBoolean(
-        'confidenceFlags' in input
-          && input.confidenceFlags
-          && typeof input.confidenceFlags === 'object'
-          && 'containsUnclearText' in input.confidenceFlags
-          ? input.confidenceFlags.containsUnclearText
-          : undefined,
+        field(
+          getRecord(field(inputRecord, 'confidenceFlags', 'confidence_flags')),
+          'containsUnclearText',
+          'contains_unclear_text',
+        ),
       ),
       isPartialDocument: asBoolean(
-        'confidenceFlags' in input
-          && input.confidenceFlags
-          && typeof input.confidenceFlags === 'object'
-          && 'isPartialDocument' in input.confidenceFlags
-          ? input.confidenceFlags.isPartialDocument
-          : undefined,
+        field(
+          getRecord(field(inputRecord, 'confidenceFlags', 'confidence_flags')),
+          'isPartialDocument',
+          'is_partial_document',
+        ),
       ),
       lowConfidence: asBoolean(
-        'confidenceFlags' in input
-          && input.confidenceFlags
-          && typeof input.confidenceFlags === 'object'
-          && 'lowConfidence' in input.confidenceFlags
-          ? input.confidenceFlags.lowConfidence
-          : undefined,
+        field(
+          getRecord(field(inputRecord, 'confidenceFlags', 'confidence_flags')),
+          'lowConfidence',
+          'low_confidence',
+        ),
         true,
       ),
     },
     documentKind,
-    notes: asStringArray('notes' in input ? input.notes : undefined),
-    rawTranscript: asString('rawTranscript' in input ? input.rawTranscript : undefined),
+    notes: asStringArray(field(inputRecord, 'notes')),
+    rawTranscript: asString(
+      field(inputRecord, 'rawTranscript', 'raw_transcript', 'transcript'),
+    ),
     reviewDraft: normalizeReviewDraftByKind(documentKind, draft),
   }
 }

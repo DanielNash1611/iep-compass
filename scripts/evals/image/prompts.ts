@@ -103,9 +103,16 @@ export function buildAccommodationImageStructuringPrompt(extractedText: string) 
 
 export function buildAssignmentImageInterpretationPrompt() {
   return [
-    'Tell me what is written on this document and extract the assignment or rubric details.',
+    'Look at this school document image and interpret the assignment or rubric details that matter for accommodation matching.',
     'You are evaluating a school assignment, worksheet, quiz, test, or rubric image for IEP Compass.',
-    'Identify the visible assignment or rubric type, summarize the task, and extract only clearly supported requirements and grading factors.',
+    'Identify the visible document type, summarize the task, and extract only clearly supported requirements and grading factors.',
+    'This does not need full text extraction, but it must preserve short visible wording for key requirements, deadlines, grading factors, and directions.',
+    'Preserve visible title and label wording such as "Quiz Practice", "Areas of Circles", or "Composite Figures" in task_summary or access_relevant_details when visible.',
+    'Never answer assignment, worksheet, quiz, or test questions.',
+    'Include access_relevant_details for visible traits like timing, rubric categories, spelling/mechanics grading, reading load, writing load, multi-step directions, allowed materials, or calculation focus.',
+    'Include short follow_up_questions that would clarify accommodation relevance, such as "Is this a timed test?" or "Does the rubric include spelling?".',
+    'If the page appears to be quiz practice, test practice, or preparation for another assessment, ask whether the accommodation check should focus on the practice work or the actual quiz/test.',
+    'If timing is visible or likely but not confirmed, ask whether it is timed and how many minutes the student has.',
     'Note incomplete visibility when directions, scoring details, or deadlines may be cut off.',
     'Do not infer unseen instructions, missing pages, or hidden rubric criteria.',
     `Use one of these document_type values: ${DOCUMENT_TYPES}.`,
@@ -114,6 +121,10 @@ export function buildAssignmentImageInterpretationPrompt() {
     'Set must_ask_for_more_context true when the image appears partial, cropped, blurry, or otherwise incomplete for reliable interpretation.',
     'Return JSON only with this shape:',
     JSON.stringify({
+      access_relevant_details: [
+        'Rubric includes grammar and spelling',
+        'Assignment asks for a multi-paragraph written response',
+      ],
       assignment_type: 'essay',
       confidence: 0.84,
       detected_requirements: [
@@ -131,6 +142,10 @@ export function buildAssignmentImageInterpretationPrompt() {
         },
       ],
       document_type: 'assignment_rubric',
+      follow_up_questions: [
+        'Is this writing assignment timed?',
+        'Does spelling count toward the final score?',
+      ],
       grading_factors: ['organization', 'supporting evidence', 'grammar', 'spelling'],
       must_ask_for_more_context: false,
       task_summary: 'Write a 5 paragraph essay on ecosystems.',
@@ -140,8 +155,14 @@ export function buildAssignmentImageInterpretationPrompt() {
 
 export function buildAssignmentImageManualFlowPrompt() {
   return [
-    'Tell me what is written on this document and extract the assignment or rubric details.',
-    'Summarize the task, visible requirements, deadlines, and grading factors in plain text.',
+    'Look at this school document image and identify what kind of assignment document it appears to be.',
+    'Summarize the task, visible requirements, deadlines, grading factors, and access-relevant details in plain text.',
+    'List short follow-up questions that would clarify accommodation relevance.',
+    'If the page appears to be quiz practice, test practice, or preparation for another assessment, note that ambiguity and ask whether the accommodation check should focus on the practice work or the actual quiz/test.',
+    'If timing is visible or likely but not confirmed, note the visible time clue or uncertainty and ask whether it is timed and how many minutes the student has.',
+    'Preserve visible title and label wording such as "Quiz Practice", "Areas of Circles", or "Composite Figures" when visible.',
+    'Do not transcribe the whole page, but do preserve short visible wording for requirements, deadlines, grading factors, and directions.',
+    'Never answer assignment, worksheet, quiz, or test questions.',
     'Do not invent unseen instructions.',
   ].join('\n')
 }
@@ -150,11 +171,19 @@ export function buildAssignmentImageStructuringPrompt(extractedText: string) {
   return [
     'Convert the extracted assignment or rubric notes below into JSON for IEP Compass.',
     'Use only facts present in the extracted notes.',
+    'Keep follow_up_questions as short questions about missing or unclear context.',
+    'For quiz practice, test practice, or assessment-prep pages, include a follow_up_question asking whether accommodation matching should focus on the practice work or the actual quiz/test.',
+    'When timing is visible, likely, or unclear, include follow_up_questions about timed status and minutes instead of inventing a time limit.',
+    'Carry visible title and label wording from the notes into task_summary or access_relevant_details instead of replacing it with generic wording.',
     `Use one of these document_type values: ${DOCUMENT_TYPES}.`,
     `Use one of these assignment_type values: ${ASSIGNMENT_TYPES}.`,
     `Use one of these requirement type values: ${REQUIREMENT_TYPES}.`,
     'Return JSON only with this shape:',
     JSON.stringify({
+      access_relevant_details: [
+        'Rubric includes grammar and spelling',
+        'Assignment asks for a multi-paragraph written response',
+      ],
       assignment_type: 'essay',
       confidence: 0.84,
       detected_requirements: [
@@ -172,6 +201,10 @@ export function buildAssignmentImageStructuringPrompt(extractedText: string) {
         },
       ],
       document_type: 'assignment_rubric',
+      follow_up_questions: [
+        'Is this writing assignment timed?',
+        'Does spelling count toward the final score?',
+      ],
       grading_factors: ['organization', 'supporting evidence', 'grammar', 'spelling'],
       must_ask_for_more_context: false,
       task_summary: 'Write a 5 paragraph essay on ecosystems.',

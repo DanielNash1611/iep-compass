@@ -16,20 +16,24 @@ import {
 } from './features/source/localSourceStorage'
 import { SourceReviewPanel } from './features/source/SourceReviewPanel'
 import {
+  addMissingSourceTextBlock,
   buildEffectiveSourceText,
   getAttachmentSourceText,
+  getAttachmentPreviousSourceText,
   getPrimaryTaskTraits,
   hasUsableSourceText,
-  mergeSourceTextBlock,
   normalizeDocumentDraft,
+  replaceSourceTextBlock,
 } from './features/source/sourceText'
 import {
+  type GemmaReadingProgressUpdate,
   readGemmaDocumentPlan,
   runGemmaDocumentReading,
   runGemmaIepTextReading,
 } from './features/upload/gemmaOcr'
 import {
   createUploadedAttachment,
+  formatElapsedTime,
   loadLocalTextAttachment,
   refreshAttachmentNotes,
   revokeAttachmentPreview,
@@ -38,6 +42,7 @@ import { createAnalysisAdapter } from './lib/analysis'
 import { hasUncertaintyMarkers } from './lib/text/uncertaintyMarkers'
 import type {
   AnalysisExecution,
+  AttachmentInterpretationProgress,
   SourceMaterial,
   TaskReviewDraft,
   TaskContext,
@@ -49,6 +54,20 @@ import type {
 type Screen = 'iep' | 'assignment' | 'results'
 type CorrectionTarget = 'iep' | 'assignment' | null
 type SourceKey = 'iep' | 'task'
+
+function logUploadInterpretationStage(
+  stage: string,
+  details: Record<string, unknown> = {},
+) {
+  console.debug('[IEP Compass upload interpretation]', stage, details)
+}
+
+function warnUploadInterpretationStage(
+  stage: string,
+  details: Record<string, unknown> = {},
+) {
+  console.warn('[IEP Compass upload interpretation]', stage, details)
+}
 
 const HERO_GUIDEPOINTS: Array<{ icon: AppIconName; text: string }> = [
   { icon: 'notebook', text: 'Paste only the approved accommodation wording you want to rely on.' },
@@ -172,12 +191,71 @@ function scrollToTop() {
   })
 }
 
+function buildRunningInterpretationProgress(
+  update: GemmaReadingProgressUpdate,
+  startedAt: number,
+  currentProgress?: AttachmentInterpretationProgress,
+): AttachmentInterpretationProgress {
+  return {
+    detail: update.detail,
+    label: update.label,
+    phase: update.phase,
+    startedAt: currentProgress?.startedAt ?? startedAt,
+    stepIndex: update.stepIndex,
+    stepTotal: update.stepTotal,
+    updatedAt: Date.now(),
+  }
+}
+
+function buildCompletedInterpretationProgress(
+  startedAt: number,
+  currentProgress: AttachmentInterpretationProgress | undefined,
+  options: {
+    failed?: boolean
+  } = {},
+): AttachmentInterpretationProgress {
+  const finishedAt = Date.now()
+  const effectiveStartedAt = currentProgress?.startedAt ?? startedAt
+  const elapsedMs = finishedAt - effectiveStartedAt
+
+  return {
+    detail: options.failed
+      ? `Stopped after ${formatElapsedTime(elapsedMs)}.`
+      : `Finished in ${formatElapsedTime(elapsedMs)}.`,
+    elapsedMs,
+    finishedAt,
+    label: options.failed ? 'Gemma interpretation stopped' : 'Gemma interpretation finished',
+    phase: 'complete',
+    startedAt: effectiveStartedAt,
+    stepIndex: currentProgress?.stepTotal,
+    stepTotal: currentProgress?.stepTotal,
+    updatedAt: finishedAt,
+  }
+}
+
+function deriveTaskTitleFromSource(source: SourceMaterial) {
+  const taskTraits = getPrimaryTaskTraits(source)
+
+  if (!taskTraits?.taskDescription.trim()) {
+    return ''
+  }
+
+  return taskTraits.taskDescription
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean)
+    ?.replace(/^(task summary|document kind|title)\s*:\s*/i, '')
+    .slice(0, 96)
+    ?? ''
+}
+
 export default function App() {
   const [analysisAdapter] = useState(() => createAnalysisAdapter())
   const [screen, setScreen] = useState<Screen>('iep')
   const [activeExampleId, setActiveExampleId] = useState<string | null>(null)
   const [contextTags, setContextTags] = useState<TaskContext[]>([])
   const [taskTitle, setTaskTitle] = useState('')
+  const [learningProfile, setLearningProfile] = useState('')
   const [teacherConcern, setTeacherConcern] = useState('')
   const [hasSavedIepOnDevice, setHasSavedIepOnDevice] = useState(() =>
     hasPersistedIepSource(),
@@ -431,9 +509,43 @@ export default function App() {
       return
     }
 
+    logUploadInterpretationStage('analysis_started', {
+      attachmentKind: attachment.kind,
+      sourceKey,
+      surface: 'main',
+    })
+
+    const startedAt = Date.now()
+    const patchProgress = (update: GemmaReadingProgressUpdate) => {
+      patchMainAttachment(
+        sourceKey,
+        attachmentId,
+        (current) =>
+          refreshAttachmentNotes({
+            ...current,
+            interpretationProgress: buildRunningInterpretationProgress(
+              update,
+              startedAt,
+              current.interpretationProgress,
+            ),
+          }),
+        false,
+      )
+    }
+
     patchMainAttachment(sourceKey, attachmentId, (current) =>
       refreshAttachmentNotes({
         ...current,
+        interpretationProgress: buildRunningInterpretationProgress(
+          {
+            detail: 'Checking the configured Gemma endpoint before reading the upload.',
+            label: 'Getting Gemma ready',
+            phase: 'checking_model',
+            stepIndex: 1,
+          },
+          startedAt,
+          current.interpretationProgress,
+        ),
         readError: undefined,
         readNotes: [],
         status: 'interpret_running',
@@ -442,7 +554,14 @@ export default function App() {
 
     try {
       if (sourceKey === 'iep') {
-        const readingResult = await runGemmaIepTextReading(attachment)
+        const readingResult = await runGemmaIepTextReading(attachment, patchProgress)
+
+        logUploadInterpretationStage('client_received_result', {
+          extractedChars: readingResult.extractedText.length,
+          readMethod: readingResult.readMethod,
+          sourceKey,
+          surface: 'main',
+        })
 
         patchMainAttachment(
           sourceKey,
@@ -462,6 +581,10 @@ export default function App() {
                 `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
                 'Review this extracted accommodations text before adding it to the source trail.',
               ],
+              interpretationProgress: buildCompletedInterpretationProgress(
+                startedAt,
+                current.interpretationProgress,
+              ),
               pageCount: readingResult.pageCount,
               processedPageCount: readingResult.processedPageCount,
               reviewedText: undefined,
@@ -470,10 +593,29 @@ export default function App() {
           false,
         )
 
+        logUploadInterpretationStage('client_render_state_updated', {
+          hasExtractedText: readingResult.extractedText.trim().length > 0,
+          nextStatus: 'review_ready',
+          sourceKey,
+          surface: 'main',
+        })
+
         return
       }
 
-      const readingResult = await runGemmaDocumentReading(attachment, sourceKey)
+      const readingResult = await runGemmaDocumentReading(
+        attachment,
+        sourceKey,
+        patchProgress,
+      )
+
+      logUploadInterpretationStage('client_received_result', {
+        documentKind: readingResult.documentResult.documentKind,
+        readMethod: readingResult.readMethod,
+        reviewDraftKeys: Object.keys(readingResult.documentResult.reviewDraft),
+        sourceKey,
+        surface: 'main',
+      })
 
       patchMainAttachment(
         sourceKey,
@@ -495,6 +637,10 @@ export default function App() {
               `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
               ...readingResult.documentResult.notes,
             ],
+            interpretationProgress: buildCompletedInterpretationProgress(
+              startedAt,
+              current.interpretationProgress,
+            ),
             pageCount: readingResult.pageCount,
             processedPageCount: readingResult.processedPageCount,
             reviewedText: undefined,
@@ -502,7 +648,19 @@ export default function App() {
           }),
         false,
       )
+
+      logUploadInterpretationStage('client_render_state_updated', {
+        documentKind: readingResult.documentResult.documentKind,
+        nextStatus: 'review_ready',
+        sourceKey,
+        surface: 'main',
+      })
     } catch (error) {
+      warnUploadInterpretationStage('analysis_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        sourceKey,
+        surface: 'main',
+      })
       patchMainAttachment(
         sourceKey,
         attachmentId,
@@ -513,6 +671,11 @@ export default function App() {
               error instanceof Error
                 ? error.message
                 : 'We could not interpret enough of this file clearly.',
+            interpretationProgress: buildCompletedInterpretationProgress(
+              startedAt,
+              current.interpretationProgress,
+              { failed: true },
+            ),
             reviewedText: undefined,
             status: 'failed',
           }),
@@ -534,9 +697,39 @@ export default function App() {
       return
     }
 
+    logUploadInterpretationStage('analysis_started', {
+      attachmentKind: attachment.kind,
+      sourceKey,
+      surface: 'correction',
+    })
+
+    const startedAt = Date.now()
+    const patchProgress = (update: GemmaReadingProgressUpdate) => {
+      patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
+        refreshAttachmentNotes({
+          ...current,
+          interpretationProgress: buildRunningInterpretationProgress(
+            update,
+            startedAt,
+            current.interpretationProgress,
+          ),
+        }),
+      )
+    }
+
     patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
       refreshAttachmentNotes({
         ...current,
+        interpretationProgress: buildRunningInterpretationProgress(
+          {
+            detail: 'Checking the configured Gemma endpoint before reading the upload.',
+            label: 'Getting Gemma ready',
+            phase: 'checking_model',
+            stepIndex: 1,
+          },
+          startedAt,
+          current.interpretationProgress,
+        ),
         readError: undefined,
         readNotes: [],
         status: 'interpret_running',
@@ -545,7 +738,14 @@ export default function App() {
 
     try {
       if (sourceKey === 'iep') {
-        const readingResult = await runGemmaIepTextReading(attachment)
+        const readingResult = await runGemmaIepTextReading(attachment, patchProgress)
+
+        logUploadInterpretationStage('client_received_result', {
+          extractedChars: readingResult.extractedText.length,
+          readMethod: readingResult.readMethod,
+          sourceKey,
+          surface: 'correction',
+        })
 
         patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
           refreshAttachmentNotes({
@@ -562,6 +762,10 @@ export default function App() {
               `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
               'Review this extracted accommodations text before adding it to the source trail.',
             ],
+            interpretationProgress: buildCompletedInterpretationProgress(
+              startedAt,
+              current.interpretationProgress,
+            ),
             pageCount: readingResult.pageCount,
             processedPageCount: readingResult.processedPageCount,
             reviewedText: undefined,
@@ -569,10 +773,29 @@ export default function App() {
           }),
         )
 
+        logUploadInterpretationStage('client_render_state_updated', {
+          hasExtractedText: readingResult.extractedText.trim().length > 0,
+          nextStatus: 'review_ready',
+          sourceKey,
+          surface: 'correction',
+        })
+
         return
       }
 
-      const readingResult = await runGemmaDocumentReading(attachment, sourceKey)
+      const readingResult = await runGemmaDocumentReading(
+        attachment,
+        sourceKey,
+        patchProgress,
+      )
+
+      logUploadInterpretationStage('client_received_result', {
+        documentKind: readingResult.documentResult.documentKind,
+        readMethod: readingResult.readMethod,
+        reviewDraftKeys: Object.keys(readingResult.documentResult.reviewDraft),
+        sourceKey,
+        surface: 'correction',
+      })
 
       patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
         refreshAttachmentNotes({
@@ -591,13 +814,29 @@ export default function App() {
             `Interpreted with ${readingResult.modelLabel} via ${readingResult.runtimeLabel}.`,
             ...readingResult.documentResult.notes,
           ],
+          interpretationProgress: buildCompletedInterpretationProgress(
+            startedAt,
+            current.interpretationProgress,
+          ),
           pageCount: readingResult.pageCount,
           processedPageCount: readingResult.processedPageCount,
           reviewedText: undefined,
           status: 'review_ready',
         }),
       )
+
+      logUploadInterpretationStage('client_render_state_updated', {
+        documentKind: readingResult.documentResult.documentKind,
+        nextStatus: 'review_ready',
+        sourceKey,
+        surface: 'correction',
+      })
     } catch (error) {
+      warnUploadInterpretationStage('analysis_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        sourceKey,
+        surface: 'correction',
+      })
       patchCorrectionAttachment(sourceKey, attachmentId, (current) =>
         refreshAttachmentNotes({
           ...current,
@@ -605,6 +844,11 @@ export default function App() {
             error instanceof Error
               ? error.message
               : 'We could not interpret enough of this file clearly.',
+          interpretationProgress: buildCompletedInterpretationProgress(
+            startedAt,
+            current.interpretationProgress,
+            { failed: true },
+          ),
           reviewedText: undefined,
           status: 'failed',
         }),
@@ -612,36 +856,64 @@ export default function App() {
     }
   }
 
-  function updateMainAttachmentTextDraft(
+  function applyMainAttachmentTextReview(
     sourceKey: SourceKey,
     attachmentId: string,
     nextValue: string,
+    mode: 'add' | 'dismiss' | 'replace',
   ) {
+    const reviewedText = nextValue.trim()
+
     patchMainAttachment(sourceKey, attachmentId, (attachment) =>
       refreshAttachmentNotes({
         ...attachment,
-        extractedText:
-          attachment.status === 'included' ? attachment.extractedText : nextValue,
-        reviewedText:
-          attachment.status === 'included' ? nextValue : attachment.reviewedText,
+        reviewedText: mode === 'dismiss' || !reviewedText ? undefined : reviewedText,
+        sourceTrailText: undefined,
+        status: mode === 'dismiss' || !reviewedText ? 'reference_only' : 'applied_to_text',
       }),
     )
+
+    if (mode === 'dismiss' || !reviewedText) {
+      return
+    }
+
+    updateMainSource(sourceKey, (current) => ({
+      ...current,
+      text:
+        mode === 'replace'
+          ? reviewedText
+          : addMissingSourceTextBlock(current.text, reviewedText),
+    }))
   }
 
-  function updateCorrectionAttachmentTextDraft(
+  function applyCorrectionAttachmentTextReview(
     sourceKey: SourceKey,
     attachmentId: string,
     nextValue: string,
+    mode: 'add' | 'dismiss' | 'replace',
   ) {
+    const reviewedText = nextValue.trim()
+
     patchCorrectionAttachment(sourceKey, attachmentId, (attachment) =>
       refreshAttachmentNotes({
         ...attachment,
-        extractedText:
-          attachment.status === 'included' ? attachment.extractedText : nextValue,
-        reviewedText:
-          attachment.status === 'included' ? nextValue : attachment.reviewedText,
+        reviewedText: mode === 'dismiss' || !reviewedText ? undefined : reviewedText,
+        sourceTrailText: undefined,
+        status: mode === 'dismiss' || !reviewedText ? 'reference_only' : 'applied_to_text',
       }),
     )
+
+    if (mode === 'dismiss' || !reviewedText) {
+      return
+    }
+
+    updateCorrectionSource(sourceKey, (current) => ({
+      ...current,
+      text:
+        mode === 'replace'
+          ? reviewedText
+          : addMissingSourceTextBlock(current.text, reviewedText),
+    }))
   }
 
   function updateMainAttachmentDocumentDraft(
@@ -672,8 +944,11 @@ export default function App() {
 
   function includeMainAttachmentSource(sourceKey: SourceKey, attachmentId: string) {
     let includedSourceText = ''
+    let previousSourceText = ''
+    let derivedTaskTitle = ''
 
     patchMainAttachment(sourceKey, attachmentId, (attachment) => {
+      previousSourceText = getAttachmentPreviousSourceText(attachment)
       const reviewedText =
         (attachment.reviewedText ?? attachment.extractedText ?? '').trim()
           ? attachment.reviewedText ?? attachment.extractedText
@@ -689,15 +964,42 @@ export default function App() {
       })
 
       includedSourceText = getAttachmentSourceText(nextAttachment)
-      return nextAttachment
+      if (
+        sourceKey === 'task'
+        && nextAttachment.status === 'included'
+        && nextAttachment.documentDraft
+        && 'taskDescription' in nextAttachment.documentDraft
+      ) {
+        derivedTaskTitle = nextAttachment.documentDraft.taskDescription
+          .split('\n')
+          .map((line) => line.trim())
+          .find(Boolean)
+          ?.replace(/^(task summary|document kind|title)\s*:\s*/i, '')
+          .slice(0, 96)
+          ?? ''
+      }
+      return {
+        ...nextAttachment,
+        sourceTrailText: includedSourceText || undefined,
+      }
     })
 
     if (sourceKey === 'iep' && includedSourceText) {
       updateMainSource(sourceKey, (current) => ({
         ...current,
-        text: mergeSourceTextBlock(current.text, includedSourceText),
+        text: replaceSourceTextBlock(
+          current.text,
+          previousSourceText,
+          includedSourceText,
+        ),
       }))
     }
+
+    if (sourceKey === 'task' && !taskTitle.trim() && derivedTaskTitle) {
+      setTaskTitle(derivedTaskTitle)
+    }
+
+    markMainSourceChanged()
   }
 
   function includeCorrectionAttachmentSource(
@@ -705,8 +1007,11 @@ export default function App() {
     attachmentId: string,
   ) {
     let includedSourceText = ''
+    let previousSourceText = ''
+    let derivedTaskTitle = ''
 
     patchCorrectionAttachment(sourceKey, attachmentId, (attachment) => {
+      previousSourceText = getAttachmentPreviousSourceText(attachment)
       const reviewedText =
         (attachment.reviewedText ?? attachment.extractedText ?? '').trim()
           ? attachment.reviewedText ?? attachment.extractedText
@@ -722,38 +1027,93 @@ export default function App() {
       })
 
       includedSourceText = getAttachmentSourceText(nextAttachment)
-      return nextAttachment
+      if (
+        sourceKey === 'task'
+        && nextAttachment.status === 'included'
+        && nextAttachment.documentDraft
+        && 'taskDescription' in nextAttachment.documentDraft
+      ) {
+        derivedTaskTitle = nextAttachment.documentDraft.taskDescription
+          .split('\n')
+          .map((line) => line.trim())
+          .find(Boolean)
+          ?.replace(/^(task summary|document kind|title)\s*:\s*/i, '')
+          .slice(0, 96)
+          ?? ''
+      }
+      return {
+        ...nextAttachment,
+        sourceTrailText: includedSourceText || undefined,
+      }
     })
 
     if (sourceKey === 'iep' && includedSourceText) {
       updateCorrectionSource(sourceKey, (current) => ({
         ...current,
-        text: mergeSourceTextBlock(current.text, includedSourceText),
+        text: replaceSourceTextBlock(
+          current.text,
+          previousSourceText,
+          includedSourceText,
+        ),
       }))
+    }
+
+    if (sourceKey === 'task' && !correctionTaskTitle.trim() && derivedTaskTitle) {
+      setCorrectionTaskTitle(derivedTaskTitle)
     }
   }
 
   function keepMainAttachmentReference(sourceKey: SourceKey, attachmentId: string) {
+    let previousSourceText = ''
+    let wasIncluded = false
+
     patchMainAttachment(sourceKey, attachmentId, (attachment) =>
-      refreshAttachmentNotes({
-        ...attachment,
-        reviewedText: undefined,
-        status: 'reference_only',
-      }),
+      {
+        wasIncluded = attachment.status === 'included'
+        previousSourceText = getAttachmentPreviousSourceText(attachment)
+        return refreshAttachmentNotes({
+          ...attachment,
+          reviewedText: undefined,
+          sourceTrailText: undefined,
+          status: 'reference_only',
+        })
+      },
     )
+
+    if (sourceKey === 'iep' && wasIncluded && previousSourceText) {
+      updateMainSource(sourceKey, (current) => ({
+        ...current,
+        text: replaceSourceTextBlock(current.text, previousSourceText, ''),
+      }))
+    }
   }
 
   function keepCorrectionAttachmentReference(
     sourceKey: SourceKey,
     attachmentId: string,
   ) {
+    let previousSourceText = ''
+    let wasIncluded = false
+
     patchCorrectionAttachment(sourceKey, attachmentId, (attachment) =>
-      refreshAttachmentNotes({
-        ...attachment,
-        reviewedText: undefined,
-        status: 'reference_only',
-      }),
+      {
+        wasIncluded = attachment.status === 'included'
+        previousSourceText = getAttachmentPreviousSourceText(attachment)
+        return refreshAttachmentNotes({
+          ...attachment,
+          reviewedText: undefined,
+          sourceTrailText: undefined,
+          status: 'reference_only',
+        })
+      },
     )
+
+    if (sourceKey === 'iep' && wasIncluded && previousSourceText) {
+      updateCorrectionSource(sourceKey, (current) => ({
+        ...current,
+        text: replaceSourceTextBlock(current.text, previousSourceText, ''),
+      }))
+    }
   }
 
   function removeMainAttachment(sourceKey: SourceKey, attachmentId: string) {
@@ -899,6 +1259,7 @@ export default function App() {
 
     setContextTags([])
     setTaskTitle('')
+    setLearningProfile('')
     setTeacherConcern('')
     setActiveExampleId(null)
     setAnalysis(null)
@@ -914,6 +1275,7 @@ export default function App() {
     nextIepSource: SourceMaterial,
     nextTaskSource: SourceMaterial,
     nextTaskTitle: string,
+    nextLearningProfile: string,
     nextTeacherConcern: string,
     nextContextTags: TaskContext[],
   ): TeacherConcernRequest | null {
@@ -926,6 +1288,7 @@ export default function App() {
     return {
       contextTags: nextContextTags,
       iepSource: getAnalysisSource(nextIepSource),
+      learningProfile: nextLearningProfile.trim(),
       taskTraits: getAnalysisTaskTraits(nextTaskSource),
       taskTitle: nextTaskTitle.trim(),
       taskSource: getAnalysisSource(nextTaskSource),
@@ -937,6 +1300,7 @@ export default function App() {
     nextIepSource: SourceMaterial,
     nextTaskSource: SourceMaterial,
     nextTaskTitle: string,
+    nextLearningProfile: string,
     nextContextTags: TaskContext[],
   ) {
     const runId = analysisRunIdRef.current + 1
@@ -952,6 +1316,7 @@ export default function App() {
       const nextAnalysis = await analysisAdapter.analyze({
         contextTags: nextContextTags,
         iepSource: getAnalysisSource(nextIepSource),
+        learningProfile: nextLearningProfile.trim(),
         taskTraits: getAnalysisTaskTraits(nextTaskSource),
         taskTitle: nextTaskTitle.trim(),
         taskSource: getAnalysisSource(nextTaskSource),
@@ -1018,10 +1383,28 @@ export default function App() {
       return
     }
 
+    const nextTaskTitle = taskTitle.trim() || deriveTaskTitleFromSource(taskSource)
+
+    if (!nextTaskTitle) {
+      return
+    }
+
+    if (!taskTitle.trim()) {
+      setTaskTitle(nextTaskTitle)
+    }
+
     const didGenerate = await runPrimaryAnalysis(
       iepSource,
       taskSource,
+<<<<<<< ours
+      nextTaskTitle,
+=======
       taskTitle,
+      learningProfile,
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
       contextTags,
     )
     if (!didGenerate) {
@@ -1032,9 +1415,22 @@ export default function App() {
   async function handleRegenerateFromCorrection() {
     const nextIepSource = correctionIepSource
     const nextTaskSource = correctionTaskSource
+<<<<<<< ours
+    const nextTaskTitle =
+      correctionTaskTitle.trim() || deriveTaskTitleFromSource(correctionTaskSource)
+=======
     const nextTaskTitle = correctionTaskTitle
+    const nextLearningProfile = learningProfile
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
     const nextTeacherConcern = correctionTeacherConcern
     const nextContextTags = correctionContextTags
+
+    if (!nextTaskTitle) {
+      return
+    }
 
     replaceIepSource(nextIepSource, {
       persist: shouldPersistIepSource,
@@ -1050,6 +1446,7 @@ export default function App() {
       nextIepSource,
       nextTaskSource,
       nextTaskTitle,
+      nextLearningProfile,
       nextContextTags,
     )
     if (!didGenerate) {
@@ -1066,7 +1463,15 @@ export default function App() {
       buildTeacherConcernRequest(
         iepSource,
         taskSource,
+<<<<<<< ours
+        effectiveTaskTitle,
+=======
         taskTitle,
+        learningProfile,
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
         teacherConcern,
         contextTags,
       ),
@@ -1089,20 +1494,23 @@ export default function App() {
   }
 
   const canContinueToAssignment = hasUsableSourceText(iepSource)
+  const effectiveTaskTitle = taskTitle.trim() || deriveTaskTitleFromSource(taskSource)
+  const effectiveCorrectionTaskTitle =
+    correctionTaskTitle.trim() || deriveTaskTitleFromSource(correctionTaskSource)
   const canGenerateOutput =
     hasUsableSourceText(iepSource) &&
     hasUsableSourceText(taskSource) &&
-    Boolean(taskTitle.trim())
+    Boolean(effectiveTaskTitle)
   const canAddressTeacherConcern =
     !isAnalyzing &&
     hasUsableSourceText(iepSource) &&
     hasUsableSourceText(taskSource) &&
-    Boolean(taskTitle.trim()) &&
+    Boolean(effectiveTaskTitle) &&
     Boolean(teacherConcern.trim())
   const canRegenerateFromCorrection =
     hasUsableSourceText(correctionIepSource) &&
     hasUsableSourceText(correctionTaskSource) &&
-    Boolean(correctionTaskTitle.trim())
+    Boolean(effectiveCorrectionTaskTitle)
   const showOptionalTaskSetup =
     contextTags.length > 0 ||
     Boolean(teacherConcern.trim())
@@ -1317,11 +1725,11 @@ export default function App() {
                   textName="iepExcerpt"
                   textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
                   textValue={iepSource.text}
+                  onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
+                    applyMainAttachmentTextReview('iep', attachmentId, nextValue, mode)
+                  }
                   onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
                     updateMainAttachmentDocumentDraft('iep', attachmentId, nextDraft)
-                  }
-                  onAttachmentTextDraftChange={(attachmentId, nextValue) =>
-                    updateMainAttachmentTextDraft('iep', attachmentId, nextValue)
                   }
                   onKeepAttachmentReference={(attachmentId) =>
                     keepMainAttachmentReference('iep', attachmentId)
@@ -1343,12 +1751,35 @@ export default function App() {
                   uploadsFirst
                   emptyState="No files yet. Skip this if typing the IEP wording is easier."
                   textFootnote={
-                    !canContinueToAssignment ? (
-                      <p className="field-message">
-                        Add at least one reviewed accommodation before moving on.
-                        Reviewed upload details from files can also count.
-                      </p>
-                    ) : null
+                    <>
+                      <label className="textarea-label">
+                        <span className="field-label__title">
+                          Learning profile notes (optional)
+                        </span>
+                        <textarea
+                          className="textarea-input textarea-input--compact"
+                          name="learningProfile"
+                          placeholder="Example: Auditory dyslexia that affects sound-symbol encoding."
+                          value={learningProfile}
+                          onChange={(event) => {
+                            setLearningProfile(event.target.value)
+                            markMainSourceChanged()
+                          }}
+                        />
+                        <span className="field-label__help">
+                          Add only if helpful. This context can guide explanations,
+                          but accommodations still must come from the approved IEP
+                          wording above.
+                        </span>
+                      </label>
+
+                      {!canContinueToAssignment ? (
+                        <p className="field-message">
+                          Add at least one reviewed accommodation before moving on.
+                          Reviewed upload details from files can also count.
+                        </p>
+                      ) : null}
+                    </>
                   }
                 />
                 <details className="optional-panel">
@@ -1464,11 +1895,11 @@ export default function App() {
                   textName="taskText"
                   textPlaceholder="Paste directions, summarize a worksheet photo, or upload a text file with the assignment details."
                   textValue={taskSource.text}
+                  onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
+                    applyMainAttachmentTextReview('task', attachmentId, nextValue, mode)
+                  }
                   onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
                     updateMainAttachmentDocumentDraft('task', attachmentId, nextDraft)
-                  }
-                  onAttachmentTextDraftChange={(attachmentId, nextValue) =>
-                    updateMainAttachmentTextDraft('task', attachmentId, nextValue)
                   }
                   onKeepAttachmentReference={(attachmentId) =>
                     keepMainAttachmentReference('task', attachmentId)
@@ -1614,11 +2045,16 @@ export default function App() {
                     textName="correctionIepExcerpt"
                     textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
                     textValue={correctionIepSource.text}
+                    onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
+                      applyCorrectionAttachmentTextReview(
+                        'iep',
+                        attachmentId,
+                        nextValue,
+                        mode,
+                      )
+                    }
                     onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
                       updateCorrectionAttachmentDocumentDraft('iep', attachmentId, nextDraft)
-                    }
-                    onAttachmentTextDraftChange={(attachmentId, nextValue) =>
-                      updateCorrectionAttachmentTextDraft('iep', attachmentId, nextValue)
                     }
                     onKeepAttachmentReference={(attachmentId) =>
                       keepCorrectionAttachmentReference('iep', attachmentId)
@@ -1710,18 +2146,19 @@ export default function App() {
                     textName="correctionTaskText"
                     textPlaceholder="Paste directions, summarize a worksheet photo, or upload a text file with the assignment details."
                     textValue={correctionTaskSource.text}
+                    onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
+                      applyCorrectionAttachmentTextReview(
+                        'task',
+                        attachmentId,
+                        nextValue,
+                        mode,
+                      )
+                    }
                     onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
                       updateCorrectionAttachmentDocumentDraft(
                         'task',
                         attachmentId,
                         nextDraft,
-                      )
-                    }
-                    onAttachmentTextDraftChange={(attachmentId, nextValue) =>
-                      updateCorrectionAttachmentTextDraft(
-                        'task',
-                        attachmentId,
-                        nextValue,
                       )
                     }
                     onKeepAttachmentReference={(attachmentId) =>

@@ -53,6 +53,36 @@ function buildPdfProgressNote(attachment: UploadedAttachment) {
   } in this phase.`
 }
 
+export function formatElapsedTime(elapsedMs: number) {
+  const totalSeconds = Math.max(0, Math.round(elapsedMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  if (minutes <= 0) {
+    return `${seconds}s`
+  }
+
+  return `${minutes}m ${seconds.toString().padStart(2, '0')}s`
+}
+
+function buildInterpretationTimingNote(attachment: UploadedAttachment) {
+  const elapsedMs =
+    attachment.interpretationProgress?.elapsedMs
+    ?? (
+      attachment.interpretationProgress?.finishedAt
+      && attachment.interpretationProgress.startedAt
+        ? attachment.interpretationProgress.finishedAt
+          - attachment.interpretationProgress.startedAt
+        : undefined
+    )
+
+  if (typeof elapsedMs !== 'number') {
+    return null
+  }
+
+  return `Gemma interpretation took ${formatElapsedTime(elapsedMs)}.`
+}
+
 function buildStatusNotes(
   attachment: UploadedAttachment,
   status: AttachmentStatus,
@@ -74,13 +104,18 @@ function buildStatusNotes(
           ]
     case 'interpret_running':
       return [
-        `Interpreting the visible document with Gemma 4${
-          attachment.kind === 'pdf' ? ' from the first PDF pages' : ''
-        }.`,
+        attachment.interpretationProgress?.label
+          ? `${attachment.interpretationProgress.label}.`
+          : `Interpreting the visible document with Gemma 4${
+              attachment.kind === 'pdf' ? ' from the first PDF pages' : ''
+            }.`,
+        attachment.interpretationProgress?.detail,
       ]
+        .filter(Boolean) as string[]
     case 'review_ready':
       return [
         'Structured document draft is ready. Review it before using it in the source trail.',
+        buildInterpretationTimingNote(attachment),
         buildPdfProgressNote(attachment),
         ...(attachment.readContainsUnclearText
           ? ['Some wording was unclear, blank, or redacted and was preserved honestly in the extracted text.']
@@ -90,6 +125,7 @@ function buildStatusNotes(
     case 'included':
       return [
         'Reviewed upload details are included in this source trail.',
+        buildInterpretationTimingNote(attachment),
         buildPdfProgressNote(attachment),
         ...(attachment.readContainsUnclearText
           ? ['A few unclear, blank, or redacted spots were preserved so the source stays honest.']
@@ -107,10 +143,11 @@ function buildStatusNotes(
           (attachment.kind === 'text'
             ? 'We could not read this text file locally.'
             : 'We could not interpret enough of this file clearly in this phase.'),
+        buildInterpretationTimingNote(attachment),
         attachment.kind === 'pdf'
           ? 'You can keep it as a reference, paste the needed wording, or upload a shorter excerpt.'
           : 'You can keep it as a reference and type the important wording below.',
-      ]
+      ].filter(Boolean) as string[]
     default:
       return ['This file stays as a reference in this phase.']
   }

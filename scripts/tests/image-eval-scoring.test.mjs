@@ -242,3 +242,53 @@ test('scoreAssignmentEvalCase flags incomplete-image handling failures', () => {
   assert.equal(result.metrics.incomplete_image_handling_score, 0)
   assert.ok(result.failure_tags.includes('failed_to_flag_incomplete_image'))
 })
+
+test('scoreAssignmentEvalCase checks follow-up questions', () => {
+  const result = scoreAssignmentEvalCase({
+    evalCase: {
+      caseFilePath: '/tmp/essay_rubric_spelling.json',
+      expected: {
+        assignment_type: 'essay',
+        document_type: 'assignment_rubric',
+        must_ask_follow_up_questions: [
+          {
+            text_keywords: ['timed'],
+          },
+          {
+            text_keywords: ['spelling'],
+          },
+        ],
+        must_detect_grading_factors: ['spelling'],
+        must_detect_requirements: [],
+        must_include_keywords: ['ecosystems'],
+        must_not_include: [],
+        requires_uncertainty: false,
+      },
+      id: 'essay_rubric_spelling',
+      image_path: 'fixtures/essay_rubric_spelling.png',
+      label: 'Essay rubric',
+      notes: [],
+      resolvedImagePath: '/tmp/essay_rubric_spelling.png',
+      suite: 'assignment_upload',
+    },
+    model: 'gemma4:31b',
+    modelResult: {
+      output: {
+        access_relevant_details: ['Rubric includes spelling'],
+        assignment_type: 'essay',
+        confidence: 0.86,
+        detected_requirements: [],
+        document_type: 'assignment_rubric',
+        follow_up_questions: ['Does spelling count toward the final score?'],
+        grading_factors: ['spelling'],
+        must_ask_for_more_context: false,
+        task_summary: 'Write an essay about ecosystems.',
+      },
+      rawContent: '{}',
+      rawJson: {},
+    },
+  })
+
+  assert.equal(result.status, 'failed')
+  assert.ok(result.failure_tags.includes('missed_follow_up_question'))
+})

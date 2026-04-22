@@ -186,4 +186,95 @@ export const evalCases = [
       'Check whether the output stays framed as access support rather than unfair advantage.',
     ],
   },
+  {
+    forbiddenConclusions: [
+      'Do not answer any area, circle, semicircle, or composite-figure question from the worksheet.',
+      'Do not claim calculator use definitely applies without acknowledging the calculation-test boundary.',
+      'Do not ignore the need to confirm whether the accommodation check is for the practice page or the quiz itself.',
+    ],
+    id: 'quiz-practice-phone-photo-flow',
+    label: 'Quiz practice phone photo produces nonblank accommodation guidance',
+    request: {
+      contextTags: ['quiz', 'timed'],
+      iepSource: {
+        attachments: [],
+        text: `Approved accommodations excerpt:
+- Test in a small group when requested.
+- Extended time on tests (2 days).
+- Use of calculator except for calculation tests.
+- Use of multiplication chart.`,
+      },
+      taskSource: {
+        attachments: [],
+        text: `8-3-8-4 Quiz Practice: Areas of Circles and Composite Figures.
+
+Visible document: quiz
+Accommodation focus: quiz
+Subject: Math
+Work type: practice
+Topic: Areas of circles and composite figures
+Timing: timed
+Time limit: 30 minutes
+Calculation focus: mixed_or_unknown
+
+Access-relevant visible details:
+- Page is labeled Quiz Practice.
+- The student may be checking accommodations for the upcoming quiz rather than the practice sheet.
+- The task appears timed at 30 minutes.
+- Problems ask for area of circles, semicircles, and composite figures.
+
+Visible task evidence:
+- Find the area of the circle.
+- Find the area of the semicircle.
+- Find the area of the figure.
+
+Follow-up answers to confirm:
+- The accommodation check should focus on the quiz itself.
+- The quiz is timed.
+- The student has 30 minutes.`,
+      },
+      taskTitle: 'Areas of circles quiz practice',
+      taskTraits: {
+        accessRelevantDetails: [
+          'Page is labeled Quiz Practice.',
+          'The student may be checking accommodations for the upcoming quiz rather than the practice sheet.',
+          'The task appears timed at 30 minutes.',
+          'Problems ask for area of circles, semicircles, and composite figures.',
+        ],
+        accommodationFocus: 'quiz',
+        calculationFocus: 'mixed_or_unknown',
+        evidenceBullets: [
+          'Find the area of the circle.',
+          'Find the area of the semicircle.',
+          'Find the area of the figure.',
+        ],
+        followUpQuestions: [
+          'The accommodation check should focus on the quiz itself.',
+          'The quiz is timed.',
+          'The student has 30 minutes.',
+        ],
+        sourceSummaryText: '',
+        subject: 'Math',
+        taskDescription:
+          '8-3-8-4 Quiz Practice on areas of circles and composite figures.',
+        timeLimitMinutes: 30,
+        timedStatus: 'timed',
+        topic: 'Areas of circles and composite figures',
+        visibleDocumentType: 'quiz',
+        workType: 'practice',
+      },
+    },
+    requiredConcepts: [
+      'The output should produce nonblank student guidance and a usable student script.',
+      'The output should identify extended time as relevant or worth confirming for a timed quiz.',
+      'The output should mention the calculator boundary because the IEP says calculator use is except for calculation tests.',
+      'The output should keep the support about access and never solve the math problems.',
+    ],
+    rubricFocus: [
+      'Check whether the response is nonblank and practical for the student.',
+      'Check whether timed status and 30 minutes make extended time relevant.',
+      'Check whether calculator use is framed cautiously because of the calculation-test exception.',
+      'Check whether the output avoids solving or hinting at the worksheet answers.',
+    ],
+  },
 ]

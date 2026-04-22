@@ -7,13 +7,13 @@ export const confidenceSchema = z.enum([
 ])
 
 export const relevantAccommodationSchema = z.object({
-  applicationReason: z.string(),
+  applicationReason: z.string().trim().min(1),
   confidence: confidenceSchema,
-  implementationNotes: z.array(z.string()),
-  name: z.string(),
-  plainLanguage: z.string(),
-  sourceText: z.string(),
-  whyItMayMatter: z.string(),
+  implementationNotes: z.array(z.string().trim().min(1)),
+  name: z.string().trim().min(1),
+  plainLanguage: z.string().trim().min(1),
+  sourceText: z.string().trim().min(1),
+  whyItMayMatter: z.string().trim().min(1),
 })
 
 export const teacherConcernEvaluationSchema = z.object({
@@ -28,30 +28,30 @@ export const teacherConcernEvaluationSchema = z.object({
 })
 
 export const skippedAccommodationSchema = z.object({
-  name: z.string(),
-  reason: z.string(),
+  name: z.string().trim().min(1),
+  reason: z.string().trim().min(1),
 })
 
 export const coreAnalysisResultSchema = z.object({
-  boundaries: z.array(z.string()),
+  boundaries: z.array(z.string().trim().min(1)),
   notObviouslyRelevant: z.array(skippedAccommodationSchema),
   relevantAccommodations: z.array(relevantAccommodationSchema),
 })
 
 export const studentGuidanceSchema = z.object({
-  alternativeScripts: z.array(z.string()),
-  startHere: z.string(),
-  suggestedScript: z.string(),
+  alternativeScripts: z.array(z.string().trim().min(1)),
+  startHere: z.string().trim().min(1),
+  suggestedScript: z.string().trim().min(1),
 })
 
 export const parentGuidanceSchema = z.object({
-  coachNotes: z.array(z.string()),
-  summary: z.string(),
+  coachNotes: z.array(z.string().trim().min(1)),
+  summary: z.string().trim().min(1),
 })
 
 export const teacherGuidanceSchema = z.object({
-  staffNotes: z.array(z.string()),
-  summary: z.string(),
+  staffNotes: z.array(z.string().trim().min(1)),
+  summary: z.string().trim().min(1),
 })
 
 export const analysisResultSchema = coreAnalysisResultSchema.extend({

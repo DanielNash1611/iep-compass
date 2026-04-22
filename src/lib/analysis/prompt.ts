@@ -8,16 +8,22 @@ function extractExcerptLines(text: string) {
   return text
     .split('\n')
     .flatMap((line) => line.split(/[;•]/))
-    .map((line) => line.trim())
+    .map((line) => line.replace(/^[-*]\s*/, '').trim())
     .filter((line) => {
-      if (line.length === 0 || /approved accommodations excerpt/i.test(line)) {
+      if (
+        line.length === 0
+        || /approved accommodations excerpt/i.test(line)
+        || /^approved accommodations:?$/i.test(line)
+        || /^student information:?$/i.test(line)
+        || /^speech\s*&\s*assessment:?$/i.test(line)
+      ) {
         return false
       }
 
       return !/^(student name|district|dob|meeting date|learning disability or profile wording|modifications)\s*:/i.test(
         line,
       )
-        && !/^(setting\s*\/\s*scheduling|teacher directions|student response|self-regulation|organization\s*\/\s*study skills|personal care\s*\/\s*equipment)\s*:?$/i.test(
+        && !/^(setting\s*\/\s*scheduling|teacher directions|student response|self[- ]regulation(?:\s*&\s*personal care\s*\/\s*equipment)?|organization\s*\/\s*study skills|personal care\s*\/\s*equipment)\s*:?$/i.test(
           line,
         )
     })
@@ -73,11 +79,18 @@ function buildTaskReasoningText(
       ? [
           request.taskTraits.taskDescription,
           request.taskTraits.subject,
+          request.taskTraits.visibleDocumentType,
           request.taskTraits.workType,
+          request.taskTraits.accommodationFocus,
           request.taskTraits.topic,
           request.taskTraits.timedStatus,
+          typeof request.taskTraits.timeLimitMinutes === 'number'
+            ? `${request.taskTraits.timeLimitMinutes} minutes`
+            : '',
           request.taskTraits.calculationFocus,
+          ...request.taskTraits.accessRelevantDetails,
           ...request.taskTraits.evidenceBullets,
+          ...request.taskTraits.followUpQuestions,
         ].join(' ')
       : '',
     options.includeTeacherConcern ? request.teacherConcern ?? '' : '',
@@ -91,6 +104,7 @@ function deriveReasoningReminders(
   options: { includeTeacherConcern?: boolean } = {},
 ) {
   const iepText = request.iepSource.text.toLowerCase()
+  const profileContextText = `${request.iepSource.text}\n${request.learningProfile ?? ''}`.toLowerCase()
   const taskText = buildTaskReasoningText(request, options)
   const reminders: string[] = []
 
@@ -105,7 +119,7 @@ function deriveReasoningReminders(
   }
 
   if (
-    /(auditory dyslexia|sound-symbol encoding)/i.test(iepText)
+    /(auditory dyslexia|sound-symbol encoding)/i.test(profileContextText)
     && /(essay|narrative|writing|written response|draft)/i.test(taskText)
   ) {
     reminders.push(
@@ -123,7 +137,7 @@ function deriveReasoningReminders(
   }
 
   if (
-    /(auditory processing|auditory dyslexia)/i.test(iepText)
+    /(auditory processing|auditory dyslexia)/i.test(profileContextText)
     && /(multi-step|steps|directions|lab|sequence|handout)/i.test(taskText)
   ) {
     reminders.push(
@@ -213,6 +227,10 @@ function buildSharedRequestContext(
       ? excerptSummary.profileContext.map((line) => `- ${line}`).join('\n')
       : '- None detected.',
     '',
+    'Optional learning profile notes from step 1 (user-entered, explanation-only):',
+    request.learningProfile?.trim() || '- None provided.',
+    'Treat these notes as context only. They are not standalone accommodations and do not expand the approved IEP list.',
+    '',
     'Task-specific reasoning reminders:',
     reasoningReminders.length > 0
       ? reasoningReminders.map((line) => `- ${line}`).join('\n')
@@ -229,13 +247,30 @@ function buildSharedRequestContext(
       ? [
           `- Task description: ${request.taskTraits.taskDescription || 'not provided'}`,
           `- Subject: ${request.taskTraits.subject || 'unknown'}`,
+          `- Visible document: ${request.taskTraits.visibleDocumentType}`,
           `- Work type: ${request.taskTraits.workType}`,
+          `- Accommodation focus: ${request.taskTraits.accommodationFocus}`,
           `- Topic: ${request.taskTraits.topic || 'unknown'}`,
           `- Timed status: ${request.taskTraits.timedStatus}`,
+          `- Time limit: ${
+            typeof request.taskTraits.timeLimitMinutes === 'number'
+              ? `${request.taskTraits.timeLimitMinutes} minutes`
+              : 'unknown'
+          }`,
           `- Calculation focus: ${request.taskTraits.calculationFocus}`,
+          ...(request.taskTraits.accessRelevantDetails.length > 0
+            ? request.taskTraits.accessRelevantDetails.map(
+                (item) => `- Access-relevant detail: ${item}`,
+              )
+            : ['- No extra access-relevant details.']),
           ...(request.taskTraits.evidenceBullets.length > 0
             ? request.taskTraits.evidenceBullets.map((item) => `- Visible evidence: ${item}`)
             : ['- No extra visible evidence bullets.']),
+          ...(request.taskTraits.followUpQuestions.length > 0
+            ? request.taskTraits.followUpQuestions.map(
+                (item) => `- Follow-up to confirm: ${item}`,
+              )
+            : ['- No follow-up questions captured.']),
         ].join('\n')
       : '- No structured task traits were reviewed from uploads.',
     '',
@@ -302,6 +337,7 @@ export function buildCoreAnalysisSystemPrompt() {
     '- Do not place profile-only lines into relevantAccommodations or notObviouslyRelevant. Omit them from both arrays.',
     '- If every eligible accommodation line appears relevant, return an empty notObviouslyRelevant array.',
     '- Use notObviouslyRelevant only for clear mismatches. If an accommodation is relevant, possibly relevant, or needs confirmation, do not place it in notObviouslyRelevant.',
+    '- Always include at least one non-empty boundary string.',
     '- Do not repeat the same excerpt line in both relevantAccommodations and notObviouslyRelevant.',
     '- Every relevantAccommodations[*].sourceText and every notObviouslyRelevant[*].name must exactly match one eligible accommodation line.',
     '- Never create a placeholder or explanation-only notObviouslyRelevant item. If there is no eligible unused accommodation line, return [].',
@@ -355,6 +391,7 @@ export function buildStudentGuidanceSystemPrompt() {
     '- Preserve uncertainty with words like "may", "might", "looks like", or "worth checking."',
     '- Do not sound legal, clinical, or bossy.',
     '- suggestedScript and alternativeScripts should help the student ask for an accommodation respectfully before or during the task.',
+    '- Every string field must be non-empty. If there is no clear match, still write a brief next-step message telling the student what to confirm.',
     'Return valid JSON only, matching this exact structure:',
     STUDENT_GUIDANCE_OUTPUT_SHAPE,
   ].join('\n')
@@ -382,6 +419,7 @@ export function buildParentGuidanceSystemPrompt() {
     'Style rules:',
     '- Keep the summary short and practical.',
     '- coachNotes should help a grown-up coach or check logistics without taking over the student’s voice.',
+    '- Every string field must be non-empty. If there is no clear match, still summarize what to confirm next.',
     '- Keep the tone calm, supportive, and non-legal.',
     '- Preserve uncertainty and recommend staff confirmation when the core result is not settled.',
     'Return valid JSON only, matching this exact structure:',
@@ -411,6 +449,7 @@ export function buildTeacherGuidanceSystemPrompt() {
     'Style rules:',
     '- Keep the summary short, careful, and non-legal.',
     '- staffNotes should stay provisional and tied to setup, boundaries, or confirmation needs.',
+    '- Every string field must be non-empty. If there is no clear match, still summarize what staff should confirm next.',
     '- Use cautious phrasing such as "may", "appears", "worth checking", or "confirm".',
     '- Do not sound like a directive, compliance finding, or legal conclusion.',
     'Return valid JSON only, matching this exact structure:',

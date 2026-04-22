@@ -28,6 +28,10 @@ const expectedRequirementSchema = z.object({
   type: assignmentRequirementTypeSchema,
 }).strict()
 
+const expectedFollowUpQuestionSchema = z.object({
+  text_keywords: z.array(z.string().trim()).default([]),
+}).strict()
+
 export const accommodationUploadEvalCaseSchema = baseCaseSchema.extend({
   expected: z.object({
     conditions: z.array(z.string().trim()).default([]),
@@ -46,6 +50,7 @@ export const assignmentUploadEvalCaseSchema = baseCaseSchema.extend({
     document_type: imageDocumentTypeSchema,
     must_detect_grading_factors: z.array(z.string().trim()).default([]),
     must_detect_requirements: z.array(expectedRequirementSchema).default([]),
+    must_ask_follow_up_questions: z.array(expectedFollowUpQuestionSchema).default([]),
     must_include_keywords: z.array(z.string().trim()).default([]),
     must_not_include: z.array(z.string().trim()).default([]),
     requires_uncertainty: z.boolean().default(false),

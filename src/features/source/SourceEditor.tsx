@@ -1,5 +1,5 @@
 import type { ChangeEvent, ReactNode } from 'react'
-import { useId } from 'react'
+import { useEffect, useId, useState } from 'react'
 import type {
   IepReviewDraft,
   StructuredDocumentDraft,
@@ -14,6 +14,9 @@ import {
   getSourceReadyAttachments,
 } from './sourceText'
 import type { GemmaDocumentPlan } from '../upload/gemmaOcr'
+import { formatElapsedTime } from '../upload/fileUtils'
+import { formatAccommodationReviewText } from '../../lib/text/accommodationReviewFormatting'
+import { toStudentFacingFollowUp } from '../../lib/text/assignmentFollowUps'
 
 interface SourceEditorProps {
   attachments: UploadedAttachment[]
@@ -21,11 +24,15 @@ interface SourceEditorProps {
   children?: ReactNode
   documentPlan: GemmaDocumentPlan
   emptyState: string
+  onApplyAttachmentTextReview: (
+    attachmentId: string,
+    nextValue: string,
+    mode: 'add' | 'dismiss' | 'replace',
+  ) => void
   onAttachmentDocumentDraftChange: (
     attachmentId: string,
     nextDraft: UploadedAttachment['documentDraft'],
   ) => void
-  onAttachmentTextDraftChange: (attachmentId: string, nextValue: string) => void
   onChooseFiles: (files: File[]) => Promise<void>
   onKeepAttachmentReference: (attachmentId: string) => void
   onRemoveAttachment: (attachmentId: string) => void
@@ -58,6 +65,8 @@ function countLines(text: string) {
 
 function formatStatusLabel(attachment: UploadedAttachment) {
   switch (attachment.status) {
+    case 'applied_to_text':
+      return 'Added to approved wording'
     case 'text_ready':
       return 'Text ready'
     case 'interpret_ready':
@@ -83,6 +92,80 @@ function getStatusBadgeClassName(attachment: UploadedAttachment) {
   }
 
   return 'meta-badge'
+}
+
+function getInterpretationElapsedMs(attachment: UploadedAttachment, now: number) {
+  const progress = attachment.interpretationProgress
+
+  if (!progress) {
+    return 0
+  }
+
+  if (typeof progress.elapsedMs === 'number') {
+    return progress.elapsedMs
+  }
+
+  return (progress.finishedAt ?? now) - progress.startedAt
+}
+
+function getProgressStepLabel(attachment: UploadedAttachment) {
+  const progress = attachment.interpretationProgress
+
+  if (!progress?.stepIndex || !progress.stepTotal) {
+    return null
+  }
+
+  return `Step ${progress.stepIndex} of ${progress.stepTotal}`
+}
+
+function InterpretationProgressStatus({
+  attachment,
+  now,
+}: {
+  attachment: UploadedAttachment
+  now: number
+}) {
+  const progress = attachment.interpretationProgress
+
+  if (!progress) {
+    return null
+  }
+
+  const isRunning = attachment.status === 'interpret_running'
+
+  if (!isRunning && progress.phase !== 'complete') {
+    return null
+  }
+
+  const stepLabel = getProgressStepLabel(attachment)
+  const elapsedLabel = formatElapsedTime(getInterpretationElapsedMs(attachment, now))
+
+  return (
+    <div
+      className={`interpretation-progress${
+        isRunning ? ' interpretation-progress--running' : ''
+      }`}
+      aria-live={isRunning ? 'polite' : undefined}
+    >
+      <div className="interpretation-progress__header">
+        <span className="interpretation-progress__title">{progress.label}</span>
+        <span className="interpretation-progress__time">
+          {isRunning ? `${elapsedLabel} so far` : `Took ${elapsedLabel}`}
+        </span>
+      </div>
+
+      <div className="interpretation-progress__meta">
+        {stepLabel ? <span>{stepLabel}</span> : null}
+        {progress.phase === 'downloading_model' ? (
+          <span>Downloading model</span>
+        ) : null}
+      </div>
+
+      {progress.detail ? (
+        <p className="interpretation-progress__detail">{progress.detail}</p>
+      ) : null}
+    </div>
+  )
 }
 
 function getAttachmentIconName(
@@ -124,18 +207,35 @@ function formatBullets(items: string[]) {
   return items.join('\n')
 }
 
+function getFollowUpQuestionText(item: string) {
+  return toStudentFacingFollowUp(item.replace(/\s+Answer:\s*.*$/i, '').trim())
+}
+
+function getFollowUpAnswer(item: string) {
+  const match = item.match(/\s+Answer:\s*(.*)$/i)
+
+  return match?.[1]?.trim() ?? ''
+}
+
+function isYesNoQuestion(question: string) {
+  return /^check whether\b/i.test(question.trim())
+}
+
+function formatFollowUpAnswer(question: string, answer: string) {
+  const trimmedQuestion = question.trim()
+  const trimmedAnswer = answer.trim()
+
+  return trimmedAnswer ? `${trimmedQuestion} Answer: ${trimmedAnswer}` : trimmedQuestion
+}
+
 function canRunInterpretation(attachment: UploadedAttachment) {
   return (
     (attachment.kind === 'image' || attachment.kind === 'pdf') &&
-    (attachment.status === 'interpret_ready' || attachment.status === 'failed')
-  )
-}
-
-function hasIncludedSource(attachment: UploadedAttachment) {
-  return Boolean(
-    attachment.documentDraft?.sourceSummaryText?.trim()
-      || attachment.reviewedText?.trim()
-      || attachment.extractedText?.trim(),
+    (
+      attachment.status === 'interpret_ready'
+      || attachment.status === 'review_ready'
+      || attachment.status === 'failed'
+    )
   )
 }
 
@@ -158,75 +258,178 @@ function renderRawTranscript(rawTranscript?: string) {
   )
 }
 
-function TextAttachmentReview({
+function canReviewExtractedText(attachment: UploadedAttachment) {
+  return Boolean(
+    attachment.extractedText?.trim()
+    && !attachment.documentDraft
+    && (attachment.status === 'review_ready'
+      || attachment.status === 'applied_to_text'
+      || attachment.status === 'reference_only'
+      || attachment.status === 'text_ready'),
+  )
+}
+
+function TextAttachmentReviewDialog({
   attachment,
-  onAttachmentTextDraftChange,
-  onKeepAttachmentReference,
-  onUseAttachmentSource,
+  onApply,
+  onClose,
 }: {
   attachment: UploadedAttachment
-  onAttachmentTextDraftChange: (attachmentId: string, nextValue: string) => void
-  onKeepAttachmentReference: (attachmentId: string) => void
-  onUseAttachmentSource: (attachmentId: string) => void
+  onApply: (
+    attachmentId: string,
+    nextValue: string,
+    mode: 'add' | 'dismiss' | 'replace',
+  ) => void
+  onClose: () => void
 }) {
-  if (
-    !attachment.extractedText
-    || (attachment.status !== 'review_ready'
-      && attachment.status !== 'included'
-      && attachment.status !== 'reference_only'
-      && attachment.status !== 'text_ready')
-  ) {
-    return null
+  const [draftText, setDraftText] = useState(
+    () => attachment.reviewedText ?? attachment.extractedText ?? '',
+  )
+  const [findText, setFindText] = useState('')
+  const [replaceText, setReplaceText] = useState('')
+  const cleanedReviewText = formatAccommodationReviewText(draftText)
+  const canCleanFormatting = cleanedReviewText !== draftText.trim()
+  const canApplyExactFix =
+    findText.trim().length > 0
+    && replaceText.trim().length > 0
+    && draftText.includes(findText)
+
+  function applyExactFix() {
+    if (!canApplyExactFix) {
+      return
+    }
+
+    setDraftText((currentText) =>
+      currentText.replace(findText, replaceText.trim()),
+    )
+    setFindText('')
+    setReplaceText('')
   }
 
   return (
-    <div className="attachment-review">
-      <label className="textarea-label">
-        <span className="field-label__title">Review this extracted text</span>
-        <span className="field-label__help">
-          Check this wording before using it in the accommodation map.
-        </span>
-        <textarea
-          className="textarea-input textarea-input--compact"
-          rows={6}
-          value={attachment.reviewedText ?? attachment.extractedText}
-          onChange={(event) =>
-            onAttachmentTextDraftChange(attachment.id, event.target.value)
-          }
-        />
-      </label>
+    <div className="review-overlay" role="presentation">
+      <section
+        aria-labelledby="review-dialog-title"
+        aria-modal="true"
+        className="review-dialog"
+        role="dialog"
+      >
+        <div className="review-dialog__header">
+          <div>
+            <p className="eyebrow">Review upload text</p>
+            <h3 id="review-dialog-title">Check extracted accommodations</h3>
+          </div>
+          <button
+            aria-label="Close review"
+            className="ghost-button"
+            type="button"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
 
-      {attachment.readContainsUnclearText ? (
-        <p className="field-message field-message--warning">
-          This extraction includes at least one uncertain placeholder such as
-          `[unclear]`, `[blank]`, or `[redacted]`. Keep those spots cautious in the
-          source trail unless you can confirm the exact wording.
-        </p>
-      ) : null}
+        <label className="textarea-label">
+          <span className="field-label__title">Extracted text</span>
+          <span className="field-label__help">
+            Edit only what you can confirm from the uploaded document. The approved
+            wording field behind this overlay is the source of truth after you apply.
+          </span>
+          <textarea
+            className="textarea-input textarea-input--compact review-dialog__textarea"
+            value={draftText}
+            onChange={(event) => setDraftText(event.target.value)}
+          />
+        </label>
 
-      <div className="screen-actions screen-actions--split">
-        {attachment.status === 'included' ? (
-          <p className="field-message">
-            This reviewed text is already part of the source trail.
+        {attachment.readContainsUnclearText ? (
+          <p className="field-message field-message--warning">
+            This extraction includes at least one uncertain placeholder such as
+            `[unclear]`, `[blank]`, or `[redacted]`. Keep those spots cautious unless
+            you can confirm the exact wording.
           </p>
-        ) : (
+        ) : null}
+
+        <details className="review-fix-panel">
+          <summary>Fix one detail</summary>
+          <p className="field-label__help">
+            This only replaces exact text already in the draft with wording you type.
+            It will not create a new accommodation or guess missing text.
+          </p>
+          <div className="review-fix-panel__grid">
+            <label className="field-label">
+              <span className="field-label__title">Text to replace</span>
+              <input
+                className="text-input"
+                value={findText}
+                onChange={(event) => setFindText(event.target.value)}
+              />
+            </label>
+            <label className="field-label">
+              <span className="field-label__title">Use this exact wording</span>
+              <input
+                className="text-input"
+                value={replaceText}
+                onChange={(event) => setReplaceText(event.target.value)}
+              />
+            </label>
+          </div>
+          <button
+            className="ghost-button"
+            disabled={!canApplyExactFix}
+            type="button"
+            onClick={applyExactFix}
+          >
+            Apply exact fix
+          </button>
+        </details>
+
+        <div className="screen-actions screen-actions--split">
+          <button
+            className="ghost-button"
+            type="button"
+            disabled={!canCleanFormatting}
+            onClick={() => setDraftText(cleanedReviewText)}
+          >
+            Clean up formatting
+          </button>
+
+          <button
+            className="ghost-button"
+            type="button"
+            disabled={!draftText.trim()}
+            onClick={() => {
+              onApply(attachment.id, draftText, 'add')
+              onClose()
+            }}
+          >
+            Add to existing
+          </button>
+
           <button
             className="action-button"
             type="button"
-            onClick={() => onUseAttachmentSource(attachment.id)}
+            disabled={!draftText.trim()}
+            onClick={() => {
+              onApply(attachment.id, draftText, 'replace')
+              onClose()
+            }}
           >
-            Use this text in the source trail
+            Update approved wording
           </button>
-        )}
 
-        <button
-          className="ghost-button"
-          type="button"
-          onClick={() => onKeepAttachmentReference(attachment.id)}
-        >
-          Keep as reference only
-        </button>
-      </div>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => {
+              onApply(attachment.id, draftText, 'dismiss')
+              onClose()
+            }}
+          >
+            Do not use
+          </button>
+        </div>
+      </section>
     </div>
   )
 }
@@ -420,12 +623,48 @@ function TaskDocumentReview({
   onKeepAttachmentReference: (attachmentId: string) => void
   onUseAttachmentSource: (attachmentId: string) => void
 }) {
+  function updateFollowUpAnswer(index: number, answer: string) {
+    onAttachmentDocumentDraftChange(attachment.id, {
+      ...draft,
+      followUpQuestions: draft.followUpQuestions.map((item, itemIndex) =>
+        itemIndex === index
+          ? formatFollowUpAnswer(getFollowUpQuestionText(item), answer)
+          : item,
+      ),
+    })
+  }
+
   return (
     <div className="attachment-review">
+      <label className="field-label">
+        <span className="field-label__title">Visible document kind</span>
+        <span className="field-label__help">
+          Choose what this upload appears to show, not what might be on another page.
+        </span>
+        <select
+          className="text-input"
+          value={draft.visibleDocumentType}
+          onChange={(event) =>
+            onAttachmentDocumentDraftChange(attachment.id, {
+              ...draft,
+              visibleDocumentType: event.target.value as TaskReviewDraft['visibleDocumentType'],
+            })
+          }
+        >
+          <option value="assignment_details">Assignment details</option>
+          <option value="assignment_page">Assignment page</option>
+          <option value="rubric">Rubric</option>
+          <option value="worksheet">Worksheet</option>
+          <option value="quiz">Quiz</option>
+          <option value="test">Test</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </label>
+
       <label className="textarea-label">
         <span className="field-label__title">Task description</span>
         <span className="field-label__help">
-          Keep this focused on what the page appears to ask the student to do.
+          Keep this focused on the kind of work shown. Do not include answers.
         </span>
         <textarea
           className="textarea-input textarea-input--compact"
@@ -492,6 +731,29 @@ function TaskDocumentReview({
         </label>
 
         <label className="field-label">
+          <span className="field-label__title">Accommodation focus</span>
+          <span className="field-label__help">
+            Choose what the accommodation check should be about.
+          </span>
+          <select
+            className="text-input"
+            value={draft.accommodationFocus}
+            onChange={(event) =>
+              onAttachmentDocumentDraftChange(attachment.id, {
+                ...draft,
+                accommodationFocus: event.target.value as TaskReviewDraft['accommodationFocus'],
+              })
+            }
+          >
+            <option value="practice">Practice</option>
+            <option value="quiz">Quiz</option>
+            <option value="test">Test</option>
+            <option value="assignment">Assignment</option>
+            <option value="unknown">Not sure yet</option>
+          </select>
+        </label>
+
+        <label className="field-label">
           <span className="field-label__title">Timed status</span>
           <select
             className="text-input"
@@ -507,6 +769,28 @@ function TaskDocumentReview({
             <option value="untimed">Untimed</option>
             <option value="unknown">Unknown</option>
           </select>
+        </label>
+
+        <label className="field-label">
+          <span className="field-label__title">Minutes</span>
+          <span className="field-label__help">
+            Leave blank if the time limit is not confirmed.
+          </span>
+          <input
+            className="text-input"
+            min="1"
+            placeholder="30"
+            type="number"
+            value={draft.timeLimitMinutes ?? ''}
+            onChange={(event) =>
+              onAttachmentDocumentDraftChange(attachment.id, {
+                ...draft,
+                timeLimitMinutes: event.target.value
+                  ? Number(event.target.value)
+                  : null,
+              })
+            }
+          />
         </label>
 
         <label className="field-label">
@@ -529,6 +813,25 @@ function TaskDocumentReview({
       </div>
 
       <label className="textarea-label">
+        <span className="field-label__title">Access-relevant visible details</span>
+        <span className="field-label__help">
+          Add details that may affect accommodations, such as timing, rubric categories,
+          writing load, reading load, steps, materials, or calculation focus.
+        </span>
+        <textarea
+          className="textarea-input textarea-input--compact"
+          rows={4}
+          value={formatBullets(draft.accessRelevantDetails)}
+          onChange={(event) =>
+            onAttachmentDocumentDraftChange(attachment.id, {
+              ...draft,
+              accessRelevantDetails: parseBullets(event.target.value),
+            })
+          }
+        />
+      </label>
+
+      <label className="textarea-label">
         <span className="field-label__title">Visible evidence</span>
         <span className="field-label__help">
           Keep these as short observations grounded in what is visible on the page.
@@ -545,6 +848,79 @@ function TaskDocumentReview({
           }
         />
       </label>
+
+      {draft.followUpQuestions.length > 0 ? (
+        <div className="follow-up-answer-list">
+          <div>
+            <h3>Check before you use this</h3>
+            <p className="field-label__help">
+              Answer what you can. Leave anything unclear blank for now.
+            </p>
+          </div>
+
+          {draft.followUpQuestions.map((item, index) => {
+            const question = getFollowUpQuestionText(item)
+            const answer = getFollowUpAnswer(item)
+            const yesNoQuestion = isYesNoQuestion(question)
+
+            return (
+              <div key={`${question}-${index}`} className="follow-up-answer">
+                <p className="follow-up-answer__prompt">{question}</p>
+
+                {yesNoQuestion ? (
+                  <div className="segmented-group follow-up-answer__choices">
+                    {['Yes', 'No'].map((choice) => (
+                      <button
+                        key={choice}
+                        className={`segmented-choice${
+                          answer.toLowerCase() === choice.toLowerCase()
+                            ? ' segmented-choice--active'
+                            : ''
+                        }`}
+                        type="button"
+                        onClick={() =>
+                          updateFollowUpAnswer(
+                            index,
+                            answer.toLowerCase() === choice.toLowerCase()
+                              ? ''
+                              : choice,
+                          )
+                        }
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    className="text-input"
+                    placeholder="Add answer"
+                    value={answer}
+                    onChange={(event) =>
+                      updateFollowUpAnswer(index, event.target.value)
+                    }
+                  />
+                )}
+              </div>
+            )
+          })}
+
+          <details className="review-fix-panel">
+            <summary>Edit prompts</summary>
+            <textarea
+              className="textarea-input textarea-input--compact"
+              rows={4}
+              value={formatBullets(draft.followUpQuestions.map(getFollowUpQuestionText))}
+              onChange={(event) =>
+                onAttachmentDocumentDraftChange(attachment.id, {
+                  ...draft,
+                  followUpQuestions: parseBullets(event.target.value),
+                })
+              }
+            />
+          </details>
+        </div>
+      ) : null}
 
       {renderRawTranscript(attachment.rawTranscript)}
 
@@ -716,8 +1092,8 @@ export function SourceEditor({
   children,
   documentPlan,
   emptyState,
+  onApplyAttachmentTextReview,
   onAttachmentDocumentDraftChange,
-  onAttachmentTextDraftChange,
   onChooseFiles,
   onKeepAttachmentReference,
   onRemoveAttachment,
@@ -740,7 +1116,27 @@ export function SourceEditor({
   const fileInputId = useId()
   const reviewedSourceCount = getSourceReadyAttachments(attachments).length
   const pendingReviewCount = getPendingReviewAttachments(attachments).length
+  const hasRunningInterpretation = attachments.some(
+    (attachment) => attachment.status === 'interpret_running',
+  )
   const showUploadPanel = attachments.length > 0
+  const [now, setNow] = useState(() => Date.now())
+  const [requestedTextReviewId, setRequestedTextReviewId] = useState<string | null>(null)
+  const [dismissedTextReviewIds, setDismissedTextReviewIds] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const requestedTextReviewAttachment = attachments.find(
+    (attachment) =>
+      attachment.id === requestedTextReviewId && canReviewExtractedText(attachment),
+  )
+  const automaticTextReviewAttachment = attachments.find(
+    (attachment) =>
+      attachment.status === 'review_ready'
+      && canReviewExtractedText(attachment)
+      && !dismissedTextReviewIds.has(attachment.id),
+  )
+  const activeTextReviewAttachment =
+    requestedTextReviewAttachment || automaticTextReviewAttachment
 
   const {
     errorMessage,
@@ -754,6 +1150,30 @@ export function SourceEditor({
       onTextChange(appendTranscript(textValue, transcript))
     },
   })
+
+  useEffect(() => {
+    if (!hasRunningInterpretation) {
+      return undefined
+    }
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [hasRunningInterpretation])
+
+  function closeTextReview() {
+    if (activeTextReviewAttachment) {
+      setDismissedTextReviewIds((currentIds) =>
+        new Set(currentIds).add(activeTextReviewAttachment.id),
+      )
+    }
+
+    setRequestedTextReviewId(null)
+  }
 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? [])
@@ -933,8 +1353,7 @@ export function SourceEditor({
           <div className="attachment-list">
             {attachments.map((attachment) => {
               const canInterpret = canRunInterpretation(attachment)
-              const showUseButton =
-                attachment.status !== 'included' && hasIncludedSource(attachment)
+              const canOpenTextReview = canReviewExtractedText(attachment)
 
               return (
                 <article key={attachment.id} className="attachment-card">
@@ -975,13 +1394,13 @@ export function SourceEditor({
                       </button>
                     ) : null}
 
-                    {showUseButton ? (
+                    {canOpenTextReview ? (
                       <button
                         className="ghost-button"
                         type="button"
-                        onClick={() => onUseAttachmentSource(attachment.id)}
+                        onClick={() => setRequestedTextReviewId(attachment.id)}
                       >
-                        Include in source trail
+                        Review extracted text
                       </button>
                     ) : null}
 
@@ -996,12 +1415,15 @@ export function SourceEditor({
                     ) : null}
                   </div>
 
-                  <TextAttachmentReview
-                    attachment={attachment}
-                    onAttachmentTextDraftChange={onAttachmentTextDraftChange}
-                    onKeepAttachmentReference={onKeepAttachmentReference}
-                    onUseAttachmentSource={onUseAttachmentSource}
-                  />
+                  <InterpretationProgressStatus attachment={attachment} now={now} />
+
+                  {attachment.notes.length > 0 ? (
+                    <ul className="attachment-card__notes">
+                      {attachment.notes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
 
                   <StructuredAttachmentReview
                     attachment={attachment}
@@ -1026,6 +1448,14 @@ export function SourceEditor({
       {uploadsFirst ? uploadPanel : null}
       {textEditor}
       {!uploadsFirst ? uploadPanel : null}
+      {activeTextReviewAttachment ? (
+        <TextAttachmentReviewDialog
+          key={activeTextReviewAttachment.id}
+          attachment={activeTextReviewAttachment}
+          onApply={onApplyAttachmentTextReview}
+          onClose={closeTextReview}
+        />
+      ) : null}
     </div>
   )
 }

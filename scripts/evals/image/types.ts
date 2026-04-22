@@ -27,6 +27,7 @@ export type AssignmentFailureTag =
   | 'wrong_assignment_type'
   | 'missed_rubric_factor'
   | 'missed_deadline'
+  | 'missed_follow_up_question'
   | 'hallucinated_requirement'
   | 'missed_accommodation_relevant_signal'
   | 'failed_to_flag_incomplete_image'

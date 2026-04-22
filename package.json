@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "node --test --experimental-strip-types scripts/tests/*.test.mjs",
     "evals:gemma": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/run.mjs",
+    "evals:gemma:analysis:composite": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/analysisCompositeLoop.mjs",
     "evals:gemma:image": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts",
     "evals:gemma:image:accommodation": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite accommodation_upload",
     "evals:gemma:image:compare:app": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite accommodation_upload --model gemma4:e2b --fresh-process-per-case --runtime-retries 1 --json scripts/evals/image/baselines/app-gemma4-e2b-accommodation-baseline.json --md scripts/evals/image/baselines/app-gemma4-e2b-accommodation-baseline.md",

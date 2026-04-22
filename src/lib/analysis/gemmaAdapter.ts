@@ -70,6 +70,13 @@ function readConfig(): GemmaConfig {
   }
 }
 
+function readAnalysisTimeoutMs() {
+  const rawValue = import.meta.env.VITE_GEMMA_ANALYSIS_TIMEOUT_MS?.trim()
+  const parsedValue = rawValue ? Number(rawValue) : 45000
+
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 45000
+}
+
 function extractJson(content: string) {
   const fencedMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/i)
   return fencedMatch ? fencedMatch[1].trim() : content.trim()
@@ -96,6 +103,7 @@ function describeRuntime(baseUrl?: string) {
 class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
   private readonly config = readConfig()
   private readonly runtimeLabel = describeRuntime(this.config.baseUrl)
+  private readonly analysisTimeoutMs = readAnalysisTimeoutMs()
 
   getModelPlan() {
     return {
@@ -417,28 +425,48 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
       headers.Authorization = `Bearer ${this.config.apiKey}`
     }
 
-    const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
-      body: JSON.stringify({
-        messages: [
-          {
-            content: systemPrompt,
-            role: 'system',
+    const abortController = new AbortController()
+    const timeoutId = window.setTimeout(() => {
+      abortController.abort()
+    }, this.analysisTimeoutMs)
+
+    let response: Response
+
+    try {
+      response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+        body: JSON.stringify({
+          messages: [
+            {
+              content: systemPrompt,
+              role: 'system',
+            },
+            {
+              content: userPrompt,
+              role: 'user',
+            },
+          ],
+          model,
+          stream: false,
+          response_format: {
+            type: 'json_object',
           },
-          {
-            content: userPrompt,
-            role: 'user',
-          },
-        ],
-        model,
-        stream: false,
-        response_format: {
-          type: 'json_object',
-        },
-        temperature: 0.1,
-      }),
-      headers,
-      method: 'POST',
-    })
+          temperature: 0.1,
+        }),
+        headers,
+        method: 'POST',
+        signal: abortController.signal,
+      })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error(
+          `Live model request timed out after ${Math.round(this.analysisTimeoutMs / 1000)} seconds`,
+        )
+      }
+
+      throw error
+    } finally {
+      window.clearTimeout(timeoutId)
+    }
 
     if (!response.ok) {
       throw new Error(`Live model request failed with ${response.status}`)

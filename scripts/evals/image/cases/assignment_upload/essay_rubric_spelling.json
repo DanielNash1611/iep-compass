@@ -29,6 +29,14 @@
       "grammar",
       "spelling"
     ],
+    "must_ask_follow_up_questions": [
+      {
+        "text_keywords": ["timed"]
+      },
+      {
+        "text_keywords": ["spelling"]
+      }
+    ],
     "must_include_keywords": [
       "ecosystems",
       "friday"

@@ -1,0 +1,305 @@
+{
+  "generated_at": "2026-04-22T02:51:49.118Z",
+  "judge_mode": "off",
+  "judge_model": "gemma4:31b",
+  "model": "gemma4:e2b",
+  "suites": [
+    {
+      "cases": [
+        {
+          "case": {
+            "id": "quiz_practice_sheet_phone_photo",
+            "image_path": "scripts/evals/image/fixtures/assignment_upload/quiz_practice_sheet_phone_photo.jpg",
+            "label": "Quiz practice sheet phone photo",
+            "notes": [
+              "Real phone photo of a math quiz practice sheet with completed answers and timing ambiguity.",
+              "Should identify the page as quiz practice, avoid answering the math, and ask whether accommodations should be checked for the practice work or the actual quiz."
+            ],
+            "expected": {
+              "assignment_type": "math_assignment",
+              "document_type": "assignment_page",
+              "must_detect_grading_factors": [],
+              "must_detect_requirements": [
+                {
+                  "text_keywords": [
+                    "area",
+                    "circle"
+                  ],
+                  "type": "math_computation"
+                },
+                {
+                  "text_keywords": [
+                    "semicircle"
+                  ],
+                  "type": "math_computation"
+                }
+              ],
+              "must_ask_follow_up_questions": [
+                {
+                  "text_keywords": [
+                    "practice",
+                    "quiz"
+                  ]
+                },
+                {
+                  "text_keywords": [
+                    "timed"
+                  ]
+                },
+                {
+                  "text_keywords": [
+                    "minutes"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "quiz practice",
+                "areas of circles",
+                "composite figures"
+              ],
+              "must_not_include": [
+                "write an essay",
+                "spelling"
+              ],
+              "requires_uncertainty": false
+            },
+            "suite": "assignment_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/assignment_upload/quiz_practice_sheet_phone_photo.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/assignment_upload/quiz_practice_sheet_phone_photo.jpg"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "key": "valid_structured_json",
+                "passed": true
+              },
+              {
+                "key": "required_fields_present",
+                "passed": true
+              },
+              {
+                "key": "confidence_in_range",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "pipeline": "vision_extract_then_structure",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/api/chat (ollama sdk)",
+            "totalTimeoutMs": 600000,
+            "transport": "ollama_sdk",
+            "originalAsset": {
+              "bytes": 3472161,
+              "dimensions": {
+                "height": 3000,
+                "width": 4000
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/assignment_upload/quiz_practice_sheet_phone_photo.jpg"
+            },
+            "finalAsset": {
+              "bytes": 360169,
+              "dimensions": {
+                "height": 960,
+                "width": 1280
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-WxKlHZ/quiz_practice_sheet_phone_photo-ollama.jpg"
+            },
+            "preprocessRuntimeMs": 189,
+            "extractionPreview": "**Document Type:** Math Assignment / Practice Worksheet\n\n**Summary of Task:**\nThe document is a practice worksheet focused on finding the area of figures, specifically referencing \"Area of Circles\" and \"Composite Figures.\" The numbered items (1 through 6) require students to find the area based on given parameters (e.g., finding the area of a circle or composite shapes).\n\n**Visible Requirements/Directions:**\nThe worksheet is structured with six main problems, each requiring the student to find a",
+            "extractionRuntimeMs": 10937,
+            "firstChunkMs": 1049,
+            "firstContentMs": 7191,
+            "structuringRuntimeMs": 12719,
+            "runtimeMs": 24017,
+            "runnerAttempts": [],
+            "runnerIsolation": "same_process"
+          },
+          "failure_tags": [
+            "missed_accommodation_relevant_signal",
+            "ocr_failure"
+          ],
+          "field": {
+            "checks": [
+              {
+                "details": "expected assignment_page, received assignment_page",
+                "key": "document_type_match",
+                "passed": true
+              },
+              {
+                "details": "expected math_assignment, received math_assignment",
+                "key": "assignment_type_match",
+                "passed": true
+              },
+              {
+                "details": "expected math_computation",
+                "key": "requirement_math_computation",
+                "passed": false
+              },
+              {
+                "details": "expected math_computation",
+                "key": "requirement_math_computation",
+                "passed": false
+              },
+              {
+                "details": "practice, quiz",
+                "key": "follow_up_question_practice_quiz",
+                "passed": true
+              },
+              {
+                "details": "timed",
+                "key": "follow_up_question_timed",
+                "passed": true
+              },
+              {
+                "details": "minutes",
+                "key": "follow_up_question_minutes",
+                "passed": true
+              },
+              {
+                "details": "quiz practice",
+                "key": "must_include_quiz practice",
+                "passed": false
+              },
+              {
+                "details": "areas of circles",
+                "key": "must_include_areas of circles",
+                "passed": false
+              },
+              {
+                "details": "composite figures",
+                "key": "must_include_composite figures",
+                "passed": true
+              },
+              {
+                "details": "write an essay",
+                "key": "must_not_include_write an essay",
+                "passed": true
+              },
+              {
+                "details": "spelling",
+                "key": "must_not_include_spelling",
+                "passed": true
+              },
+              {
+                "details": "confidence=1; must_ask_for_more_context=false",
+                "key": "uncertainty_handling",
+                "passed": true
+              }
+            ],
+            "passed": false,
+            "score": 0.6923076923076923
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": null,
+            "field_score": 0.6923076923076923,
+            "hallucination_flagged": 0,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 1
+          },
+          "model": "gemma4:e2b",
+          "output": {
+            "access_relevant_details": [
+              "Document is a practice worksheet focused on finding the area of figures (Area of Circles and Composite Figures).",
+              "The document is a printed assignment or practice material.",
+              "Period: 4"
+            ],
+            "assignment_type": "math_assignment",
+            "confidence": 1,
+            "detected_requirements": [
+              {
+                "text": "Finding the area of figures",
+                "type": "math_computation"
+              },
+              {
+                "text": "Worksheet structure (6 numbered items)",
+                "type": "multi_step_instructions"
+              },
+              {
+                "text": "Written response",
+                "type": "written_output"
+              }
+            ],
+            "document_type": "assignment_page",
+            "follow_up_questions": [
+              "If it is timed, how many minutes does the student have?",
+              "Is this a calculation test or quiz where calculator use is restricted?",
+              "Does this practice work need to be completed under timed conditions, and if so, what is the allotted time?",
+              "Does the accommodation check need to focus on the practice work presented here, or is the focus on a hypothetical future quiz/test?"
+            ],
+            "grading_factors": [
+              "None visible"
+            ],
+            "must_ask_for_more_context": false,
+            "task_summary": "Practice worksheet focused on finding the area of circles and composite figures through six numbered problems."
+          },
+          "raw_content": "```json\n{\n  \"access_relevant_details\": [\n    \"Document is a practice worksheet focused on finding the area of figures (Area of Circles and Composite Figures).\",\n    \"The document is a printed assignment or practice material.\",\n    \"Period: 4\"\n  ],\n  \"assignment_type\": \"math_assignment\",\n  \"confidence\": 1.0,\n  \"detected_requirements\": [\n    {\n      \"text\": \"Finding the area of figures\",\n      \"type\": \"math_computation\"\n    },\n    {\n      \"text\": \"Worksheet structure (6 numbered items)\",\n      \"type\": \"multi_step_instructions\"\n    },\n    {\n      \"text\": \"Written response\",\n      \"type\": \"written_output\"\n    }\n  ],\n  \"document_type\": \"assignment_page\",\n  \"follow_up_questions\": [\n    \"Does this practice work need to be completed under timed conditions, and if so, what is the allotted time?\",\n    \"Does the accommodation check need to focus on the practice work presented here, or is the focus on a hypothetical future quiz/test?\"\n  ],\n  \"task_summary\": \"Practice worksheet focused on finding the area of circles and composite figures through six numbered problems.\",\n  \"grading_factors\": [\n    \"None visible\"\n  ],\n  \"must_ask_for_more_context\": false\n}\n```",
+          "raw_json": {
+            "access_relevant_details": [
+              "Document is a practice worksheet focused on finding the area of figures (Area of Circles and Composite Figures).",
+              "The document is a printed assignment or practice material.",
+              "Period: 4"
+            ],
+            "assignment_type": "math_assignment",
+            "confidence": 1,
+            "detected_requirements": [
+              {
+                "text": "Finding the area of figures",
+                "type": "math_computation"
+              },
+              {
+                "text": "Worksheet structure (6 numbered items)",
+                "type": "multi_step_instructions"
+              },
+              {
+                "text": "Written response",
+                "type": "written_output"
+              }
+            ],
+            "document_type": "assignment_page",
+            "follow_up_questions": [
+              "Does this practice work need to be completed under timed conditions, and if so, what is the allotted time?",
+              "Does the accommodation check need to focus on the practice work presented here, or is the focus on a hypothetical future quiz/test?"
+            ],
+            "task_summary": "Practice worksheet focused on finding the area of circles and composite figures through six numbered problems.",
+            "grading_factors": [
+              "None visible"
+            ],
+            "must_ask_for_more_context": false
+          },
+          "status": "failed"
+        }
+      ],
+      "suite": "assignment_upload",
+      "summary": {
+        "average_field_score": 0.692,
+        "average_judge_dimensions": {},
+        "average_judge_overall": null,
+        "average_uncertainty_handling_score": 1,
+        "case_ids_failed": [
+          "quiz_practice_sheet_phone_photo"
+        ],
+        "condition_preservation_score": null,
+        "executed_cases": 1,
+        "failed_cases": 1,
+        "failure_tag_counts": {
+          "missed_accommodation_relevant_signal": 1,
+          "ocr_failure": 1
+        },
+        "hallucination_rate": 0,
+        "incomplete_image_handling_score": null,
+        "pass_rate": 0,
+        "passed_cases": 0,
+        "skipped_cases": 0,
+        "total_cases": 1
+      }
+    }
+  ]
+}

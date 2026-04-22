@@ -85,10 +85,12 @@ export const assignmentRequirementSchema = z.object({
 }).strict()
 
 export const assignmentUploadInterpretationSchema = z.object({
+  access_relevant_details: z.array(z.string().trim().min(1)).default([]),
   assignment_type: assignmentTypeSchema,
   confidence: z.number().min(0).max(1),
   detected_requirements: z.array(assignmentRequirementSchema),
   document_type: imageDocumentTypeSchema,
+  follow_up_questions: z.array(z.string().trim().min(1)).default([]),
   grading_factors: z.array(z.string().trim().min(1)),
   must_ask_for_more_context: z.boolean(),
   task_summary: z.string().trim().min(1),

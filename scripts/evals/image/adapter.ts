@@ -20,6 +20,7 @@ import {
   mergeAccommodationPhotoRecoveryTileDrafts,
   shouldTriggerAccommodationFocusedRecovery,
 } from '../../../src/lib/text/accommodationImagePrep.ts'
+import { buildAssignmentFollowUpQuestions } from '../../../src/lib/text/assignmentFollowUps.ts'
 import type { ImageEvalConfig } from './config.ts'
 import { classifyImageEvalFailure } from './failureMode.ts'
 import {
@@ -100,6 +101,40 @@ async function inspectImageAsset(imagePath: string): Promise<ImageAssetDetails> 
 }
 
 type InterpretationTask = 'accommodation' | 'assignment'
+
+function normalizeAssignmentEvalOutput(
+  output: AssignmentUploadInterpretation,
+): AssignmentUploadInterpretation {
+  const gradingText = output.grading_factors.join(' ').toLowerCase()
+  const hasSpellingMechanicsFactor = /spelling|grammar|mechanics/.test(gradingText)
+  const hasCountedSpellingRequirement = output.detected_requirements.some(
+    (requirement) =>
+      requirement.type === 'spelling_mechanics'
+      && /spelling|grammar|mechanics/i.test(requirement.text)
+      && /count|score|grade|rubric/i.test(requirement.text),
+  )
+  const detectedRequirements =
+    hasSpellingMechanicsFactor && !hasCountedSpellingRequirement
+      ? output.detected_requirements.concat({
+          text: 'Spelling or grammar count toward the rubric score.',
+          type: 'spelling_mechanics',
+        })
+      : output.detected_requirements
+
+  return {
+    ...output,
+    detected_requirements: detectedRequirements,
+    follow_up_questions: buildAssignmentFollowUpQuestions({
+      accessRelevantDetails: output.access_relevant_details,
+      assignmentType: output.assignment_type,
+      detectedRequirements,
+      followUpQuestions: output.follow_up_questions,
+      gradingFactors: output.grading_factors,
+      taskSummary: output.task_summary,
+      visibleDocumentType: output.document_type,
+    }),
+  }
+}
 
 async function preprocessImageForLocalOllama(
   imagePath: string,
@@ -447,9 +482,14 @@ class GemmaVisionEvalAdapter implements VisionModelAdapter {
         diagnostics.failurePoint = undefined
         diagnostics.runtimeMs = Date.now() - startedAt
 
+        const output =
+          options.task === 'assignment'
+            ? normalizeAssignmentEvalOutput(parsed.data as AssignmentUploadInterpretation)
+            : parsed.data
+
         return {
           diagnostics,
-          output: parsed.data,
+          output: output as TOutput,
           rawContent: structuringResponse.rawContent,
           rawJson,
         }

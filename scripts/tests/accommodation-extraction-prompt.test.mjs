@@ -7,6 +7,7 @@ import {
   buildAccommodationFocusedExtractionPrompt,
 } from '../../src/lib/text/accommodationExtractionPrompt.ts'
 import { selectAccommodationDraft } from '../../src/lib/text/accommodationDraftSelection.ts'
+import { formatAccommodationReviewText } from '../../src/lib/text/accommodationReviewFormatting.ts'
 
 test('buildAccommodationExtractionPrompt includes the direct-paste structure and uncertainty markers', () => {
   const prompt = buildAccommodationExtractionPrompt({
@@ -147,4 +148,71 @@ test('selectAccommodationDraft prefers a focused recovery draft over a heading-o
   ].join('\n')
 
   assert.equal(selectAccommodationDraft([headingOnly, focusedRecovery]), focusedRecovery)
+})
+
+test('formatAccommodationReviewText turns raw accommodation extraction into editable sections', () => {
+  const rawText = [
+    'Accommodations need for student to be invo[lved]',
+    'Note: Accommodations do NOT fundamentally alter or lower',
+    'SETTING / SCHEDULING',
+    'Test in small group when requested',
+    'Extended time to complete assignments (2 days)',
+    'Extended time on tests (2 days)',
+    'Seat away from distractions/noise',
+    'TEACHER DIRECTIONS',
+    'Directions given in a variety of ways',
+    'Frequent checks for understanding',
+    'SPEECH & ASSESSMENT',
+    'STUDENT RESPONSE',
+    'Speech-to-text application',
+    'No penalty for spelling except on spelling task',
+  ].join('\n')
+
+  assert.equal(
+    formatAccommodationReviewText(rawText),
+    [
+      'Accommodations need for student to be invo[lved]',
+      'Note: Accommodations do NOT fundamentally alter or lower',
+      '',
+      'Setting / Scheduling:',
+      '- Test in small group when requested',
+      '- Extended time to complete assignments (2 days)',
+      '- Extended time on tests (2 days)',
+      '- Seat away from distractions/noise',
+      '',
+      'Teacher Directions:',
+      '- Directions given in a variety of ways',
+      '- Frequent checks for understanding',
+      '',
+      'Speech & Assessment',
+      '',
+      'Student Response:',
+      '- Speech-to-text application',
+      '- No penalty for spelling except on spelling task',
+    ].join('\n'),
+  )
+})
+
+test('formatAccommodationReviewText keeps form metadata readable without turning it into accommodations', () => {
+  const rawText = [
+    'STUDENT INFORMATION',
+    'Student Name: Juliette',
+    'Meeting Date: 11/19/2025',
+    'WRITING ACCOMMODATIONS',
+    'Spelling errors will not reduce score except when spelling is part of the rubric.',
+    '- Speech-to-text permitted for multi-paragraph writing tasks.',
+  ].join('\n')
+
+  assert.equal(
+    formatAccommodationReviewText(rawText),
+    [
+      'Student Information',
+      'Student Name: Juliette',
+      'Meeting Date: 11/19/2025',
+      '',
+      'Writing Accommodations:',
+      '- Spelling errors will not reduce score except when spelling is part of the rubric.',
+      '- Speech-to-text permitted for multi-paragraph writing tasks.',
+    ].join('\n'),
+  )
 })

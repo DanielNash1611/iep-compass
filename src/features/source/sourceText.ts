@@ -9,11 +9,97 @@ function uniqueTextBlocks(blocks: string[]) {
   return Array.from(new Set(blocks.map((block) => block.trim()).filter(Boolean)))
 }
 
+function normalizeSourceReviewLine(line: string) {
+  return line
+    .replace(/^[-*•]\s*/, '')
+    .replace(/^\d+[.)]\s*/, '')
+    .replace(/:$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+function looksLikeReviewHeading(line: string) {
+  const trimmedLine = line.trim()
+
+  if (/^[-*•]|\d+[.)]\s/.test(trimmedLine)) {
+    return false
+  }
+
+  return trimmedLine.endsWith(':') || /^[A-Z][A-Za-z\s/&-]{3,48}$/.test(trimmedLine)
+}
+
 export function mergeSourceTextBlock(currentText: string, nextBlock: string) {
   return uniqueTextBlocks([
     ...currentText.split(/\n\s*\n/),
     nextBlock,
   ]).join('\n\n')
+}
+
+export function addMissingSourceTextBlock(currentText: string, nextBlock: string) {
+  const existingLineKeys = new Set(
+    currentText
+      .split('\n')
+      .map(normalizeSourceReviewLine)
+      .filter(Boolean),
+  )
+  const missingBlocks = nextBlock
+    .split(/\n\s*\n/)
+    .map((block) => block.split('\n').map((line) => line.trim()).filter(Boolean))
+    .flatMap((lines) => {
+      const missingLines = lines.filter((line) => {
+        const lineKey = normalizeSourceReviewLine(line)
+        return lineKey && !existingLineKeys.has(lineKey)
+      })
+
+      if (missingLines.length === 0) {
+        return []
+      }
+
+      const firstLine = lines[0]
+
+      if (
+        firstLine
+        && looksLikeReviewHeading(firstLine)
+        && !missingLines.includes(firstLine)
+      ) {
+        return [[firstLine, ...missingLines].join('\n')]
+      }
+
+      return [missingLines.join('\n')]
+    })
+
+  return mergeSourceTextBlock(currentText, missingBlocks.join('\n\n'))
+}
+
+export function replaceSourceTextBlock(
+  currentText: string,
+  previousBlock: string | undefined,
+  nextBlock: string,
+) {
+  const trimmedPreviousBlock = previousBlock?.trim()
+  const trimmedNextBlock = nextBlock.trim()
+  const blocks = currentText.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean)
+
+  if (!trimmedPreviousBlock) {
+    return mergeSourceTextBlock(currentText, trimmedNextBlock)
+  }
+
+  let replaced = false
+  const nextBlocks = blocks.flatMap((block) => {
+    if (block !== trimmedPreviousBlock) {
+      return [block]
+    }
+
+    replaced = true
+    return trimmedNextBlock ? [trimmedNextBlock] : []
+  })
+
+  if (!replaced && trimmedNextBlock) {
+    nextBlocks.push(trimmedNextBlock)
+  }
+
+  return uniqueTextBlocks(nextBlocks).join('\n\n')
 }
 
 function formatLabeledLines(label: string, values: string[]) {
@@ -44,14 +130,30 @@ export function buildIepSourceSummary(draft: IepReviewDraft) {
 }
 
 export function buildTaskSourceSummary(draft: TaskReviewDraft) {
+  const accessRelevantDetails = draft.accessRelevantDetails ?? []
+  const evidenceBullets = draft.evidenceBullets ?? []
+  const followUpQuestions = draft.followUpQuestions ?? []
+  const visibleDocumentType = draft.visibleDocumentType ?? 'unknown'
+  const accommodationFocus = draft.accommodationFocus ?? 'unknown'
   const lines = [
     draft.taskDescription.trim(),
+    visibleDocumentType !== 'unknown'
+      ? `Visible document: ${visibleDocumentType}`
+      : '',
     draft.subject.trim() ? `Subject: ${draft.subject.trim()}` : '',
+    accommodationFocus !== 'unknown'
+      ? `Accommodation focus: ${accommodationFocus}`
+      : '',
     draft.workType !== 'unknown' ? `Work type: ${draft.workType}` : '',
     draft.topic.trim() ? `Topic: ${draft.topic.trim()}` : '',
     draft.timedStatus !== 'unknown' ? `Timing: ${draft.timedStatus}` : '',
+    typeof draft.timeLimitMinutes === 'number'
+      ? `Time limit: ${draft.timeLimitMinutes} minutes`
+      : '',
     `Calculation focus: ${draft.calculationFocus}`,
-    formatLabeledLines('Visible task evidence', draft.evidenceBullets),
+    formatLabeledLines('Access-relevant visible details', accessRelevantDetails),
+    formatLabeledLines('Visible task evidence', evidenceBullets),
+    formatLabeledLines('Follow-up answers to confirm', followUpQuestions),
   ]
 
   return lines.filter(Boolean).join('\n\n')
@@ -94,7 +196,11 @@ export function normalizeDocumentDraft(
 }
 
 export function getAttachmentSourceText(attachment: UploadedAttachment) {
-  if (attachment.status !== 'included' && attachment.status !== 'text_ready') {
+  if (
+    attachment.status !== 'included'
+    && attachment.status !== 'applied_to_text'
+    && attachment.status !== 'text_ready'
+  ) {
     return ''
   }
 
@@ -103,6 +209,18 @@ export function getAttachmentSourceText(attachment: UploadedAttachment) {
   }
 
   return attachment.reviewedText?.trim() ?? ''
+}
+
+export function getAttachmentPreviousSourceText(attachment: UploadedAttachment) {
+  if (attachment.sourceTrailText?.trim()) {
+    return attachment.sourceTrailText.trim()
+  }
+
+  if (attachment.documentDraft?.sourceSummaryText?.trim()) {
+    return attachment.documentDraft.sourceSummaryText.trim()
+  }
+
+  return attachment.extractedText?.trim() ?? ''
 }
 
 export function getReadableAttachmentSourceText(attachment: UploadedAttachment) {
@@ -177,7 +295,7 @@ export function hasUsableSourceText(source: SourceMaterial) {
 export function getPrimaryTaskTraits(source: SourceMaterial): TaskReviewDraft | null {
   const attachment = source.attachments.find(
     (candidate) =>
-      candidate.status === 'included'
+      (candidate.status === 'included' || candidate.status === 'applied_to_text')
       && candidate.documentKind === 'assignment_or_quiz'
       && candidate.documentDraft
       && 'taskDescription' in candidate.documentDraft,

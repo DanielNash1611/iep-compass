@@ -2,6 +2,14 @@ import {
   parseDocumentReadingResult,
   type DocumentReadingResult,
 } from '../../lib/schema/ocrSchema'
+import {
+  buildTaskDocumentResultFromPlainText,
+} from '../../lib/schema/taskDocumentFromText'
+import {
+  describeObjectKeys,
+  parseJsonFromModelOutput,
+} from '../../lib/model/structuredOutput'
+import { recoverBlankTaskDocumentResult } from '../../lib/schema/documentReadingRecovery'
 import { GEMMA_LOCAL_MODEL_ID } from '../../lib/analysis/prompt'
 import { selectAccommodationDraft } from '../../lib/text/accommodationDraftSelection'
 import {
@@ -20,7 +28,10 @@ import {
   type AccommodationDraftHealth,
   type AccommodationImagePrepAsset,
 } from '../../lib/text/accommodationImagePrep'
-import type { UploadedAttachment } from '../../types/analysis'
+import type {
+  AttachmentInterpretationPhase,
+  UploadedAttachment,
+} from '../../types/analysis'
 import { renderPdfPagesToImageDataUrls } from './pdfPageImages'
 
 interface OpenAICompatibleResponse {
@@ -77,6 +88,18 @@ export interface GemmaIepTextReadingResult {
   usedFallback: boolean
 }
 
+export interface GemmaReadingProgressUpdate {
+  detail?: string
+  label: string
+  phase: AttachmentInterpretationPhase
+  stepIndex?: number
+  stepTotal?: number
+}
+
+export type GemmaReadingProgressReporter = (
+  update: GemmaReadingProgressUpdate,
+) => void
+
 type SourceKey = 'iep' | 'task'
 
 const DOCUMENT_SYSTEM_PROMPT = [
@@ -84,16 +107,68 @@ const DOCUMENT_SYSTEM_PROMPT = [
   'Look at the image and interpret what kind of school document it appears to be.',
   'Extract exact visible wording when you can, but also organize it into a structured review draft.',
   'Never invent diagnosis wording, accommodations, assignment directions, or missing document details.',
+  'Never answer assignment, quiz, worksheet, or test questions.',
   'If text is blurry or unreadable, preserve [unclear] instead of guessing.',
   'For IEP accommodation forms: group accommodations by the visible section labels on the page when possible.',
-  'For assignment or quiz pages: describe the task, subject, work type, topic, timing, and whether it appears focused on calculation skill versus broader geometry or reasoning work.',
+  'For assignment uploads: do not perform full text extraction, but preserve short visible wording for key requirements, deadlines, grading factors, and directions.',
+  'For assignment uploads: preserve visible title and label wording such as "Quiz Practice", "Areas of Circles", or "Composite Figures" inside taskDescription or evidenceBullets when visible.',
+  'For assignment uploads: identify whether the visible page is assignment_details, assignment_page, rubric, worksheet, quiz, test, or unknown.',
+  'For assignment uploads: describe the task type and visible access-relevant details, such as timing, rubric categories, spelling/mechanics grading, reading load, writing load, number of steps, required materials, or calculation focus.',
+  'For assignment uploads: include short student-facing followUpQuestions that would clarify accommodation relevance, such as "Check whether this task is timed.", "Write how many minutes you have if this task is timed.", or "Check whether your accommodations should be matched to this practice work, the actual quiz/test, or both.".',
+  'For assignment uploads: use accommodationFocus to capture whether the accommodation check should focus on assignment, practice, quiz, test, or unknown.',
+  'For assignment uploads: use timeLimitMinutes only when a visible time limit is clear; otherwise use null and ask a follow-up question.',
   'Use cautious inference for task traits. If something is not visible enough, leave it empty or mark it unknown.',
   'Return JSON only with one of these document kinds: iep_accommodations, assignment_or_quiz, unknown.',
   'Every reviewDraft must include sourceSummaryText as a normalized text summary for downstream mapping.',
+  'Use this exact top-level JSON shape: {"documentKind":"assignment_or_quiz","confidenceFlags":{"containsUnclearText":false,"isPartialDocument":false,"lowConfidence":false},"notes":[],"rawTranscript":"visible wording only","reviewDraft":{...}}.',
+  'For assignment_or_quiz reviewDraft, include: taskDescription, subject, topic, workType, visibleDocumentType, timedStatus, timeLimitMinutes, calculationFocus, accommodationFocus, accessRelevantDetails, evidenceBullets, followUpQuestions, sourceSummaryText.',
 ].join('\n')
+
+const TASK_TEXT_SYSTEM_PROMPT = [
+  'You are a careful document-reading assistant for IEP Compass.',
+  'Look at the image and describe the visible school task document in short plain text.',
+  'Do not return JSON, markdown, code fences, or a schema.',
+  'Do not transcribe the whole page.',
+  'Never answer worksheet, quiz, assignment, or test questions.',
+  'Focus on document type, task summary, subject/topic if visible, timing clues, rubric or grading factors, calculation focus, and what a student or family should confirm before matching accommodations.',
+  'If the page is unreadable or does not appear to be schoolwork, say that plainly instead of guessing.',
+].join('\n')
+
+const TASK_IMAGE_LONG_SIDE = 1280
+const TASK_IMAGE_MAX_BYTES = 750_000
+const TASK_IMAGE_QUALITY = 0.75
 
 function formatModelLabel(model: string) {
   return model
+}
+
+function logGemmaStage(stage: string, details: Record<string, unknown> = {}) {
+  console.debug('[IEP Compass Gemma]', stage, details)
+}
+
+function warnGemmaStage(stage: string, details: Record<string, unknown> = {}) {
+  console.warn('[IEP Compass Gemma]', stage, details)
+}
+
+function describeDataUrl(imageDataUrl: string) {
+  const mimeMatch = imageDataUrl.match(/^data:([^;,]+)/)
+
+  return {
+    chars: imageDataUrl.length,
+    mimeType: mimeMatch?.[1] ?? 'unknown',
+  }
+}
+
+function describeAsset(asset?: AccommodationImagePrepAsset) {
+  if (!asset) {
+    return undefined
+  }
+
+  return {
+    bytes: asset.bytes,
+    dimensions: asset.dimensions,
+    mimeType: asset.mimeType,
+  }
 }
 
 function describeRuntime(baseUrl?: string) {
@@ -131,11 +206,6 @@ function readConfig(): GemmaDocumentConfig {
   }
 }
 
-function extractJson(content: string) {
-  const fencedMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/i)
-  return fencedMatch ? fencedMatch[1].trim() : content.trim()
-}
-
 function extractPlainText(content: string) {
   const fencedMatch = content.match(/```(?:text|txt|markdown)?\s*([\s\S]*?)```/i)
   return fencedMatch ? fencedMatch[1].trim() : content.trim()
@@ -169,6 +239,11 @@ function buildDocumentReadingInstruction(
       : [
           'This upload was added under the assignment or quiz source area.',
           'Prefer assignment_or_quiz when the page looks like classwork, a worksheet, a quiz, or a test, but return unknown if that is not actually visible.',
+          'For the assignment reviewDraft, include visibleDocumentType, accommodationFocus, timeLimitMinutes, accessRelevantDetails, and followUpQuestions.',
+          'If the page shows quiz practice, add a student-facing prompt to check whether the accommodation match should focus on the practice sheet, the quiz itself, or both.',
+          'If timing is visible or likely but not fully confirmed, add student-facing prompts to check whether it is timed and write how many minutes they have.',
+          'If the page appears to be a worksheet, quiz, test, practice sheet, assignment page, or schoolwork, return assignment_or_quiz even when some text is unreadable.',
+          'For task uploads, never return a blank review draft. If you cannot read enough detail, fill taskDescription with a cautious visible summary and add followUpQuestions for the missing context.',
         ]
 
   const pageInstruction =
@@ -181,9 +256,33 @@ function buildDocumentReadingInstruction(
     ...sourceExpectation,
     'Read the visible page carefully and build the structured document review result.',
     'Keep the rawTranscript faithful to the visible wording.',
-    'For task pages, do not decide the final accommodation mapping here. Only summarize the task and its visible traits.',
+    'For task pages, do not decide the final accommodation mapping here. Only summarize the task, visible traits, relevant details, and short follow-up questions.',
+    'Every text field shown to the user should contain useful reviewable wording when the page is schoolwork; do not leave the review draft blank.',
   ].join(' ')
 }
+
+function buildTaskTextReadingInstruction(
+  attachmentName: string,
+  kind: UploadedAttachment['kind'],
+  pageIndex?: number,
+  pageCount?: number,
+) {
+  const pageInstruction =
+    kind === 'pdf' && pageIndex && pageCount
+      ? `This image is page ${pageIndex} of ${pageCount} from the PDF "${attachmentName}".`
+      : `This image comes from the uploaded ${kind} file "${attachmentName}".`
+
+  return [
+    pageInstruction,
+    'Return 4 to 8 short plain-text lines.',
+    'Include the visible document kind if you can tell: assignment details, assignment page, rubric, worksheet, quiz, test, practice, or unknown.',
+    'Include a cautious task summary based only on what is visible.',
+    'Include access-relevant details such as timing, reading load, writing load, multi-step directions, rubric categories, required materials, allowed tools, or calculation focus.',
+    'Include short student-facing follow-up prompts for unclear context, especially whether a practice page should be checked as practice or for the actual quiz/test, and whether the task is timed.',
+    'Use [unclear] for important details that appear present but unreadable.',
+  ].join(' ')
+}
+
 
 function buildIepTextReadingInstruction(
   attachmentName: string,
@@ -289,6 +388,74 @@ async function inspectBrowserImageFile(file: File): Promise<AccommodationImagePr
         width: image.naturalWidth,
       },
       mimeType: getImageMimeType(file),
+    }
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
+async function prepareTaskImageForReading(file: File) {
+  const originalAsset = await inspectBrowserImageFile(file)
+  const longSide = Math.max(
+    originalAsset.dimensions.width,
+    originalAsset.dimensions.height,
+  )
+  const shouldNormalize =
+    longSide > TASK_IMAGE_LONG_SIDE
+    || originalAsset.bytes > TASK_IMAGE_MAX_BYTES
+    || !['image/jpeg', 'image/png', 'image/webp'].includes(originalAsset.mimeType)
+
+  if (!shouldNormalize) {
+    return {
+      imageDataUrl: await fileToDataUrl(file),
+      originalAsset,
+      normalizedAsset: undefined,
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(file)
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image()
+
+      element.onload = () => resolve(element)
+      element.onerror = () => reject(new Error('The image could not be prepared for document reading.'))
+      element.src = objectUrl
+    })
+    const scale = TASK_IMAGE_LONG_SIDE / longSide
+    const targetWidth = Math.max(1, Math.round(image.naturalWidth * scale))
+    const targetHeight = Math.max(1, Math.round(image.naturalHeight * scale))
+    const canvas = document.createElement('canvas')
+
+    canvas.width = targetWidth
+    canvas.height = targetHeight
+
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      throw new Error('The image could not be prepared for document reading.')
+    }
+
+    context.drawImage(image, 0, 0, targetWidth, targetHeight)
+
+    const normalizedBlob = await canvasToBlob(
+      canvas,
+      'image/jpeg',
+      TASK_IMAGE_QUALITY,
+    )
+
+    return {
+      imageDataUrl: await blobToDataUrl(normalizedBlob),
+      normalizedAsset: {
+        bytes: normalizedBlob.size,
+        dimensions: {
+          height: targetHeight,
+          width: targetWidth,
+        },
+        mimeType: 'image/jpeg',
+      },
+      originalAsset,
     }
   } finally {
     URL.revokeObjectURL(objectUrl)
@@ -530,6 +697,13 @@ async function requestDocumentReading(options: {
   instruction: string
   model: string
 }) {
+  logGemmaStage('provider_request_start', {
+    image: describeDataUrl(options.imageDataUrl),
+    instructionChars: options.instruction.length,
+    model: options.model,
+    requestKind: 'document_json',
+  })
+
   const response = await fetch(`${options.baseUrl}/chat/completions`, {
     body: JSON.stringify({
       messages: [
@@ -565,6 +739,14 @@ async function requestDocumentReading(options: {
   })
 
   if (!response.ok) {
+    const details = await response.text().catch(() => '')
+
+    warnGemmaStage('provider_request_failed', {
+      detailChars: details.length,
+      model: options.model,
+      requestKind: 'document_json',
+      status: response.status,
+    })
     throw new Error(`Gemma document reading request failed with ${response.status}.`)
   }
 
@@ -572,10 +754,49 @@ async function requestDocumentReading(options: {
   const content = payload.choices?.[0]?.message?.content
 
   if (!content) {
+    warnGemmaStage('provider_response_empty', {
+      payloadKeys: describeObjectKeys(payload),
+      requestKind: 'document_json',
+    })
     throw new Error('Gemma document reading did not return message content.')
   }
 
-  return parseDocumentReadingResult(JSON.parse(extractJson(content)))
+  logGemmaStage('provider_raw_response_received', {
+    contentChars: content.length,
+    payloadKeys: describeObjectKeys(payload),
+    requestKind: 'document_json',
+  })
+
+  try {
+    const rawJson = parseJsonFromModelOutput(content)
+
+    logGemmaStage('provider_response_parsed', {
+      rawJsonKeys: describeObjectKeys(rawJson),
+      requestKind: 'document_json',
+    })
+
+    const parsedResult = parseDocumentReadingResult(rawJson)
+
+    logGemmaStage('provider_response_normalized', {
+      confidenceFlags: parsedResult.confidenceFlags,
+      documentKind: parsedResult.documentKind,
+      notesCount: parsedResult.notes.length,
+      reviewDraftKeys: describeObjectKeys(parsedResult.reviewDraft),
+    })
+
+    return parsedResult
+  } catch (error) {
+    warnGemmaStage('provider_response_parse_failed', {
+      contentChars: content.length,
+      error: error instanceof Error ? error.message : String(error),
+      requestKind: 'document_json',
+    })
+    throw new Error(
+      `Gemma document reading returned output the app could not parse: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    )
+  }
 }
 
 async function requestIepTextReading(options: {
@@ -586,6 +807,13 @@ async function requestIepTextReading(options: {
   model: string
   temperature?: number
 }) {
+  logGemmaStage('provider_request_start', {
+    image: describeDataUrl(options.imageDataUrl),
+    instructionChars: options.instruction.length,
+    model: options.model,
+    requestKind: 'iep_plain_text',
+  })
+
   const response = await fetch(`${options.baseUrl}/chat/completions`, {
     body: JSON.stringify({
       messages: [
@@ -618,6 +846,14 @@ async function requestIepTextReading(options: {
   })
 
   if (!response.ok) {
+    const details = await response.text().catch(() => '')
+
+    warnGemmaStage('provider_request_failed', {
+      detailChars: details.length,
+      model: options.model,
+      requestKind: 'iep_plain_text',
+      status: response.status,
+    })
     throw new Error(`Gemma IEP text reading request failed with ${response.status}.`)
   }
 
@@ -625,16 +861,122 @@ async function requestIepTextReading(options: {
   const content = payload.choices?.[0]?.message?.content
 
   if (!content) {
+    warnGemmaStage('provider_response_empty', {
+      payloadKeys: describeObjectKeys(payload),
+      requestKind: 'iep_plain_text',
+    })
     throw new Error('Gemma IEP text reading did not return message content.')
   }
 
-  return extractPlainText(content)
+  const extractedText = extractPlainText(content).trim()
+
+  logGemmaStage('provider_raw_response_received', {
+    contentChars: content.length,
+    extractedChars: extractedText.length,
+    payloadKeys: describeObjectKeys(payload),
+    requestKind: 'iep_plain_text',
+  })
+
+  if (!extractedText) {
+    throw new Error('Gemma IEP text reading returned blank extracted text.')
+  }
+
+  return extractedText
+}
+
+async function requestTaskTextReading(options: {
+  baseUrl: string
+  headers: HeadersInit
+  imageDataUrl: string
+  instruction: string
+  model: string
+  temperature?: number
+}) {
+  logGemmaStage('provider_request_start', {
+    image: describeDataUrl(options.imageDataUrl),
+    instructionChars: options.instruction.length,
+    model: options.model,
+    requestKind: 'task_plain_text',
+  })
+
+  const response = await fetch(`${options.baseUrl}/chat/completions`, {
+    body: JSON.stringify({
+      messages: [
+        {
+          content: TASK_TEXT_SYSTEM_PROMPT,
+          role: 'system',
+        },
+        {
+          content: [
+            {
+              text: options.instruction,
+              type: 'text',
+            },
+            {
+              image_url: {
+                url: options.imageDataUrl,
+              },
+              type: 'image_url',
+            },
+          ],
+          role: 'user',
+        },
+      ],
+      model: options.model,
+      stream: false,
+      temperature: options.temperature ?? 0,
+    }),
+    headers: options.headers,
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => '')
+
+    warnGemmaStage('provider_request_failed', {
+      detailChars: details.length,
+      model: options.model,
+      requestKind: 'task_plain_text',
+      status: response.status,
+    })
+    throw new Error(`Gemma task reading request failed with ${response.status}.`)
+  }
+
+  const payload = (await response.json()) as OpenAICompatibleResponse
+  const content = payload.choices?.[0]?.message?.content
+
+  if (!content) {
+    warnGemmaStage('provider_response_empty', {
+      payloadKeys: describeObjectKeys(payload),
+      requestKind: 'task_plain_text',
+    })
+    throw new Error('Gemma task reading did not return message content.')
+  }
+
+  const extractedText = extractPlainText(content).trim()
+
+  logGemmaStage('provider_raw_response_received', {
+    contentChars: content.length,
+    extractedChars: extractedText.length,
+    payloadKeys: describeObjectKeys(payload),
+    requestKind: 'task_plain_text',
+  })
+
+  if (!extractedText) {
+    throw new Error('Gemma task reading returned blank task notes.')
+  }
+
+  return extractedText
 }
 
 async function requestWithFallback(
   config: GemmaDocumentConfig,
   imageDataUrl: string,
   instruction: string,
+  options: {
+    attachmentName: string
+    sourceKey: SourceKey
+  },
 ) {
   if (!config.baseUrl) {
     throw new Error('Gemma document reading is not configured for this session.')
@@ -653,10 +995,21 @@ async function requestWithFallback(
 
     return {
       modelLabel: formatModelLabel(config.primaryModel),
-      result,
+      result: recoverBlankTaskDocumentResult(
+        result,
+        options.attachmentName,
+        options.sourceKey,
+      ),
       usedFallback: false,
     }
   } catch (primaryError) {
+    warnGemmaStage('provider_primary_failed', {
+      error: primaryError instanceof Error ? primaryError.message : String(primaryError),
+      fallbackConfigured: Boolean(config.fallbackModel),
+      model: config.primaryModel,
+      requestKind: 'document_json',
+    })
+
     if (!config.fallbackModel) {
       throw primaryError
     }
@@ -667,6 +1020,65 @@ async function requestWithFallback(
       imageDataUrl,
       instruction,
       model: config.fallbackModel,
+    })
+
+    return {
+      modelLabel: formatModelLabel(config.fallbackModel),
+      result: recoverBlankTaskDocumentResult(
+        result,
+        options.attachmentName,
+        options.sourceKey,
+      ),
+      usedFallback: true,
+    }
+  }
+}
+
+async function requestTaskTextWithFallback(
+  config: GemmaDocumentConfig,
+  imageDataUrl: string,
+  instruction: string,
+) {
+  if (!config.baseUrl) {
+    throw new Error('Gemma document reading is not configured for this session.')
+  }
+
+  const headers = buildHeaders(config.apiKey)
+
+  try {
+    const result = await requestTaskTextReading({
+      baseUrl: config.baseUrl,
+      headers,
+      imageDataUrl,
+      instruction,
+      model: config.primaryModel,
+      temperature: 0,
+    })
+
+    return {
+      modelLabel: formatModelLabel(config.primaryModel),
+      result,
+      usedFallback: false,
+    }
+  } catch (primaryError) {
+    warnGemmaStage('provider_primary_failed', {
+      error: primaryError instanceof Error ? primaryError.message : String(primaryError),
+      fallbackConfigured: Boolean(config.fallbackModel),
+      model: config.primaryModel,
+      requestKind: 'task_plain_text',
+    })
+
+    if (!config.fallbackModel) {
+      throw primaryError
+    }
+
+    const result = await requestTaskTextReading({
+      baseUrl: config.baseUrl,
+      headers,
+      imageDataUrl,
+      instruction,
+      model: config.fallbackModel,
+      temperature: 0,
     })
 
     return {
@@ -705,6 +1117,13 @@ async function requestIepTextWithFallback(
       usedFallback: false,
     }
   } catch (primaryError) {
+    warnGemmaStage('provider_primary_failed', {
+      error: primaryError instanceof Error ? primaryError.message : String(primaryError),
+      fallbackConfigured: Boolean(config.fallbackModel),
+      model: config.primaryModel,
+      requestKind: 'iep_plain_text',
+    })
+
     if (!config.fallbackModel) {
       throw primaryError
     }
@@ -744,6 +1163,7 @@ async function runIepTextReadingPasses(options: {
     label: string
   }>
   photoMode?: boolean
+  onProgress?: GemmaReadingProgressReporter
   preprocessRuntimeMs?: number
 }) {
   const drafts: string[] = []
@@ -755,10 +1175,25 @@ async function runIepTextReadingPasses(options: {
   let usedFallback = false
   let focusedRecoveryTriggered = false
   const runPass = async (pass: {
+    detail?: string
     imageDataUrl: string
     instruction: string
     label: string
+    phase?: AttachmentInterpretationPhase
+    stepIndex?: number
+    stepTotal?: number
   }) => {
+    options.onProgress?.({
+      detail: pass.detail,
+      label:
+        pass.phase === 'focused_recovery'
+          ? 'Scanning a focused part of the picture'
+          : 'Scanning the picture with Gemma',
+      phase: pass.phase ?? 'scanning_image',
+      stepIndex: pass.stepIndex,
+      stepTotal: pass.stepTotal,
+    })
+
     const response = await requestIepTextWithFallback(
       options.config,
       pass.imageDataUrl,
@@ -784,7 +1219,14 @@ async function runIepTextReadingPasses(options: {
     throw new Error('No IEP text reading passes were configured.')
   }
 
-  const firstPassResult = await runPass(firstPass)
+  const estimatedStepTotal = 2 + (options.focusedRecoveryTiles?.length ?? 1)
+  const firstPassResult = await runPass({
+    ...firstPass,
+    detail: 'Reading the visible accommodations and preserving unclear wording instead of guessing.',
+    phase: 'scanning_image',
+    stepIndex: 2,
+    stepTotal: estimatedStepTotal,
+  })
   const draftHealth: AccommodationDraftHealth | undefined
     = assessAccommodationDraftHealth(firstPassResult)
 
@@ -798,12 +1240,19 @@ async function runIepTextReadingPasses(options: {
       text: string
     }> = []
 
-    for (const tile of options.focusedRecoveryTiles) {
+    for (const [tileIndex, tile] of options.focusedRecoveryTiles.entries()) {
       try {
         const tileOutput = await runPass({
+          detail:
+            tile.label === 'student_response_conditions'
+              ? 'Checking the student-response condition wording more closely.'
+              : 'Checking a smaller crop so faint accommodation rows are easier to read.',
           imageDataUrl: tile.imageDataUrl,
           instruction: tile.instruction,
           label: `focused_recovery_tile_${tile.label}`,
+          phase: 'focused_recovery',
+          stepIndex: 3 + tileIndex,
+          stepTotal: estimatedStepTotal,
         })
 
         tileDrafts.push({
@@ -820,6 +1269,14 @@ async function runIepTextReadingPasses(options: {
     const mergedTileDraft = mergeAccommodationPhotoRecoveryTileDrafts(tileDrafts)
 
     if (mergedTileDraft) {
+      options.onProgress?.({
+        detail: 'Combining the focused scans into one reviewable accommodations draft.',
+        label: 'Putting the multiple outputs together',
+        phase: 'combining_outputs',
+        stepIndex: estimatedStepTotal,
+        stepTotal: estimatedStepTotal,
+      })
+
       drafts.push(mergedTileDraft)
       passOutputs.push({
         label: 'focused_recovery_tiled',
@@ -827,18 +1284,38 @@ async function runIepTextReadingPasses(options: {
       })
     } else if (options.passes[1]) {
       try {
-        await runPass(options.passes[1])
+        await runPass({
+          ...options.passes[1],
+          detail: 'Running one focused recovery pass before choosing the best draft.',
+          phase: 'focused_recovery',
+          stepIndex: 3,
+          stepTotal: estimatedStepTotal,
+        })
       } catch {
         focusedRecoveryTriggered = true
       }
     }
   } else if (focusedRecoveryTriggered && options.passes[1]) {
     try {
-      await runPass(options.passes[1])
+      await runPass({
+        ...options.passes[1],
+        detail: 'Running one focused recovery pass before choosing the best draft.',
+        phase: 'focused_recovery',
+        stepIndex: 3,
+        stepTotal: estimatedStepTotal,
+      })
     } catch {
       focusedRecoveryTriggered = true
     }
   }
+
+  options.onProgress?.({
+    detail: 'Choosing the clearest grounded draft for review.',
+    label: 'Putting the multiple outputs together',
+    phase: 'combining_outputs',
+    stepIndex: focusedRecoveryTriggered ? estimatedStepTotal : 3,
+    stepTotal: focusedRecoveryTriggered ? estimatedStepTotal : 3,
+  })
 
   const selectedOutput = selectAccommodationDraft(drafts)
   const selectedPass =
@@ -873,6 +1350,57 @@ function mergeDocumentResults(results: DocumentReadingResult[]): DocumentReading
 
   if (results.length === 1) {
     return firstResult
+  }
+
+  if (firstResult.documentKind === 'assignment_or_quiz') {
+    const assignmentResults = results.filter(
+      (result): result is Extract<DocumentReadingResult, { documentKind: 'assignment_or_quiz' }> =>
+        result.documentKind === 'assignment_or_quiz',
+    )
+    const uniqueStrings = (items: string[]) =>
+      Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)))
+    const firstDraft = firstResult.reviewDraft
+    const taskDescription = uniqueStrings(
+      assignmentResults.map((result) => result.reviewDraft.taskDescription),
+    ).join('\n\n')
+
+    return {
+      ...firstResult,
+      confidenceFlags: {
+        containsUnclearText: results.some(
+          (result) => result.confidenceFlags.containsUnclearText,
+        ),
+        isPartialDocument: results.some(
+          (result) => result.confidenceFlags.isPartialDocument,
+        ),
+        lowConfidence: results.some((result) => result.confidenceFlags.lowConfidence),
+      },
+      notes: Array.from(new Set(results.flatMap((result) => result.notes))),
+      rawTranscript: results
+        .map((result, index) => `[PDF page ${index + 1}]\n${result.rawTranscript.trim()}`)
+        .join('\n\n'),
+      reviewDraft: {
+        ...firstDraft,
+        accessRelevantDetails: uniqueStrings(
+          assignmentResults.flatMap((result) => result.reviewDraft.accessRelevantDetails),
+        ),
+        accommodationFocus:
+          assignmentResults.find((result) =>
+            result.reviewDraft.accommodationFocus !== 'unknown',
+          )?.reviewDraft.accommodationFocus ?? firstDraft.accommodationFocus,
+        evidenceBullets: uniqueStrings(
+          assignmentResults.flatMap((result) => result.reviewDraft.evidenceBullets),
+        ),
+        followUpQuestions: uniqueStrings(
+          assignmentResults.flatMap((result) => result.reviewDraft.followUpQuestions),
+        ),
+        taskDescription: taskDescription || firstDraft.taskDescription,
+        timeLimitMinutes:
+          assignmentResults.find((result) =>
+            typeof result.reviewDraft.timeLimitMinutes === 'number',
+          )?.reviewDraft.timeLimitMinutes ?? firstDraft.timeLimitMinutes,
+      },
+    }
   }
 
   if (firstResult.documentKind !== 'iep_accommodations') {
@@ -961,8 +1489,24 @@ export function readGemmaDocumentPlan(): GemmaDocumentPlan {
 export async function runGemmaDocumentReading(
   attachment: Pick<UploadedAttachment, 'file' | 'kind' | 'name'>,
   sourceKey: SourceKey,
+  onProgress?: GemmaReadingProgressReporter,
 ): Promise<GemmaDocumentReadingResult> {
   const config = readConfig()
+
+  logGemmaStage('analysis_started', {
+    attachmentKind: attachment.kind,
+    model: config.primaryModel,
+    runtimeLabel: config.runtimeLabel,
+    sourceKey,
+  })
+
+  onProgress?.({
+    detail: `Using ${formatModelLabel(config.primaryModel)} through ${config.runtimeLabel}.`,
+    label: 'Getting Gemma ready',
+    phase: 'checking_model',
+    stepIndex: 1,
+    stepTotal: attachment.kind === 'pdf' ? undefined : 3,
+  })
 
   if (!config.baseUrl) {
     throw new Error('Gemma document reading is not configured yet for this session.')
@@ -973,39 +1517,146 @@ export async function runGemmaDocumentReading(
   }
 
   if (attachment.kind === 'image') {
-    const imageDataUrl = await fileToDataUrl(attachment.file)
-    const response = await requestWithFallback(
-      config,
-      imageDataUrl,
-      buildDocumentReadingInstruction(attachment.name, attachment.kind, sourceKey),
-    )
+    onProgress?.({
+      detail: 'Preparing the image so Gemma can read the visible school document.',
+      label: 'Preparing the picture',
+      phase: 'preparing_image',
+      stepIndex: 1,
+      stepTotal: 3,
+    })
+
+    const preparedImage = sourceKey === 'task'
+      ? await prepareTaskImageForReading(attachment.file)
+      : {
+          imageDataUrl: await fileToDataUrl(attachment.file),
+          normalizedAsset: undefined,
+          originalAsset: undefined,
+        }
+
+    logGemmaStage('image_payload_prepared', {
+      image: describeDataUrl(preparedImage.imageDataUrl),
+      normalizedAsset: describeAsset(preparedImage.normalizedAsset),
+      originalAsset: describeAsset(preparedImage.originalAsset),
+      sourceKey,
+    })
+
+    onProgress?.({
+      detail: 'Reading the visible task details and preserving unclear wording.',
+      label: 'Scanning the picture with Gemma',
+      phase: 'scanning_image',
+      stepIndex: 2,
+      stepTotal: 3,
+    })
+
+    const resolvedResponse =
+      sourceKey === 'task'
+        ? await requestTaskTextWithFallback(
+            config,
+            preparedImage.imageDataUrl,
+            buildTaskTextReadingInstruction(attachment.name, attachment.kind),
+          ).then((taskTextResponse) => ({
+            modelLabel: taskTextResponse.modelLabel,
+            result: buildTaskDocumentResultFromPlainText(
+              taskTextResponse.result,
+              attachment.name,
+            ),
+            usedFallback: taskTextResponse.usedFallback,
+          }))
+        : await requestWithFallback(
+            config,
+            preparedImage.imageDataUrl,
+            buildDocumentReadingInstruction(attachment.name, attachment.kind, sourceKey),
+            {
+              attachmentName: attachment.name,
+              sourceKey,
+            },
+          )
+
+    logGemmaStage('analysis_completed', {
+      documentKind: resolvedResponse.result.documentKind,
+      readMethod: 'gemma4_image',
+      reviewDraftKeys: describeObjectKeys(resolvedResponse.result.reviewDraft),
+      sourceKey,
+      usedFallback: resolvedResponse.usedFallback,
+    })
+
+    onProgress?.({
+      detail: 'Turning Gemma output into the review draft shown below.',
+      label: 'Putting the output together',
+      phase: 'combining_outputs',
+      stepIndex: 3,
+      stepTotal: 3,
+    })
 
     return {
-      documentResult: response.result,
-      modelLabel: response.modelLabel,
+      documentResult: resolvedResponse.result,
+      modelLabel: resolvedResponse.modelLabel,
       readMethod: 'gemma4_image',
       runtimeLabel: config.runtimeLabel,
-      usedFallback: response.usedFallback,
+      usedFallback: resolvedResponse.usedFallback,
     }
   }
 
+  onProgress?.({
+    detail: 'Rendering the first PDF pages into images for Gemma.',
+    label: 'Preparing the PDF pages',
+    phase: 'preparing_pdf',
+    stepIndex: 1,
+  })
+
   const pdfPages = await renderPdfPagesToImageDataUrls(attachment.file)
+  logGemmaStage('pdf_payload_prepared', {
+    pageCount: pdfPages.pageCount,
+    processedPageCount: pdfPages.processedPageCount,
+    sourceKey,
+  })
   const pageResults: DocumentReadingResult[] = []
   let modelLabel = formatModelLabel(config.primaryModel)
   let usedFallback = false
 
   for (let index = 0; index < pdfPages.imageDataUrls.length; index += 1) {
-    const response = await requestWithFallback(
-      config,
-      pdfPages.imageDataUrls[index],
-      buildDocumentReadingInstruction(
-        attachment.name,
-        attachment.kind,
-        sourceKey,
-        index + 1,
-        pdfPages.processedPageCount,
-      ),
-    )
+    onProgress?.({
+      detail: `Reading page ${index + 1} of ${pdfPages.processedPageCount}.`,
+      label: 'Scanning a PDF page with Gemma',
+      phase: 'scanning_pdf_page',
+      stepIndex: index + 2,
+      stepTotal: pdfPages.processedPageCount + 2,
+    })
+
+    const response =
+      sourceKey === 'task'
+        ? await requestTaskTextWithFallback(
+            config,
+            pdfPages.imageDataUrls[index],
+            buildTaskTextReadingInstruction(
+              attachment.name,
+              attachment.kind,
+              index + 1,
+              pdfPages.processedPageCount,
+            ),
+          ).then((taskTextResponse) => ({
+            modelLabel: taskTextResponse.modelLabel,
+            result: buildTaskDocumentResultFromPlainText(
+              taskTextResponse.result,
+              attachment.name,
+            ),
+            usedFallback: taskTextResponse.usedFallback,
+          }))
+        : await requestWithFallback(
+            config,
+            pdfPages.imageDataUrls[index],
+            buildDocumentReadingInstruction(
+              attachment.name,
+              attachment.kind,
+              sourceKey,
+              index + 1,
+              pdfPages.processedPageCount,
+            ),
+            {
+              attachmentName: attachment.name,
+              sourceKey,
+            },
+          )
 
     pageResults.push(response.result)
     modelLabel = response.modelLabel
@@ -1016,7 +1667,25 @@ export async function runGemmaDocumentReading(
     })
   }
 
+  onProgress?.({
+    detail: 'Combining the page readings into one review draft.',
+    label: 'Putting the multiple outputs together',
+    phase: 'combining_outputs',
+    stepIndex: pdfPages.processedPageCount + 2,
+    stepTotal: pdfPages.processedPageCount + 2,
+  })
+
   const documentResult = mergeDocumentResults(pageResults)
+
+  logGemmaStage('analysis_completed', {
+    documentKind: documentResult.documentKind,
+    pageCount: pdfPages.pageCount,
+    processedPageCount: pdfPages.processedPageCount,
+    readMethod: 'gemma4_pdf_pages',
+    reviewDraftKeys: describeObjectKeys(documentResult.reviewDraft),
+    sourceKey,
+    usedFallback,
+  })
 
   return {
     documentResult,
@@ -1031,8 +1700,24 @@ export async function runGemmaDocumentReading(
 
 export async function runGemmaIepTextReading(
   attachment: Pick<UploadedAttachment, 'file' | 'kind' | 'name'>,
+  onProgress?: GemmaReadingProgressReporter,
 ): Promise<GemmaIepTextReadingResult> {
   const config = readConfig()
+
+  logGemmaStage('analysis_started', {
+    attachmentKind: attachment.kind,
+    model: config.primaryModel,
+    runtimeLabel: config.runtimeLabel,
+    sourceKey: 'iep',
+  })
+
+  onProgress?.({
+    detail: `Using ${formatModelLabel(config.primaryModel)} through ${config.runtimeLabel}.`,
+    label: 'Getting Gemma ready',
+    phase: 'checking_model',
+    stepIndex: 1,
+    stepTotal: attachment.kind === 'pdf' ? undefined : 4,
+  })
 
   if (!config.baseUrl) {
     throw new Error('Gemma document reading is not configured yet for this session.')
@@ -1043,7 +1728,27 @@ export async function runGemmaIepTextReading(
   }
 
   if (attachment.kind === 'image') {
+    onProgress?.({
+      detail: 'Preparing the photo so the accommodations table is easier to read.',
+      label: 'Preparing the picture',
+      phase: 'preparing_image',
+      stepIndex: 1,
+      stepTotal: 4,
+    })
+
     const preparedImage = await prepareAccommodationImageForReading(attachment.file)
+
+    logGemmaStage('image_payload_prepared', {
+      finalAsset: describeAsset(preparedImage.finalAsset),
+      focusedRecoveryAsset: describeAsset(preparedImage.focusedRecoveryAsset),
+      focusedRecoveryTileCount: preparedImage.focusedRecoveryTiles?.length ?? 0,
+      image: describeDataUrl(preparedImage.originalImageDataUrl),
+      normalizedAsset: describeAsset(preparedImage.normalizedAsset),
+      originalAsset: describeAsset(preparedImage.originalAsset),
+      photoMode: preparedImage.photoMode,
+      sourceKey: 'iep',
+    })
+
     const response = await runIepTextReadingPasses({
       config,
       finalAsset: preparedImage.finalAsset,
@@ -1100,8 +1805,17 @@ export async function runGemmaIepTextReading(
           label: 'focused_recovery',
         },
       ],
+      onProgress,
       photoMode: preparedImage.photoMode,
       preprocessRuntimeMs: preparedImage.preprocessRuntimeMs,
+    })
+
+    logGemmaStage('analysis_completed', {
+      extractedChars: response.extractedText.length,
+      readMethod: 'gemma4_image',
+      selectedPassLabel: response.diagnostics.selectedPassLabel,
+      sourceKey: 'iep',
+      usedFallback: response.usedFallback,
     })
 
     return {
@@ -1114,12 +1828,32 @@ export async function runGemmaIepTextReading(
     }
   }
 
+  onProgress?.({
+    detail: 'Rendering the first PDF pages into images for Gemma.',
+    label: 'Preparing the PDF pages',
+    phase: 'preparing_pdf',
+    stepIndex: 1,
+  })
+
   const pdfPages = await renderPdfPagesToImageDataUrls(attachment.file)
+  logGemmaStage('pdf_payload_prepared', {
+    pageCount: pdfPages.pageCount,
+    processedPageCount: pdfPages.processedPageCount,
+    sourceKey: 'iep',
+  })
   const pageTexts: string[] = []
   let modelLabel = formatModelLabel(config.primaryModel)
   let usedFallback = false
 
   for (let index = 0; index < pdfPages.imageDataUrls.length; index += 1) {
+    onProgress?.({
+      detail: `Reading accommodations page ${index + 1} of ${pdfPages.processedPageCount}.`,
+      label: 'Scanning a PDF page with Gemma',
+      phase: 'scanning_pdf_page',
+      stepIndex: index + 2,
+      stepTotal: pdfPages.processedPageCount + 2,
+    })
+
     const response = await runIepTextReadingPasses({
       config,
       passes: [
@@ -1156,8 +1890,27 @@ export async function runGemmaIepTextReading(
     })
   }
 
+  onProgress?.({
+    detail: 'Combining the page readings into one accommodations draft.',
+    label: 'Putting the multiple outputs together',
+    phase: 'combining_outputs',
+    stepIndex: pdfPages.processedPageCount + 2,
+    stepTotal: pdfPages.processedPageCount + 2,
+  })
+
+  const extractedText = pageTexts.map((text) => text.trim()).filter(Boolean).join('\n\n')
+
+  logGemmaStage('analysis_completed', {
+    extractedChars: extractedText.length,
+    pageCount: pdfPages.pageCount,
+    processedPageCount: pdfPages.processedPageCount,
+    readMethod: 'gemma4_pdf_pages',
+    sourceKey: 'iep',
+    usedFallback,
+  })
+
   return {
-    extractedText: pageTexts.map((text) => text.trim()).filter(Boolean).join('\n\n'),
+    extractedText,
     modelLabel,
     pageCount: pdfPages.pageCount,
     processedPageCount: pdfPages.processedPageCount,

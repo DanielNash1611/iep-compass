@@ -22,6 +22,7 @@ export type TaskContext = (typeof taskContexts)[number]
 
 export type AttachmentKind = 'image' | 'pdf' | 'text' | 'other'
 export type AttachmentStatus =
+  | 'applied_to_text'
   | 'text_ready'
   | 'interpret_ready'
   | 'interpret_running'
@@ -35,6 +36,29 @@ export type AttachmentReadMethod =
   | 'gemma4_pdf_pages'
   | 'plain_text_file'
 
+export type AttachmentInterpretationPhase =
+  | 'checking_model'
+  | 'downloading_model'
+  | 'preparing_image'
+  | 'preparing_pdf'
+  | 'scanning_image'
+  | 'scanning_pdf_page'
+  | 'focused_recovery'
+  | 'combining_outputs'
+  | 'complete'
+
+export interface AttachmentInterpretationProgress {
+  detail?: string
+  elapsedMs?: number
+  finishedAt?: number
+  label: string
+  phase: AttachmentInterpretationPhase
+  startedAt: number
+  stepIndex?: number
+  stepTotal?: number
+  updatedAt: number
+}
+
 export interface UploadedAttachment {
   confidenceFlags?: DocumentConfidenceFlags
   documentDraft?: StructuredDocumentDraft
@@ -43,6 +67,7 @@ export interface UploadedAttachment {
   file: File
   fileType: string
   id: string
+  interpretationProgress?: AttachmentInterpretationProgress
   kind: AttachmentKind
   name: string
   notes: string[]
@@ -56,6 +81,7 @@ export interface UploadedAttachment {
   previewUrl?: string
   reviewedText?: string
   sizeLabel: string
+  sourceTrailText?: string
   status: AttachmentStatus
 }
 
@@ -67,6 +93,7 @@ export interface SourceMaterial {
 export interface AnalysisRequest {
   contextTags: TaskContext[]
   iepSource: SourceMaterial
+  learningProfile?: string
   taskTraits?: TaskReviewDraft | null
   taskTitle: string
   teacherConcern?: string

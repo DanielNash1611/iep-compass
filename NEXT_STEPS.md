@@ -2,6 +2,104 @@
 
 ## Recently Completed
 
+<<<<<<< ours
+<<<<<<< ours
+- Created a project-local Codex environment:
+  - added setup for `npm ci` and the ignored `public/models` directory
+  - added Codex actions for running the app, build, lint, tests, and the main Gemma image eval suites
+  - kept model assets out of the environment setup so the repo still follows the privacy/model-size guardrails
+- Tightened task-upload follow-up wording for the student audience:
+  - generated and model-supplied follow-up prompts now normalize into student-facing "check/write" actions instead of teacher-directed questions
+  - the task review UI labels the section "Check before you use this" and keeps the helper copy aimed at the student/family
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Improved task-upload review controls and source handoff:
+  - follow-up questions now render as individual answer controls, using Yes/No segmented choices for yes/no prompts and text inputs for open prompts
+  - answers are written back into the task draft so the source summary carries the confirmed context forward
+  - included task uploads can now provide the task title when the manual title field is blank, so the next-step action is not blocked after using a reviewed upload
+  - teacher-concern follow-up uses the same derived title fallback
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Switched task upload interpretation away from direct vision-to-JSON:
+  - task images/PDF pages now ask Gemma for short plain-text document notes first, matching the more reliable shape used by the accommodation flow
+  - IEP Compass converts those notes into the existing typed task review draft locally, so the UI still receives the same canonical structure
+  - blank or unusable task notes now throw before state update, causing the attachment to enter the explicit failed interpretation UI instead of showing a blank summary
+  - added focused coverage for plain-text task notes becoming a reviewable draft and blank/unusable notes failing early
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Repaired the e2b-backed upload interpretation handoff:
+  - added shared model-output JSON extraction for fenced, wrapped, or prose-prefixed structured responses
+  - normalized provider-shaped document-reading output, including common result envelopes and snake_case keys, into the existing UI draft schema
+  - added privacy-conscious stage logs for image preparation, provider response shape, parsing, normalization, client receipt, and render-state updates
+  - added regression coverage for an e2b-style wrapped assignment upload result
+  - targeted `clear_typed_document` e2b image eval passed with `deterministic=1.000`, `field=1.000`, and `uncertainty=1.000`
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Fixed blank structured task drafts after Gemma finishes on large phone photos:
+  - task-side image uploads are now normalized to a 1280px JPEG before document reading, matching the eval path that produced usable output from the quiz-practice photo
+  - task uploads that still come back as blank `unknown` drafts are recovered into low-confidence assignment review drafts with reviewable task text, evidence, and follow-up questions instead of blank textareas
+  - review-ready image/PDF attachments can be interpreted again, so a bad draft can be rerun without removing and re-uploading the file
+  - added regression coverage for blank unknown task-draft recovery
+  - E2B targeted image eval improved from `field=0.615` with `missed_follow_up_question` to `field=0.692`; it still fails on OCR/title detail (`quiz practice`, `areas of circles`, semicircle-specific wording)
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Added a composite analysis eval loop for the quiz-practice photo flow:
+  - added `npm run evals:gemma:analysis:composite` to exercise the same core, student, parent, and teacher live-analysis stages the app uses
+  - added a `quiz-practice-phone-photo-flow` eval case with the reviewed 30-minute timed quiz focus and the relevant IEP accommodations
+  - baseline loop after the source/schema fix passed `3/3` with no blank or invalid failures
+  - after prompt hardening, the same flow passed `5/5` with nonblank guidance, extended-time detection, timed-task cues, calculator-boundary wording, and no answer leakage
+  - restarted the Vite dev server after confirming it had been stopped, and `http://localhost:5173/` now returns `200`
+  - live analysis calls now time out and fall back instead of leaving the results view stuck if the local model hangs
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Fixed a blank-results edge after upload review:
+  - reviewed upload text marked as already applied to the main text box now still counts as usable source material
+  - task traits can still be recovered from an applied reviewed task attachment when present
+  - live model guidance now rejects blank strings so an empty-but-schema-shaped response falls back to deterministic demo guidance instead of rendering a blank results page
+  - added regression coverage for applied reviewed text and blank live guidance validation
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Added real quiz-practice handling to the assignment upload flow:
+  - assignment document drafts now carry accommodation focus and a confirmed/blank minutes field
+  - quiz-practice and assessment-prep pages now get grounded follow-up prompts for practice-vs-quiz focus, timed status, and number of minutes
+  - the reviewed task summary now passes visible document type, accommodation focus, timing, access-relevant details, and follow-up answers into final analysis
+  - added the real `quiz_practice_sheet_phone_photo` fixture and eval case from the user-provided phone photo
+  - updated assignment image prompts to avoid answering the math while asking the clarification questions needed for accommodation matching
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+  - targeted `quiz_practice_sheet_phone_photo` 31B eval passed with `deterministic=1.000`, `field=0.846`, and `uncertainty=1.000`, though it still carried an `ocr_failure` tag for imperfect extraction
+- Reworked assignment image interpretation away from full OCR and toward task classification:
+  - assignment uploads now track the visible document kind separately from work type, including assignment details, assignment page, rubric, worksheet, quiz, test, and unknown
+  - assignment review drafts now include access-relevant visible details and short follow-up questions
+  - added grounded fallback follow-up questions for timing, spelling/grammar rubric scoring, and calculation-test ambiguity when the model omits them
+  - updated the assignment image eval schema, prompts, scoring, and starter cases to measure follow-up questions
+  - kept key visible requirements/deadlines/rubric factors in the eval path without requiring full-page transcription
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+  - full assignment image eval initially reached `pass_rate=0.25`; after the fallback/normalization pass, isolated `essay_rubric_spelling` passed with `field=1.000`
+- Added live Gemma interpretation progress for upload intake:
+  - upload cards now show the current phase, step count, and elapsed timer while Gemma reads a picture or PDF
+  - accommodation photo reading reports preparation, full scan, focused recovery scans, and output-combining phases
+  - completed and failed interpretation states now keep the total runtime in the upload notes
+  - `npm run test`, `npm run lint`, and `npm run build` passed
+- Added a deterministic formatting option for accommodation image extraction review:
+  - keeps selected plain-text accommodation drafts raw when image interpretation finishes
+  - moves extracted-text review into a temporary overlay so the approved wording textarea remains the only durable editable source field
+  - overlay actions now support `Clean up formatting`, `Update approved wording`, `Add to existing`, and `Do not use`
+  - added a guarded `Fix one detail` helper that only performs exact find-and-replace inside the extracted draft
+  - applied upload drafts are marked as added to the approved wording instead of being counted as a second source-text block
+  - keeps the app-aligned image-eval comparison path raw so extraction quality remains separate from review cleanup
+  - strips formatted bullets/headings before downstream accommodation-line classification so hierarchy does not become evidence
+  - added formatter coverage for dense real-form style output and single-section accommodation snippets
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+  - targeted `real_accommodation_page_phone_photo` 31B eval still failed, but reached `field=0.879`, `condition_preservation=0.833`, and kept uncertainty handling at `1.000`
+=======
+=======
+>>>>>>> theirs
+- Added an optional step-1 learning profile field so families can note context like auditory dyslexia without changing the accommodation source boundary:
+  - new `Learning profile notes (optional)` input in the step-1 IEP screen
+  - wired the note into analysis requests and prompts as explanation-only context
+  - clarified in prompt context that this field does not create new accommodations or expand the approved IEP list
+- Ran core local checks for the step-1 learning profile addition:
+  - `npm run lint` passed
+  - `npm run test` is currently blocked in this environment because Node does not support `--experimental-strip-types`
+  - `npm run build` passed
+
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 - Tried one shared narrow follow-up tile for the real phone photo’s student-response condition lines:
   - added a shared `student_response_conditions` recovery tile in both the browser app path and the comparison harness
   - added a tighter shared prompt variant for that tile that explicitly preserves exception wording and forbids a heading-only answer
@@ -128,6 +226,9 @@
 
 ## Current Focus
 
+- Validate the formatted upload-review text on real IEP photos and check whether section heading/bullet hierarchy makes correction faster on phone.
+- Try the new assignment review fields in the live app with the quiz-practice photo and confirm the overlay lets the user answer practice-vs-quiz and 30-minute timing without cluttering the main text box.
+- Re-run the full assignment image eval suite after the follow-up-question fallback and key-requirement normalization pass, then tune the remaining math/worksheet cases without weakening the no-answering guardrail.
 - Determine why the student-response condition-focused tile still returns weaker wording than the visible crop supports on the real phone photo.
 - Determine whether the next real-photo lift should merge a stronger line-level selector, a different condition-tile prompt, or one more crop specifically for the left-column "when requested" line.
 - Determine why the real accommodation phone-photo case still runs extremely slowly in stage-1 extraction even on the official Ollama SDK path.
@@ -154,6 +255,7 @@
 - Decide whether the next real-photo lift should split the upright accommodations crop into smaller column/section tiles, because the lighter model still under-reads the full accommodations table even after rotation and top-cropping.
 - Compare the remaining failed lighter-model cases against the saved per-pass diagnostics to decide whether the next fix should target mixed-section filtering, real-photo preprocessing, or prompt tightening.
 - Compare prompt revisions against the new failure-tag summaries to improve condition preservation, deadline extraction, and incomplete-image handling.
+- Add more real assignment-detail, worksheet, quiz/test, and rubric photos to exercise visible document kind and follow-up quality beyond the first real quiz-practice fixture.
 - Test the new structured IEP extraction against more real accommodation forms, especially cases with profile wording, multi-page PDFs, and empty sections.
 - Test assignment interpretation on more math, reading, and writing pages so the task-description and trait defaults stay grounded.
 - Decide whether the raw transcript disclosure should stay collapsed by default everywhere or become visible more often in correction flows.

@@ -1,0 +1,445 @@
+{
+  "baseUrl": "http://127.0.0.1:11434/v1",
+  "case": {
+    "id": "quiz-practice-phone-photo-flow",
+    "label": "Quiz practice phone photo produces nonblank accommodation guidance"
+  },
+  "model": "gemma4:e2b",
+  "results": [
+    {
+      "diagnostics": {
+        "attemptIndex": 1,
+        "runtimes": {
+          "coreMs": 14605,
+          "studentMs": 7733,
+          "parentMs": 8001,
+          "teacherMs": 6654
+        },
+        "stage": "final"
+      },
+      "finalResult": {
+        "boundaries": [
+          "Extended time on tests (2 days)",
+          "Use of calculator except for calculation tests"
+        ],
+        "notObviouslyRelevant": [
+          {
+            "name": "Test in a small group when requested.",
+            "reason": "The task is a practice sheet, not a formal test, and there is no indication that small group testing is required or requested for this practice."
+          },
+          {
+            "name": "Use of multiplication chart.",
+            "reason": "There is no explicit context suggesting that multiplication chart use is necessary for finding the areas of circles and composite figures."
+          }
+        ],
+        "relevantAccommodations": [
+          {
+            "applicationReason": "The task is timed at 30 minutes, and extended time may help the student manage the time constraint while working on the quiz.",
+            "confidence": "possibly_relevant",
+            "implementationNotes": [
+              "Ask how to use the extended time on tests for this timed quiz."
+            ],
+            "name": "Extended time on tests (2 days)",
+            "plainLanguage": "Extended time on tests (2 days).",
+            "sourceText": "Extended time on tests (2 days).",
+            "whyItMayMatter": "Extended time may help the student manage the time constraint of the 30-minute quiz."
+          },
+          {
+            "applicationReason": "The task involves finding areas, which may involve calculations. The accommodation allows calculator use unless the task is explicitly a calculation test.",
+            "confidence": "possibly_relevant",
+            "implementationNotes": [
+              "Use the calculator for area calculations on the quiz, unless the task is explicitly a calculation test."
+            ],
+            "name": "Use of calculator except for calculation tests",
+            "plainLanguage": "Use of calculator except for calculation tests.",
+            "sourceText": "Use of calculator except for calculation tests.",
+            "whyItMayMatter": "The use of a calculator may be relevant for calculating the areas required by the quiz."
+          }
+        ],
+        "parentGuidance": {
+          "coachNotes": [
+            "Confirm how the 'Extended time on tests (2 days)' accommodation will be applied to this specific 30-minute timed quiz.",
+            "Ensure the student is permitted to use a calculator for the area calculations on the quiz, as this is relevant to the 'Use of calculator except for calculation tests' accommodation."
+          ],
+          "summary": "For the upcoming 30-minute timed quiz on Areas of Circles and Composite Figures, the following accommodations are noted: Extended time on tests (2 days) and Use of calculator except for calculation tests. Please confirm how the extended time will be applied to this specific timed quiz and ensure the calculator can be used for area calculations."
+        },
+        "studentGuidance": {
+          "alternativeScripts": [
+            "Can I use the extended time on tests for this quiz?",
+            "How do I use the extended time on tests for this 30-minute quiz?"
+          ],
+          "startHere": "You have a quiz on the areas of circles and composite figures. This quiz is timed for 30 minutes.",
+          "suggestedScript": "I need to ask about using extended time for this timed quiz. How can I use the extended time on tests for this quiz?"
+        },
+        "teacherGuidance": {
+          "staffNotes": [
+            "Confirm how the extended time accommodation applies to this timed practice quiz.",
+            "Confirm the student's plan for using the calculator for area calculations on the quiz."
+          ],
+          "summary": "The student has accommodations for tests, including extended time and calculator use, which may be relevant for this timed practice quiz on areas of circles and composite figures."
+        }
+      },
+      "passed": true,
+      "score": {
+        "hasCalculatorBoundary": true,
+        "hasExtendedTime": true,
+        "hasNonblankGuidance": true,
+        "hasTimedCue": true,
+        "noAnswerLeak": true,
+        "relevantCount": 2
+      },
+      "status": "passed"
+    },
+    {
+      "diagnostics": {
+        "attemptIndex": 2,
+        "runtimes": {
+          "coreMs": 14729,
+          "studentMs": 8629,
+          "parentMs": 7370,
+          "teacherMs": 7941
+        },
+        "stage": "final"
+      },
+      "finalResult": {
+        "boundaries": [
+          "Extended time on tests (2 days)",
+          "Use of calculator except for calculation tests"
+        ],
+        "notObviouslyRelevant": [
+          {
+            "name": "Test in a small group when requested.",
+            "reason": "The task context does not indicate a need for small group testing or a request for grouping."
+          },
+          {
+            "name": "Use of multiplication chart.",
+            "reason": "The task context does not indicate a need for a multiplication chart."
+          }
+        ],
+        "relevantAccommodations": [
+          {
+            "applicationReason": "The task is timed at 30 minutes, so extended time may help the student manage the time constraint while working on the quiz.",
+            "confidence": "possibly_relevant",
+            "implementationNotes": [
+              "Ask how to use the extended time on tests (2 days) for this timed quiz."
+            ],
+            "name": "Extended time on tests (2 days)",
+            "plainLanguage": "Extended time on tests (2 days).",
+            "sourceText": "Extended time on tests (2 days).",
+            "whyItMayMatter": "The task is timed at 30 minutes, and extended time may help the student complete the timed quiz."
+          },
+          {
+            "applicationReason": "The task involves finding areas, which may involve calculations. The context indicates the calculation focus is mixed_or_unknown, so using a calculator might be relevant depending on the specific nature of the area calculations.",
+            "confidence": "unclear_confirm",
+            "implementationNotes": [
+              "Check if the area calculations require the use of a calculator, keeping in mind the exception for calculation tests."
+            ],
+            "name": "Use of calculator except for calculation tests",
+            "plainLanguage": "Use of calculator except for calculation tests.",
+            "sourceText": "Use of calculator except for calculation tests.",
+            "whyItMayMatter": "The task involves finding the area of circles and composite figures, which may involve calculations. The accommodation allows for calculator use except for calculation tests."
+          }
+        ],
+        "parentGuidance": {
+          "coachNotes": [
+            "Confirm how the 'Extended time on tests (2 days)' accommodation will be applied to this specific 30-minute timed quiz.",
+            "Check if the 'Use of calculator except for calculation tests' accommodation applies to the area calculations on this quiz, keeping in mind the exception for calculation tests."
+          ],
+          "summary": "For the timed quiz on Areas of Circles and Composite Figures, the accommodations available are Extended time on tests (2 days) and Use of calculator except for calculation tests. Please confirm how the extended time will be applied to this specific timed quiz and check if a calculator is permitted for the area calculations."
+        },
+        "studentGuidance": {
+          "alternativeScripts": [
+            "Can I have extended time for this quiz?",
+            "I need more time to finish the quiz.",
+            "How can I use the extended time on tests for this timed quiz?"
+          ],
+          "startHere": "When you take the Areas of circles quiz, you can ask for extended time. You have 30 minutes for the quiz. You can also use a calculator unless the test is specifically about calculations.",
+          "suggestedScript": "I would like to use the extended time on tests for this quiz. Can I have that time?"
+        },
+        "teacherGuidance": {
+          "staffNotes": [
+            "Confirm how the 'Extended time on tests (2 days)' accommodation applies to this specific 30-minute timed quiz.",
+            "Check if the area calculations on the quiz require the use of a calculator, keeping in mind the exception for calculation tests.",
+            "No need to check for 'Test in a small group when requested' or 'Use of multiplication chart' as they do not appear relevant to this task."
+          ],
+          "summary": "The student has accommodations for tests, including extended time and calculator use, for this timed quiz on areas of circles and composite figures."
+        }
+      },
+      "passed": true,
+      "score": {
+        "hasCalculatorBoundary": true,
+        "hasExtendedTime": true,
+        "hasNonblankGuidance": true,
+        "hasTimedCue": true,
+        "noAnswerLeak": true,
+        "relevantCount": 2
+      },
+      "status": "passed"
+    },
+    {
+      "diagnostics": {
+        "attemptIndex": 3,
+        "runtimes": {
+          "coreMs": 14462,
+          "studentMs": 9163,
+          "parentMs": 7719,
+          "teacherMs": 8314
+        },
+        "stage": "final"
+      },
+      "finalResult": {
+        "boundaries": [
+          "Extended time on tests (2 days)",
+          "Use of calculator except for calculation tests",
+          "Test in a small group when requested",
+          "Use of multiplication chart"
+        ],
+        "notObviouslyRelevant": [
+          {
+            "name": "Test in a small group when requested.",
+            "reason": "The task is a practice sheet, not a formal test, and there is no indication that small group testing is required or relevant for this practice activity."
+          },
+          {
+            "name": "Use of multiplication chart.",
+            "reason": "There is no specific context in the task description or visible evidence suggesting that a multiplication chart is required for finding the areas of circles or composite figures."
+          }
+        ],
+        "relevantAccommodations": [
+          {
+            "applicationReason": "The task is timed at 30 minutes, so extended time may help the student manage the time constraint while working on the quiz.",
+            "confidence": "possibly_relevant",
+            "implementationNotes": [
+              "Ask how to use the extended time on tests for this timed quiz."
+            ],
+            "name": "Extended time on tests (2 days)",
+            "plainLanguage": "Extended time on tests (2 days).",
+            "sourceText": "Extended time on tests (2 days).",
+            "whyItMayMatter": "Extended time may help the student manage the time constraint of the 30-minute quiz."
+          },
+          {
+            "applicationReason": "The task involves finding areas, which may involve calculations. The context indicates the calculation focus is mixed_or_unknown, making the use of a calculator potentially relevant for area calculations.",
+            "confidence": "possibly_relevant",
+            "implementationNotes": [
+              "Check how to use the calculator for the area calculations on the quiz."
+            ],
+            "name": "Use of calculator except for calculation tests",
+            "plainLanguage": "Use of calculator except for calculation tests.",
+            "sourceText": "Use of calculator except for calculation tests.",
+            "whyItMayMatter": "The use of a calculator may assist with the area calculations required by the quiz."
+          }
+        ],
+        "parentGuidance": {
+          "coachNotes": [
+            "Confirm with the teacher how the 'Extended time on tests (2 days)' accommodation will be applied to this specific 30-minute timed quiz.",
+            "Check with the teacher how the 'Use of calculator except for calculation tests' accommodation applies to the area calculations on this quiz."
+          ],
+          "summary": "For the upcoming 30-minute timed quiz on Areas of Circles and Composite Figures, the following accommodations are available: Extended time on tests (2 days) and Use of calculator except for calculation tests. Please confirm with the teacher how to apply the extended time and calculator use to this specific timed quiz."
+        },
+        "studentGuidance": {
+          "alternativeScripts": [
+            "Can I have extended time on this quiz?",
+            "I would like to use the extended time on tests for this test.",
+            "How do I use the extended time on tests for this quiz?"
+          ],
+          "startHere": "When you take this quiz, you can ask for some accommodations. You can ask for extended time on tests. You can also use a calculator for most of the work, except for specific calculation tests. You can also ask to test in a small group if you need it.",
+          "suggestedScript": "I need to ask for extended time on this quiz. How can I use the extended time on tests for this timed quiz?"
+        },
+        "teacherGuidance": {
+          "staffNotes": [
+            "Confirm how the extended time on tests (2 days) applies to this timed 30-minute practice quiz.",
+            "Confirm how the use of a calculator (except for calculation tests) applies to the area calculations on this quiz.",
+            "The accommodation for testing in a small group when requested and the use of a multiplication chart do not appear directly relevant to this practice activity."
+          ],
+          "summary": "The student has accommodations for tests, including extended time and calculator use, which may be relevant for this timed practice quiz on areas of circles and composite figures."
+        }
+      },
+      "passed": true,
+      "score": {
+        "hasCalculatorBoundary": true,
+        "hasExtendedTime": true,
+        "hasNonblankGuidance": true,
+        "hasTimedCue": true,
+        "noAnswerLeak": true,
+        "relevantCount": 2
+      },
+      "status": "passed"
+    },
+    {
+      "diagnostics": {
+        "attemptIndex": 4,
+        "runtimes": {
+          "coreMs": 15400,
+          "studentMs": 8885,
+          "parentMs": 8625,
+          "teacherMs": 7468
+        },
+        "stage": "final"
+      },
+      "finalResult": {
+        "boundaries": [
+          "Extended time on tests (2 days)",
+          "Use of calculator except for calculation tests"
+        ],
+        "notObviouslyRelevant": [
+          {
+            "name": "Test in a small group when requested.",
+            "reason": "Not applicable as the task is practice and not a formal test setting."
+          },
+          {
+            "name": "Use of multiplication chart.",
+            "reason": "No specific need or context was identified for using a multiplication chart for finding areas of circles and composite figures."
+          }
+        ],
+        "relevantAccommodations": [
+          {
+            "applicationReason": "The task is timed at 30 minutes, so extended time may help the student manage the time constraint while working on the quiz.",
+            "confidence": "possibly_relevant",
+            "implementationNotes": [
+              "Ask how to use the extended time on tests for this timed quiz."
+            ],
+            "name": "Extended time on tests (2 days)",
+            "plainLanguage": "Extended time on tests (2 days).",
+            "sourceText": "Extended time on tests (2 days).",
+            "whyItMayMatter": "Extended time may help the student manage the time constraint of the 30-minute quiz."
+          },
+          {
+            "applicationReason": "The task involves finding areas, which may involve calculations. The context indicates the calculation focus is mixed_or_unknown, so the calculator use needs confirmation regarding the nature of the required calculations.",
+            "confidence": "unclear_confirm",
+            "implementationNotes": [
+              "Check if the problems require calculation tests to determine calculator use."
+            ],
+            "name": "Use of calculator except for calculation tests",
+            "plainLanguage": "Use of calculator except for calculation tests.",
+            "sourceText": "Use of calculator except for calculation tests.",
+            "whyItMayMatter": "The use of the calculator depends on whether the problems require calculation tests, which is not explicitly clear for this practice."
+          }
+        ],
+        "parentGuidance": {
+          "coachNotes": [
+            "Please confirm with the teacher how the 'Extended time on tests (2 days)' accommodation will be applied to this specific 30-minute timed quiz.",
+            "Please check with the teacher whether the problems on the quiz require 'calculation tests' to determine if the student should use a calculator."
+          ],
+          "summary": "For the upcoming 30-minute timed quiz on Areas of Circles and Composite Figures, the following accommodations are noted:\n\n*   **Extended time on tests (2 days):** This accommodation may help the student manage the 30-minute time limit.\n*   **Use of calculator except for calculation tests:** It is unclear if the problems require calculation tests, so please confirm with the teacher if a calculator should be used for these area problems."
+        },
+        "studentGuidance": {
+          "alternativeScripts": [
+            "How can I use the extended time on tests for this quiz?",
+            "Can I use a calculator for this practice quiz?"
+          ],
+          "startHere": "When you take the Areas of circles quiz, you can ask for extended time. You have 30 minutes for the quiz. You can also use a calculator unless the problems are calculation tests. You might want to ask how to use the extended time for this quiz.",
+          "suggestedScript": "Can I please have extended time for this quiz? I have 30 minutes to finish."
+        },
+        "teacherGuidance": {
+          "staffNotes": [
+            "Confirm how the extended time accommodation applies to this timed practice quiz.",
+            "Confirm if the problems on the quiz require calculation tests to determine if the use of a calculator is appropriate."
+          ],
+          "summary": "The student has accommodations for tests, including extended time and calculator use, which may be relevant for this timed practice quiz."
+        }
+      },
+      "passed": true,
+      "score": {
+        "hasCalculatorBoundary": true,
+        "hasExtendedTime": true,
+        "hasNonblankGuidance": true,
+        "hasTimedCue": true,
+        "noAnswerLeak": true,
+        "relevantCount": 2
+      },
+      "status": "passed"
+    },
+    {
+      "diagnostics": {
+        "attemptIndex": 5,
+        "runtimes": {
+          "coreMs": 14618,
+          "studentMs": 8066,
+          "parentMs": 8867,
+          "teacherMs": 7861
+        },
+        "stage": "final"
+      },
+      "finalResult": {
+        "boundaries": [
+          "Extended time on tests (2 days)",
+          "Use of calculator except for calculation tests"
+        ],
+        "notObviouslyRelevant": [
+          {
+            "name": "Test in a small group when requested.",
+            "reason": "Not applicable as the task is practice and not a formal test setting."
+          },
+          {
+            "name": "Use of multiplication chart.",
+            "reason": "No specific need or context suggesting the use of a multiplication chart for finding areas of circles or composite figures was provided."
+          }
+        ],
+        "relevantAccommodations": [
+          {
+            "applicationReason": "The task is timed at 30 minutes, so extended time may help the student manage the time constraint while working on the quiz.",
+            "confidence": "possibly_relevant",
+            "implementationNotes": [
+              "Ask how to use the extended time on tests for this timed quiz."
+            ],
+            "name": "Extended time on tests (2 days)",
+            "plainLanguage": "Extended time on tests (2 days).",
+            "sourceText": "Extended time on tests (2 days).",
+            "whyItMayMatter": "Extended time may help the student manage the time constraint of the 30-minute quiz."
+          },
+          {
+            "applicationReason": "The task involves finding areas, which may involve calculations. The context indicates the calculation focus is mixed_or_unknown, so the calculator use needs confirmation regarding the specific nature of the area calculations.",
+            "confidence": "unclear_confirm",
+            "implementationNotes": [
+              "Check how to use the calculator for the area calculations on the quiz."
+            ],
+            "name": "Use of calculator except for calculation tests",
+            "plainLanguage": "Use of calculator except for calculation tests.",
+            "sourceText": "Use of calculator except for calculation tests.",
+            "whyItMayMatter": "The use of the calculator may be relevant depending on whether the area calculations require it, as the calculation focus is mixed_or_unknown."
+          }
+        ],
+        "parentGuidance": {
+          "coachNotes": [
+            "Please confirm with the student how they plan to use the 'Extended time on tests (2 days)' accommodation for this specific 30-minute timed quiz.",
+            "Check with the student regarding the 'Use of calculator except for calculation tests' accommodation to ensure they understand how to apply it to the area calculations on the quiz."
+          ],
+          "summary": "For the upcoming 30-minute timed quiz on Areas of Circles and Composite Figures, the following accommodations are noted:\n\n*   **Extended time on tests (2 days):** This may help the student manage the 30-minute time limit.\n*   **Use of calculator except for calculation tests:** You should confirm how the student is expected to use the calculator for the area calculations on this quiz."
+        },
+        "studentGuidance": {
+          "alternativeScripts": [
+            "Can I have extended time for this quiz?",
+            "I need to ask about the extended time for the quiz.",
+            "How do I use the extended time on tests for this timed quiz?"
+          ],
+          "startHere": "When you take the Areas of circles quiz, you can ask for extended time. You have 30 minutes for the quiz. You can also use a calculator unless the test is about calculations.",
+          "suggestedScript": "I would like to use the extended time on tests for this quiz. How can I use the extended time?"
+        },
+        "teacherGuidance": {
+          "staffNotes": [
+            "Confirm how the extended time on tests accommodation applies to this timed practice quiz.",
+            "Confirm how the use of a calculator except for calculation tests applies to the area calculations on this quiz.",
+            "Check if the student needs to use the multiplication chart for this practice.",
+            "The task is timed for 30 minutes."
+          ],
+          "summary": "The student has accommodations for tests, including extended time and calculator use, which may be relevant for this timed practice quiz. Extended time may help manage the 30-minute time limit. Use of a calculator may be relevant depending on the specific area calculations required."
+        }
+      },
+      "passed": true,
+      "score": {
+        "hasCalculatorBoundary": true,
+        "hasExtendedTime": true,
+        "hasNonblankGuidance": true,
+        "hasTimedCue": true,
+        "noAnswerLeak": true,
+        "relevantCount": 2
+      },
+      "status": "passed"
+    }
+  ],
+  "summary": {
+    "attempts": 5,
+    "blank_or_invalid_failures": 0,
+    "pass_rate": 1,
+    "passed": 5
+  }
+}

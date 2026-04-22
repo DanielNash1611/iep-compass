@@ -1,0 +1,46 @@
+{
+  "suite": "assignment_upload",
+  "id": "quiz_practice_sheet_phone_photo",
+  "label": "Quiz practice sheet phone photo",
+  "image_path": "scripts/evals/image/fixtures/assignment_upload/quiz_practice_sheet_phone_photo.jpg",
+  "notes": [
+    "Real phone photo of a math quiz practice sheet with completed answers and timing ambiguity.",
+    "Should identify the page as quiz practice, avoid answering the math, and ask whether accommodations should be checked for the practice work or the actual quiz."
+  ],
+  "expected": {
+    "document_type": "assignment_page",
+    "assignment_type": "math_assignment",
+    "must_detect_requirements": [
+      {
+        "type": "math_computation",
+        "text_keywords": ["area", "circle"]
+      },
+      {
+        "type": "math_computation",
+        "text_keywords": ["semicircle"]
+      }
+    ],
+    "must_detect_grading_factors": [],
+    "must_ask_follow_up_questions": [
+      {
+        "text_keywords": ["practice", "quiz"]
+      },
+      {
+        "text_keywords": ["timed"]
+      },
+      {
+        "text_keywords": ["minutes"]
+      }
+    ],
+    "must_include_keywords": [
+      "quiz practice",
+      "areas of circles",
+      "composite figures"
+    ],
+    "must_not_include": [
+      "write an essay",
+      "spelling"
+    ],
+    "requires_uncertainty": false
+  }
+}

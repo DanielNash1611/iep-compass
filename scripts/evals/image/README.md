@@ -16,6 +16,9 @@ Important architecture note:
 - Assignment and rubric evals still use the two-step path:
   1. Gemma reads the image and produces a looser freeform extraction.
   2. Gemma converts that extracted text into the required structured JSON schema.
+  3. The structured result should classify the visible document, summarize
+     access-relevant details, and ask short follow-up questions instead of
+     trying to OCR every line.
 - When the base URL points at local Ollama, the eval harness uses the official `ollama` JS SDK for the local image stage instead of the OpenAI-compatible transport.
 - Exception for the lighter app comparison:
   - the `gemma4:e2b` accommodation comparison now follows the live app request shape more closely

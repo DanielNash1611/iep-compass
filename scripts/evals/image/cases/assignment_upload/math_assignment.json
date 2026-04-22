@@ -24,6 +24,11 @@
       }
     ],
     "must_detect_grading_factors": [],
+    "must_ask_follow_up_questions": [
+      {
+        "text_keywords": ["timed"]
+      }
+    ],
     "must_include_keywords": [
       "12",
       "long division",

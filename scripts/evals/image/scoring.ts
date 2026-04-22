@@ -42,9 +42,11 @@ function buildScoreBlock(checks: EvalCheckResult[], threshold = 1): EvalScoreBlo
 
 function buildAssignmentText(output: AssignmentUploadInterpretation) {
   return [
+    ...(output.access_relevant_details ?? []),
     output.document_type,
     output.assignment_type,
     output.task_summary,
+    ...(output.follow_up_questions ?? []),
     ...output.grading_factors,
     ...output.detected_requirements.flatMap((item) => [item.type, item.text]),
   ].join('\n')
@@ -73,6 +75,16 @@ function matchRequirement(
 
     return expected.text_keywords.length === 0 || includesAllKeywords(item.text, expected.text_keywords)
   })
+}
+
+function matchFollowUpQuestion(
+  output: AssignmentUploadInterpretation,
+  expected: LoadedAssignmentUploadEvalCase['expected']['must_ask_follow_up_questions'][number],
+) {
+  return (output.follow_up_questions ?? []).find((question) =>
+    expected.text_keywords.length === 0
+      || includesAllKeywords(question, expected.text_keywords),
+  )
 }
 
 function calculateConditionMetric(checks: EvalCheckResult[]) {
@@ -381,6 +393,22 @@ export function scoreAssignmentEvalCase(options: {
     }
   }
 
+  for (const expectedQuestion of (
+    options.evalCase.expected.must_ask_follow_up_questions ?? []
+  )) {
+    const matchedQuestion = matchFollowUpQuestion(output, expectedQuestion)
+
+    fieldChecks.push({
+      details: expectedQuestion.text_keywords.join(', '),
+      key: `follow_up_question_${expectedQuestion.text_keywords.join('_')}`,
+      passed: Boolean(matchedQuestion),
+    })
+
+    if (!matchedQuestion) {
+      failureTags.add('missed_follow_up_question')
+    }
+  }
+
   for (const keyword of options.evalCase.expected.must_include_keywords) {
     const present = includesKeyword(outputText, keyword)
 
@@ -430,6 +458,7 @@ export function scoreAssignmentEvalCase(options: {
     'hallucinated_requirement',
     'missed_accommodation_relevant_signal',
     'missed_deadline',
+    'missed_follow_up_question',
     'missed_rubric_factor',
     'wrong_assignment_type',
   ]

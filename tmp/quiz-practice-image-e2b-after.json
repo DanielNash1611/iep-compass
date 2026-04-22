@@ -1,0 +1,290 @@
+{
+  "generated_at": "2026-04-22T02:50:34.317Z",
+  "judge_mode": "off",
+  "judge_model": "gemma4:31b",
+  "model": "gemma4:e2b",
+  "suites": [
+    {
+      "cases": [
+        {
+          "case": {
+            "id": "quiz_practice_sheet_phone_photo",
+            "image_path": "scripts/evals/image/fixtures/assignment_upload/quiz_practice_sheet_phone_photo.jpg",
+            "label": "Quiz practice sheet phone photo",
+            "notes": [
+              "Real phone photo of a math quiz practice sheet with completed answers and timing ambiguity.",
+              "Should identify the page as quiz practice, avoid answering the math, and ask whether accommodations should be checked for the practice work or the actual quiz."
+            ],
+            "expected": {
+              "assignment_type": "math_assignment",
+              "document_type": "assignment_page",
+              "must_detect_grading_factors": [],
+              "must_detect_requirements": [
+                {
+                  "text_keywords": [
+                    "area",
+                    "circle"
+                  ],
+                  "type": "math_computation"
+                },
+                {
+                  "text_keywords": [
+                    "semicircle"
+                  ],
+                  "type": "math_computation"
+                }
+              ],
+              "must_ask_follow_up_questions": [
+                {
+                  "text_keywords": [
+                    "practice",
+                    "quiz"
+                  ]
+                },
+                {
+                  "text_keywords": [
+                    "timed"
+                  ]
+                },
+                {
+                  "text_keywords": [
+                    "minutes"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "quiz practice",
+                "areas of circles",
+                "composite figures"
+              ],
+              "must_not_include": [
+                "write an essay",
+                "spelling"
+              ],
+              "requires_uncertainty": false
+            },
+            "suite": "assignment_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/assignment_upload/quiz_practice_sheet_phone_photo.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/assignment_upload/quiz_practice_sheet_phone_photo.jpg"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "key": "valid_structured_json",
+                "passed": true
+              },
+              {
+                "key": "required_fields_present",
+                "passed": true
+              },
+              {
+                "key": "confidence_in_range",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "pipeline": "vision_extract_then_structure",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/api/chat (ollama sdk)",
+            "totalTimeoutMs": 600000,
+            "transport": "ollama_sdk",
+            "originalAsset": {
+              "bytes": 3472161,
+              "dimensions": {
+                "height": 3000,
+                "width": 4000
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/fixtures/assignment_upload/quiz_practice_sheet_phone_photo.jpg"
+            },
+            "finalAsset": {
+              "bytes": 360169,
+              "dimensions": {
+                "height": 960,
+                "width": 1280
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-xXXS63/quiz_practice_sheet_phone_photo-ollama.jpg"
+            },
+            "preprocessRuntimeMs": 188,
+            "extractionPreview": "**Assignment Type:** Quiz Practice / Practice Work\n\n**Summary of Task, Requirements, and Details:**\n\n*   **Title:** #28 Quiz PRACTICE\n*   **Instructions/Items:** The document contains six problems (1 through 6) requiring the student to find the area of various geometric shapes (circle, rectangle, square, parallelogram, and triangle).\n*   **Visible Requirements:** The tasks involve calculating the area based on given fractions or expressions related to geometric formulas.\n*   **Grading Factors/De",
+            "extractionRuntimeMs": 11498,
+            "firstChunkMs": 1046,
+            "firstContentMs": 8567,
+            "structuringRuntimeMs": 11507,
+            "runtimeMs": 23375,
+            "runnerAttempts": [],
+            "runnerIsolation": "same_process"
+          },
+          "failure_tags": [
+            "missed_accommodation_relevant_signal",
+            "missed_follow_up_question",
+            "ocr_failure"
+          ],
+          "field": {
+            "checks": [
+              {
+                "details": "expected assignment_page, received assignment_page",
+                "key": "document_type_match",
+                "passed": true
+              },
+              {
+                "details": "expected math_assignment, received math_assignment",
+                "key": "assignment_type_match",
+                "passed": true
+              },
+              {
+                "details": "expected math_computation",
+                "key": "requirement_math_computation",
+                "passed": true
+              },
+              {
+                "details": "expected math_computation",
+                "key": "requirement_math_computation",
+                "passed": false
+              },
+              {
+                "details": "practice, quiz",
+                "key": "follow_up_question_practice_quiz",
+                "passed": true
+              },
+              {
+                "details": "timed",
+                "key": "follow_up_question_timed",
+                "passed": false
+              },
+              {
+                "details": "minutes",
+                "key": "follow_up_question_minutes",
+                "passed": true
+              },
+              {
+                "details": "quiz practice",
+                "key": "must_include_quiz practice",
+                "passed": false
+              },
+              {
+                "details": "areas of circles",
+                "key": "must_include_areas of circles",
+                "passed": false
+              },
+              {
+                "details": "composite figures",
+                "key": "must_include_composite figures",
+                "passed": false
+              },
+              {
+                "details": "write an essay",
+                "key": "must_not_include_write an essay",
+                "passed": true
+              },
+              {
+                "details": "spelling",
+                "key": "must_not_include_spelling",
+                "passed": true
+              },
+              {
+                "details": "confidence=1; must_ask_for_more_context=false",
+                "key": "uncertainty_handling",
+                "passed": true
+              }
+            ],
+            "passed": false,
+            "score": 0.6153846153846154
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": null,
+            "field_score": 0.6153846153846154,
+            "hallucination_flagged": 0,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 1
+          },
+          "model": "gemma4:e2b",
+          "output": {
+            "access_relevant_details": [
+              "The document contains six problems requiring the calculation of the area of various geometric shapes.",
+              "The tasks involve calculating area based on given fractions or expressions related to geometric formulas.",
+              "The document includes fields for Period, Name, and Date."
+            ],
+            "assignment_type": "math_assignment",
+            "confidence": 1,
+            "detected_requirements": [
+              {
+                "text": "Calculate the area of geometric shapes (circle, rectangle, square, parallelogram, triangle)",
+                "type": "math_computation"
+              }
+            ],
+            "document_type": "assignment_page",
+            "follow_up_questions": [
+              "Is this a calculation test or quiz where calculator use is restricted?",
+              "Should accommodation matching focus on the practice work or the actual quiz/test?",
+              "Is there a specific time limit for completing this practice work, and if so, how many minutes does the student have?"
+            ],
+            "grading_factors": [
+              "None visible"
+            ],
+            "must_ask_for_more_context": false,
+            "task_summary": "Practice work involving finding the area of various geometric shapes (circle, rectangle, square, parallelogram, and triangle)."
+          },
+          "raw_content": "```json\n{\n  \"access_relevant_details\": [\n    \"The document contains six problems requiring the calculation of the area of various geometric shapes.\",\n    \"The tasks involve calculating area based on given fractions or expressions related to geometric formulas.\",\n    \"The document includes fields for Period, Name, and Date.\"\n  ],\n  \"assignment_type\": \"math_assignment\",\n  \"confidence\": 1.0,\n  \"detected_requirements\": [\n    {\n      \"text\": \"Calculate the area of geometric shapes (circle, rectangle, square, parallelogram, triangle)\",\n      \"type\": \"math_computation\"\n    }\n  ],\n  \"document_type\": \"assignment_page\",\n  \"follow_up_questions\": [\n    \"Should accommodation matching focus on the practice work or the actual quiz/test?\",\n    \"Is there a specific time limit for completing this practice work, and if so, how many minutes does the student have?\"\n  ],\n  \"grading_factors\": [\n    \"None visible\"\n  ],\n  \"must_ask_for_more_context\": false,\n  \"task_summary\": \"Practice work involving finding the area of various geometric shapes (circle, rectangle, square, parallelogram, and triangle).\"\n}\n```",
+          "raw_json": {
+            "access_relevant_details": [
+              "The document contains six problems requiring the calculation of the area of various geometric shapes.",
+              "The tasks involve calculating area based on given fractions or expressions related to geometric formulas.",
+              "The document includes fields for Period, Name, and Date."
+            ],
+            "assignment_type": "math_assignment",
+            "confidence": 1,
+            "detected_requirements": [
+              {
+                "text": "Calculate the area of geometric shapes (circle, rectangle, square, parallelogram, triangle)",
+                "type": "math_computation"
+              }
+            ],
+            "document_type": "assignment_page",
+            "follow_up_questions": [
+              "Should accommodation matching focus on the practice work or the actual quiz/test?",
+              "Is there a specific time limit for completing this practice work, and if so, how many minutes does the student have?"
+            ],
+            "grading_factors": [
+              "None visible"
+            ],
+            "must_ask_for_more_context": false,
+            "task_summary": "Practice work involving finding the area of various geometric shapes (circle, rectangle, square, parallelogram, and triangle)."
+          },
+          "status": "failed"
+        }
+      ],
+      "suite": "assignment_upload",
+      "summary": {
+        "average_field_score": 0.615,
+        "average_judge_dimensions": {},
+        "average_judge_overall": null,
+        "average_uncertainty_handling_score": 1,
+        "case_ids_failed": [
+          "quiz_practice_sheet_phone_photo"
+        ],
+        "condition_preservation_score": null,
+        "executed_cases": 1,
+        "failed_cases": 1,
+        "failure_tag_counts": {
+          "missed_accommodation_relevant_signal": 1,
+          "missed_follow_up_question": 1,
+          "ocr_failure": 1
+        },
+        "hallucination_rate": 0,
+        "incomplete_image_handling_score": null,
+        "pass_rate": 0,
+        "passed_cases": 0,
+        "skipped_cases": 0,
+        "total_cases": 1
+      }
+    }
+  ]
+}
