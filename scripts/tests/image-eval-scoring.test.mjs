@@ -48,6 +48,88 @@ test('scoreAccommodationEvalCase tags lost conditions when accommodation text dr
   assert.ok(result.failure_tags.includes('lost_condition'))
 })
 
+test('scoreAccommodationEvalCase requires accommodation-specific condition wording on a matching line', () => {
+  const result = scoreAccommodationEvalCase({
+    evalCase: {
+      caseFilePath: '/tmp/real_accommodation_page_phone_photo.json',
+      expected: {
+        conditions: [],
+        expected_accommodations: [
+          {
+            conditions: ['when requested'],
+            label_keywords: ['small group', 'seat away'],
+            normalized_type: 'reduced_distraction_setting',
+            source_evidence_keywords: ['distractions', 'noise'],
+          },
+        ],
+        must_include_keywords: [],
+        must_not_include: [],
+        requires_uncertainty: false,
+      },
+      id: 'real_accommodation_page_phone_photo',
+      image_path: 'fixtures/real_accommodation_page_phone_photo.jpg',
+      label: 'Real accommodations page phone photo',
+      notes: [],
+      resolvedImagePath: '/tmp/real_accommodation_page_phone_photo.jpg',
+      suite: 'accommodation_upload',
+    },
+    model: 'gemma4:e2b',
+    modelResult: {
+      output: [
+        'SETTING / SCHEDULING',
+        'Test in small group requested',
+        'Seat away from distractions/noise',
+        'TEACHER DIRECTIONS',
+        'Answer choices read aloud when requested',
+      ].join('\n'),
+      rawContent: 'plain text',
+      rawJson: undefined,
+    },
+  })
+
+  assert.equal(result.status, 'failed')
+  assert.ok(result.failure_tags.includes('lost_condition'))
+  assert.equal(result.metrics.condition_preservation_score, 0)
+})
+
+test('scoreAccommodationEvalCase keeps visible grammar condition exact instead of accepting collapsed wording', () => {
+  const result = scoreAccommodationEvalCase({
+    evalCase: {
+      caseFilePath: '/tmp/real_accommodation_page_phone_photo.json',
+      expected: {
+        conditions: [],
+        expected_accommodations: [
+          {
+            conditions: ['unless a grammar task'],
+            label_keywords: ['no penalty', 'grammar'],
+            normalized_type: 'other',
+            source_evidence_keywords: ['unless', 'grammar task'],
+          },
+        ],
+        must_include_keywords: [],
+        must_not_include: [],
+        requires_uncertainty: false,
+      },
+      id: 'real_accommodation_page_phone_photo',
+      image_path: 'fixtures/real_accommodation_page_phone_photo.jpg',
+      label: 'Real accommodations page phone photo',
+      notes: [],
+      resolvedImagePath: '/tmp/real_accommodation_page_phone_photo.jpg',
+      suite: 'accommodation_upload',
+    },
+    model: 'gemma4:e2b',
+    modelResult: {
+      output: 'No penalty for grammar unless grammar task',
+      rawContent: 'plain text',
+      rawJson: undefined,
+    },
+  })
+
+  assert.equal(result.status, 'failed')
+  assert.ok(result.failure_tags.includes('lost_condition'))
+  assert.equal(result.metrics.condition_preservation_score, 0)
+})
+
 test('scoreAccommodationEvalCase tags overconfidence for blurry cases', () => {
   const result = scoreAccommodationEvalCase({
     evalCase: {

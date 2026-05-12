@@ -221,6 +221,10 @@ function isYesNoQuestion(question: string) {
   return /^check whether\b/i.test(question.trim())
 }
 
+function isAccommodationFocusQuestion(question: string) {
+  return /practice work,\s*the actual quiz\/test,\s*or both/i.test(question)
+}
+
 function formatFollowUpAnswer(question: string, answer: string) {
   const trimmedQuestion = question.trim()
   const trimmedAnswer = answer.trim()
@@ -861,13 +865,38 @@ function TaskDocumentReview({
           {draft.followUpQuestions.map((item, index) => {
             const question = getFollowUpQuestionText(item)
             const answer = getFollowUpAnswer(item)
+            const accommodationFocusQuestion = isAccommodationFocusQuestion(question)
             const yesNoQuestion = isYesNoQuestion(question)
 
             return (
               <div key={`${question}-${index}`} className="follow-up-answer">
                 <p className="follow-up-answer__prompt">{question}</p>
 
-                {yesNoQuestion ? (
+                {accommodationFocusQuestion ? (
+                  <div className="segmented-group follow-up-answer__choices follow-up-answer__choices--wrap">
+                    {['Practice work', 'Quiz/test', 'Both'].map((choice) => (
+                      <button
+                        key={choice}
+                        className={`segmented-choice${
+                          answer.toLowerCase() === choice.toLowerCase()
+                            ? ' segmented-choice--active'
+                            : ''
+                        }`}
+                        type="button"
+                        onClick={() =>
+                          updateFollowUpAnswer(
+                            index,
+                            answer.toLowerCase() === choice.toLowerCase()
+                              ? ''
+                              : choice,
+                          )
+                        }
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+                ) : yesNoQuestion ? (
                   <div className="segmented-group follow-up-answer__choices">
                     {['Yes', 'No'].map((choice) => (
                       <button

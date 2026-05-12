@@ -85,16 +85,23 @@ test('shouldTriggerAccommodationFocusedRecovery skips already-good drafts', () =
   )
 })
 
-test('getAccommodationPhotoRecoveryTileRects returns three bounded overlapping tiles', () => {
+test('getAccommodationPhotoRecoveryTileRects returns bounded overlapping and condition tiles', () => {
   const tiles = getAccommodationPhotoRecoveryTileRects({
     height: 1296,
     width: 972,
   })
 
-  assert.equal(tiles.length, 4)
+  assert.equal(tiles.length, 6)
   assert.deepEqual(
     tiles.map((tile) => tile.label),
-    ['left', 'middle', 'right', 'student_response_conditions'],
+    [
+      'left',
+      'middle',
+      'right',
+      'student_response_conditions',
+      'setting_condition_lines',
+      'student_response_exception_lines',
+    ],
   )
 
   for (const tile of tiles) {
@@ -112,6 +119,9 @@ test('getAccommodationPhotoRecoveryTileRects returns three bounded overlapping t
   assert.ok(tiles[1].x + tiles[1].width > tiles[2].x)
   assert.ok(tiles[3].x >= tiles[2].x)
   assert.ok(tiles[3].y <= tiles[2].y)
+  assert.ok(tiles[4].x <= tiles[0].x + tiles[0].width)
+  assert.ok(tiles[5].x >= tiles[1].x)
+  assert.ok(tiles[5].x + tiles[5].width >= tiles[2].x + tiles[2].width)
 })
 
 test('mergeAccommodationPhotoRecoveryTileDrafts keeps richer overlapping lines once', () => {

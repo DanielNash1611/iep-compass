@@ -19,6 +19,7 @@ import {
   getAccommodationPhotoRecoveryTileRects,
   mergeAccommodationPhotoRecoveryTileDrafts,
   shouldTriggerAccommodationFocusedRecovery,
+  type AccommodationPhotoRecoveryTileLabel,
 } from '../../../src/lib/text/accommodationImagePrep.ts'
 import { buildAssignmentFollowUpQuestions } from '../../../src/lib/text/assignmentFollowUps.ts'
 import type { ImageEvalConfig } from './config.ts'
@@ -31,6 +32,7 @@ import {
 } from './openaiCompatible.ts'
 import {
   buildAccommodationImageFocusedPrompt,
+  buildAccommodationImageFocusedPromptForTile,
   buildAccommodationImageManualFlowPrompt,
   buildAssignmentImageManualFlowPrompt,
   buildAssignmentImageStructuringPrompt,
@@ -223,7 +225,7 @@ async function preprocessAccommodationImageForComparison(imagePath: string) {
   let focusedRecoveryTiles:
     | Array<{
       asset: ImageAssetDetails
-      label: string
+      label: AccommodationPhotoRecoveryTileLabel
     }>
     | undefined
 
@@ -696,7 +698,7 @@ class GemmaVisionEvalAdapter implements VisionModelAdapter {
 
         if (diagnostics.photoMode && focusedRecoveryTileDataUrls.length > 0) {
           const tileDrafts: Array<{
-            label: string
+            label: AccommodationPhotoRecoveryTileLabel
             text: string
           }> = []
           let mergedTileRuntimeMs = 0
@@ -707,10 +709,7 @@ class GemmaVisionEvalAdapter implements VisionModelAdapter {
                 imageDataUrl: tile.imageDataUrl,
                 imagePath: tile.path,
                 label: `focused_recovery_tile_${tile.label}`,
-                prompt: buildAccommodationImageFocusedPrompt({
-                  conditionFocus: tile.label === 'student_response_conditions',
-                  photoMode: false,
-                }),
+                prompt: buildAccommodationImageFocusedPromptForTile(tile.label, false),
                 timeoutMs: Math.min(this.config.timeoutMs, 30_000),
               })
 

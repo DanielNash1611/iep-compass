@@ -11,7 +11,7 @@ import { SourceEditor } from './features/source/SourceEditor'
 import {
   clearPersistedIepSource,
   hasPersistedIepSource,
-  loadPersistedIepSource,
+  loadPersistedIepDetails,
   persistIepSource,
 } from './features/source/localSourceStorage'
 import { SourceReviewPanel } from './features/source/SourceReviewPanel'
@@ -139,8 +139,13 @@ function createBlankSource(): SourceMaterial {
   }
 }
 
-function getRestoredIepSource() {
-  return loadPersistedIepSource() ?? createBlankSource()
+function getRestoredIepDetails() {
+  const restoredDetails = loadPersistedIepDetails()
+
+  return {
+    learningProfile: restoredDetails?.learningProfile ?? '',
+    source: restoredDetails?.source ?? createBlankSource(),
+  }
 }
 
 function copySource(source: SourceMaterial): SourceMaterial {
@@ -234,7 +239,13 @@ function buildCompletedInterpretationProgress(
 }
 
 function deriveTaskTitleFromSource(source: SourceMaterial) {
-  const taskTraits = getPrimaryTaskTraits(source)
+  const taskTraits =
+    getPrimaryTaskTraits(source)
+    ?? source.attachments
+      .map((attachment) => attachment.documentDraft)
+      .find((draft): draft is TaskReviewDraft =>
+        Boolean(draft && 'taskDescription' in draft),
+      )
 
   if (!taskTraits?.taskDescription.trim()) {
     return ''
@@ -249,19 +260,70 @@ function deriveTaskTitleFromSource(source: SourceMaterial) {
     ?? ''
 }
 
+function shouldUseReviewReadyTaskAttachment(attachment: UploadedAttachment) {
+  return (
+    attachment.status === 'review_ready'
+    && attachment.documentKind === 'assignment_or_quiz'
+    && Boolean(
+      attachment.documentDraft
+      && 'taskDescription' in attachment.documentDraft
+      && attachment.documentDraft.sourceSummaryText?.trim(),
+    )
+  )
+}
+
+function hasUsableTaskSourceForGeneration(source: SourceMaterial) {
+  return (
+    hasUsableSourceText(source)
+    || source.attachments.some(shouldUseReviewReadyTaskAttachment)
+  )
+}
+
+function includeReviewReadyTaskAttachments(source: SourceMaterial): SourceMaterial {
+  return {
+    ...source,
+    attachments: source.attachments.map((attachment) => {
+      if (!shouldUseReviewReadyTaskAttachment(attachment)) {
+        return attachment
+      }
+
+      return refreshAttachmentNotes({
+        ...attachment,
+        sourceTrailText: attachment.documentDraft?.sourceSummaryText?.trim(),
+        status: 'included',
+      })
+    }),
+  }
+}
+
 export default function App() {
   const [analysisAdapter] = useState(() => createAnalysisAdapter())
-  const [screen, setScreen] = useState<Screen>('iep')
+  const initialIepDetailsRef = useRef<ReturnType<typeof getRestoredIepDetails> | null>(
+    null,
+  )
+  if (!initialIepDetailsRef.current) {
+    initialIepDetailsRef.current = getRestoredIepDetails()
+  }
+
+  const [screen, setScreen] = useState<Screen>(() =>
+    hasUsableSourceText(initialIepDetailsRef.current?.source ?? createBlankSource())
+      ? 'assignment'
+      : 'iep',
+  )
   const [activeExampleId, setActiveExampleId] = useState<string | null>(null)
   const [contextTags, setContextTags] = useState<TaskContext[]>([])
   const [taskTitle, setTaskTitle] = useState('')
-  const [learningProfile, setLearningProfile] = useState('')
+  const [learningProfile, setLearningProfile] = useState(
+    () => initialIepDetailsRef.current?.learningProfile ?? '',
+  )
   const [teacherConcern, setTeacherConcern] = useState('')
   const [hasSavedIepOnDevice, setHasSavedIepOnDevice] = useState(() =>
     hasPersistedIepSource(),
   )
   const [shouldPersistIepSource, setShouldPersistIepSource] = useState(true)
-  const [iepSource, setIepSource] = useState<SourceMaterial>(getRestoredIepSource)
+  const [iepSource, setIepSource] = useState<SourceMaterial>(
+    () => initialIepDetailsRef.current?.source ?? createBlankSource(),
+  )
   const [taskSource, setTaskSource] = useState<SourceMaterial>(createBlankSource)
   const [analysis, setAnalysis] = useState<AnalysisExecution | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
@@ -287,6 +349,9 @@ export default function App() {
   const latestSourcesRef = useRef<SourceMaterial[]>([])
   const analysisRunIdRef = useRef(0)
   const teacherConcernRunIdRef = useRef(0)
+  const correctionIepRef = useRef<HTMLDivElement>(null)
+  const correctionAssignmentRef = useRef<HTMLDivElement>(null)
+  const teacherConcernPanelRef = useRef<HTMLDivElement>(null)
 
   const modelPlan = analysisAdapter.getModelPlan()
   const documentPlan = readGemmaDocumentPlan()
@@ -360,8 +425,28 @@ export default function App() {
       return
     }
 
-    setHasSavedIepOnDevice(persistIepSource(iepSource))
-  }, [iepSource, shouldPersistIepSource])
+    setHasSavedIepOnDevice(persistIepSource(iepSource, learningProfile))
+  }, [iepSource, learningProfile, shouldPersistIepSource])
+
+  useEffect(() => {
+    if (!correctionTarget) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      const targetElement =
+        correctionTarget === 'iep'
+          ? correctionIepRef.current
+          : correctionAssignmentRef.current
+
+      targetElement?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+      const firstEditable = targetElement?.querySelector<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >('textarea:not([disabled]), input:not([type="file"]):not([disabled]), select:not([disabled])')
+      firstEditable?.focus({ preventScroll: true })
+    })
+  }, [correctionTarget])
 
   useEffect(() => {
     return () => {
@@ -1250,8 +1335,10 @@ export default function App() {
   }
 
   function resetAllState() {
+    const restoredIepDetails = getRestoredIepDetails()
+
     cancelPendingAnalysis()
-    replaceIepSource(getRestoredIepSource())
+    replaceIepSource(restoredIepDetails.source)
     replaceTaskSource(createBlankSource())
 
     setCorrectionIepSource((current) => {
@@ -1265,7 +1352,7 @@ export default function App() {
 
     setContextTags([])
     setTaskTitle('')
-    setLearningProfile('')
+    setLearningProfile(restoredIepDetails.learningProfile)
     setTeacherConcern('')
     setActiveExampleId(null)
     setAnalysis(null)
@@ -1274,7 +1361,7 @@ export default function App() {
     setCorrectionTeacherConcern('')
     setCorrectionContextTags([])
     setCorrectionTarget(null)
-    setScreen('iep')
+    setScreen(hasUsableSourceText(restoredIepDetails.source) ? 'assignment' : 'iep')
   }
 
   function buildTeacherConcernRequest(
@@ -1385,14 +1472,19 @@ export default function App() {
   }
 
   async function handleGenerateOutput() {
-    if (!hasUsableSourceText(iepSource) || !hasUsableSourceText(taskSource)) {
+    if (!hasUsableSourceText(iepSource) || !hasUsableTaskSourceForGeneration(taskSource)) {
       return
     }
 
-    const nextTaskTitle = taskTitle.trim() || deriveTaskTitleFromSource(taskSource)
+    const nextTaskSource = includeReviewReadyTaskAttachments(taskSource)
+    const nextTaskTitle = taskTitle.trim() || deriveTaskTitleFromSource(nextTaskSource)
 
     if (!nextTaskTitle) {
       return
+    }
+
+    if (nextTaskSource !== taskSource) {
+      replaceTaskSource(nextTaskSource)
     }
 
     if (!taskTitle.trim()) {
@@ -1401,7 +1493,7 @@ export default function App() {
 
     const didGenerate = await runPrimaryAnalysis(
       iepSource,
-      taskSource,
+      nextTaskSource,
       nextTaskTitle,
       learningProfile,
       contextTags,
@@ -1413,15 +1505,19 @@ export default function App() {
 
   async function handleRegenerateFromCorrection() {
     const nextIepSource = correctionIepSource
-    const nextTaskSource = correctionTaskSource
+    const nextTaskSource = includeReviewReadyTaskAttachments(correctionTaskSource)
     const nextTaskTitle =
-      correctionTaskTitle.trim() || deriveTaskTitleFromSource(correctionTaskSource)
+      correctionTaskTitle.trim() || deriveTaskTitleFromSource(nextTaskSource)
     const nextLearningProfile = learningProfile
     const nextTeacherConcern = correctionTeacherConcern
     const nextContextTags = correctionContextTags
 
     if (!nextTaskTitle) {
       return
+    }
+
+    if (nextTaskSource !== correctionTaskSource) {
+      setCorrectionTaskSource(nextTaskSource)
     }
 
     replaceIepSource(nextIepSource, {
@@ -1451,10 +1547,16 @@ export default function App() {
       return
     }
 
+    const nextTaskSource = includeReviewReadyTaskAttachments(taskSource)
+
+    if (nextTaskSource !== taskSource) {
+      replaceTaskSource(nextTaskSource)
+    }
+
     await runTeacherConcernFollowUp(
       buildTeacherConcernRequest(
         iepSource,
-        taskSource,
+        nextTaskSource,
         effectiveTaskTitle,
         learningProfile,
         teacherConcern,
@@ -1463,11 +1565,30 @@ export default function App() {
     )
   }
 
+  function askAboutSkippedAccommodation(
+    item: AnalysisExecution['result']['notObviouslyRelevant'][number],
+  ) {
+    updateMainTeacherConcern(
+      `Can we check why my approved accommodation "${item.name}" might not fit this task yet? ${item.reason}`,
+    )
+
+    window.requestAnimationFrame(() => {
+      teacherConcernPanelRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+      teacherConcernPanelRef.current
+        ?.querySelector<HTMLTextAreaElement>('textarea[name="resultsTeacherConcern"]')
+        ?.focus({ preventScroll: true })
+    })
+  }
+
   function clearSavedIepFromDevice() {
     clearPersistedIepSource()
     setHasSavedIepOnDevice(false)
     cancelPendingAnalysis()
     replaceIepSource(createBlankSource())
+    setLearningProfile('')
     setActiveExampleId(null)
     setAnalysis(null)
     setAnalysisError(null)
@@ -1482,20 +1603,44 @@ export default function App() {
   const effectiveTaskTitle = taskTitle.trim() || deriveTaskTitleFromSource(taskSource)
   const effectiveCorrectionTaskTitle =
     correctionTaskTitle.trim() || deriveTaskTitleFromSource(correctionTaskSource)
+  const interpretedTaskTitle = !taskTitle.trim()
+    ? deriveTaskTitleFromSource(taskSource)
+    : ''
   const canGenerateOutput =
     hasUsableSourceText(iepSource) &&
-    hasUsableSourceText(taskSource) &&
+    hasUsableTaskSourceForGeneration(taskSource) &&
     Boolean(effectiveTaskTitle)
+  const generateDisabledReason = !hasUsableSourceText(iepSource)
+    ? 'Add or review approved IEP accommodation wording first.'
+    : !hasUsableTaskSourceForGeneration(taskSource)
+      ? 'Add task details, or review the interpreted assignment upload first.'
+      : !effectiveTaskTitle
+        ? 'Add a short task title, or use the interpreted title from the upload.'
+        : isAnalyzing
+          ? 'IEP Compass is already checking this task.'
+          : undefined
   const canAddressTeacherConcern =
     !isAnalyzing &&
     hasUsableSourceText(iepSource) &&
-    hasUsableSourceText(taskSource) &&
+    hasUsableTaskSourceForGeneration(taskSource) &&
     Boolean(effectiveTaskTitle) &&
     Boolean(teacherConcern.trim())
   const canRegenerateFromCorrection =
     hasUsableSourceText(correctionIepSource) &&
-    hasUsableSourceText(correctionTaskSource) &&
+    hasUsableTaskSourceForGeneration(correctionTaskSource) &&
     Boolean(effectiveCorrectionTaskTitle)
+  const canNavigateToResults = Boolean(analysis || analysisError || isAnalyzing)
+  const canNavigateToStep = (stepId: Screen) => {
+    if (stepId === 'iep') {
+      return true
+    }
+
+    if (stepId === 'assignment') {
+      return canContinueToAssignment
+    }
+
+    return canNavigateToResults
+  }
   const showOptionalTaskSetup =
     contextTags.length > 0 ||
     Boolean(teacherConcern.trim())
@@ -1621,13 +1766,20 @@ export default function App() {
               : isActive
                 ? 'Now'
                 : 'Up next'
+            const canNavigate = canNavigateToStep(step.id)
 
             return (
-              <div
+              <button
                 key={step.id}
+                aria-current={isActive ? 'step' : undefined}
                 className={`progress-step progress-step--${step.id}${
                   isActive ? ' progress-step--active' : ''
-                }${isComplete ? ' progress-step--complete' : ''}`}
+                }${isComplete ? ' progress-step--complete' : ''}${
+                  canNavigate ? '' : ' progress-step--locked'
+                }`}
+                disabled={!canNavigate}
+                type="button"
+                onClick={() => setScreen(step.id)}
               >
                 <div className="progress-step__marker">
                   <span className="progress-step__index">{index + 1}</span>
@@ -1642,7 +1794,7 @@ export default function App() {
                   </div>
                   <p>{step.helper}</p>
                 </div>
-              </div>
+              </button>
             )
           })}
         </nav>
@@ -1832,21 +1984,26 @@ export default function App() {
                       Back to IEP details
                     </button>
 
-                    <button
-                      className="action-button"
-                      type="button"
-                      disabled={!canGenerateOutput || isAnalyzing}
-                      onClick={() => void handleGenerateOutput()}
+                    <span
+                      className="action-button-tooltip"
+                      title={generateDisabledReason}
                     >
-                      {isAnalyzing ? (
-                        <LoadingIndicator label="Generating output" size="sm" />
-                      ) : (
-                        <>
-                          <AppIcon name="results" className="button-icon" />
-                          Check what may apply
-                        </>
-                      )}
-                    </button>
+                      <button
+                        className="action-button"
+                        type="button"
+                        disabled={!canGenerateOutput || isAnalyzing}
+                        onClick={() => void handleGenerateOutput()}
+                      >
+                        {isAnalyzing ? (
+                          <LoadingIndicator label="Generating output" size="sm" />
+                        ) : (
+                          <>
+                            <AppIcon name="results" className="button-icon" />
+                            Check what may apply
+                          </>
+                        )}
+                      </button>
+                    </span>
                   </div>
                 }
               >
@@ -1855,6 +2012,23 @@ export default function App() {
                   <p className="field-label__help">
                     Keep this short so it is easy to spot later.
                   </p>
+                  {interpretedTaskTitle ? (
+                    <div className="inline-suggestion">
+                      <span>Gemma found: {interpretedTaskTitle}</span>
+                      <button
+                        className="text-link-button"
+                        type="button"
+                        onClick={() => {
+                          setTaskTitle(interpretedTaskTitle)
+                          setActiveExampleId(null)
+                          setAnalysisError(null)
+                          clearTeacherConcernState()
+                        }}
+                      >
+                        Use interpreted title
+                      </button>
+                    </div>
+                  ) : null}
                   <input
                     className="text-input"
                     name="taskTitle"
@@ -1984,12 +2158,13 @@ export default function App() {
           {screen === 'results' ? (
             <>
               {correctionTarget === 'iep' ? (
-                <SectionCard
-                  eyebrow="Correct details"
-                  title="Update the IEP source trail"
-                  description="Fix anything we missed in the IEP details, then regenerate from the updated version."
-                  icon={<AppIcon name="notebook" />}
-                  footer={
+                <div ref={correctionIepRef}>
+                  <SectionCard
+                    eyebrow="Correct details"
+                    title="Update the IEP source trail"
+                    description="Fix anything we missed in the IEP details, then regenerate from the updated version."
+                    icon={<AppIcon name="notebook" />}
+                    footer={
                     <div className="screen-actions screen-actions--split">
                       <button
                         className="ghost-button"
@@ -2015,61 +2190,63 @@ export default function App() {
                             Regenerate accommodation map
                           </>
                         )}
-                      </button>
-                    </div>
-                  }
-                >
-                  <SourceEditor
-                    attachments={correctionIepSource.attachments}
-                    documentPlan={documentPlan}
-                    textHelp="Fix the approved wording here if the first pass missed something important or cited the wrong detail."
-                    textLabel="Approved IEP wording"
-                    textName="correctionIepExcerpt"
-                    textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
-                    textValue={correctionIepSource.text}
-                    onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
-                      applyCorrectionAttachmentTextReview(
-                        'iep',
-                        attachmentId,
-                        nextValue,
-                        mode,
-                      )
+                        </button>
+                      </div>
                     }
-                    onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
-                      updateCorrectionAttachmentDocumentDraft('iep', attachmentId, nextDraft)
-                    }
-                    onKeepAttachmentReference={(attachmentId) =>
-                      keepCorrectionAttachmentReference('iep', attachmentId)
-                    }
-                    onRunAttachmentInterpretation={(attachmentId) =>
-                      runCorrectionAttachmentInterpretation('iep', attachmentId)
-                    }
-                    onTextChange={(nextValue) =>
-                      setCorrectionIepSource((current) => ({
-                        ...current,
-                        text: nextValue,
-                      }))
-                    }
-                    onUseAttachmentSource={(attachmentId) =>
-                      includeCorrectionAttachmentSource('iep', attachmentId)
-                    }
-                    onChooseFiles={(files) =>
-                      appendFilesToCorrectionSource('iep', files)
-                    }
-                    onRemoveAttachment={(attachmentId) =>
-                      removeCorrectionAttachment('iep', attachmentId)
-                    }
-                    uploadEmptyBadge="Recommended first"
-                    uploadGuidance="Use a photo, screenshot, PDF, or text file if that is the easiest way to correct the IEP wording."
-                    uploadSummaryTitle="Start with a photo or file"
-                    uploadsFirst
-                    emptyState="No files in this correction draft yet."
-                  />
-                </SectionCard>
+                  >
+                    <SourceEditor
+                      attachments={correctionIepSource.attachments}
+                      documentPlan={documentPlan}
+                      textHelp="Fix the approved wording here if the first pass missed something important or cited the wrong detail."
+                      textLabel="Approved IEP wording"
+                      textName="correctionIepExcerpt"
+                      textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
+                      textValue={correctionIepSource.text}
+                      onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
+                        applyCorrectionAttachmentTextReview(
+                          'iep',
+                          attachmentId,
+                          nextValue,
+                          mode,
+                        )
+                      }
+                      onAttachmentDocumentDraftChange={(attachmentId, nextDraft) =>
+                        updateCorrectionAttachmentDocumentDraft('iep', attachmentId, nextDraft)
+                      }
+                      onKeepAttachmentReference={(attachmentId) =>
+                        keepCorrectionAttachmentReference('iep', attachmentId)
+                      }
+                      onRunAttachmentInterpretation={(attachmentId) =>
+                        runCorrectionAttachmentInterpretation('iep', attachmentId)
+                      }
+                      onTextChange={(nextValue) =>
+                        setCorrectionIepSource((current) => ({
+                          ...current,
+                          text: nextValue,
+                        }))
+                      }
+                      onUseAttachmentSource={(attachmentId) =>
+                        includeCorrectionAttachmentSource('iep', attachmentId)
+                      }
+                      onChooseFiles={(files) =>
+                        appendFilesToCorrectionSource('iep', files)
+                      }
+                      onRemoveAttachment={(attachmentId) =>
+                        removeCorrectionAttachment('iep', attachmentId)
+                      }
+                      uploadEmptyBadge="Recommended first"
+                      uploadGuidance="Use a photo, screenshot, PDF, or text file if that is the easiest way to correct the IEP wording."
+                      uploadSummaryTitle="Start with a photo or file"
+                      uploadsFirst
+                      emptyState="No files in this correction draft yet."
+                    />
+                  </SectionCard>
+                </div>
               ) : null}
 
               {correctionTarget === 'assignment' ? (
-                <SectionCard
+                <div ref={correctionAssignmentRef}>
+                  <SectionCard
                   eyebrow="Correct details"
                   title="Update the assignment source trail"
                   description="Refine the assignment details, helpful tags, or school question, then regenerate from the corrected version."
@@ -2210,7 +2387,8 @@ export default function App() {
                       />
                     </div>
                   </details>
-                </SectionCard>
+                  </SectionCard>
+                </div>
               ) : null}
 
               {isAnalyzing ? (
@@ -2258,16 +2436,20 @@ export default function App() {
               ) : null}
 
               {analysis ? (
-                <ResultsView analysis={analysis} />
+                <ResultsView
+                  analysis={analysis}
+                  onAskAboutAccommodation={askAboutSkippedAccommodation}
+                />
               ) : null}
 
               {analysis ? (
-                <SectionCard
-                  eyebrow="Optional follow-up"
-                  title="Check one school question"
-                  description="Use this only if you want help thinking through one question about how an accommodation may be used."
-                  icon={<AppIcon name="teacher" />}
-                >
+                <div ref={teacherConcernPanelRef}>
+                  <SectionCard
+                    eyebrow="Optional follow-up"
+                    title="Ask about one accommodation or school question"
+                    description="Use this if you want help thinking through one approved accommodation or one question about how it may be used."
+                    icon={<AppIcon name="teacher" />}
+                  >
                   <details
                     className="optional-panel"
                     open={Boolean(teacherConcern.trim()) || Boolean(teacherConcernAnalysis)}
@@ -2288,7 +2470,7 @@ export default function App() {
                         <textarea
                           className="textarea-input textarea-input--compact"
                           name="resultsTeacherConcern"
-                          placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
+                          placeholder="Example: Can we check whether the spelling accommodation fits this essay, or does the task measure spelling?"
                           value={teacherConcern}
                           onChange={(event) => {
                             updateMainTeacherConcern(event.target.value)
@@ -2356,7 +2538,8 @@ export default function App() {
                       ) : null}
                     </div>
                   </details>
-                </SectionCard>
+                  </SectionCard>
+                </div>
               ) : null}
 
               {analysis || analysisError ? (

@@ -1,3 +1,7 @@
+import type {
+  AccommodationPhotoRecoveryTileLabel,
+} from './accommodationImagePrep.ts'
+
 interface AccommodationPromptContext {
   attachmentKind?: 'image' | 'other' | 'pdf' | 'text'
   attachmentName?: string
@@ -7,6 +11,7 @@ interface AccommodationPromptContext {
 
 interface AccommodationPromptOptions {
   conditionFocus?: boolean
+  conditionFocusSection?: 'setting_scheduling' | 'student_response'
   photoMode?: boolean
 }
 
@@ -127,21 +132,31 @@ export function buildAccommodationFocusedExtractionPrompt(
   options?: AccommodationPromptOptions,
 ) {
   if (options?.conditionFocus) {
+    const sectionFocus = options.conditionFocusSection ?? 'student_response'
+    const sectionName =
+      sectionFocus === 'setting_scheduling'
+        ? 'Setting / Scheduling'
+        : 'Student Response'
+    const conditionExamples =
+      sectionFocus === 'setting_scheduling'
+        ? '"when requested"'
+        : '"when requested," "except on," "unless," and "except for"'
+
     return [
       buildPageContext(context),
       context ? 'This upload was added under the approved IEP source area.' : null,
       options.photoMode
         ? 'This phone photo may be sideways or rotated, so mentally rotate it until the text reads normally before extracting.'
         : null,
-      'Tell me exactly what is written in the Student Response accommodation rows of this document.',
+      `Tell me exactly what is written in the ${sectionName} accommodation rows of this document.`,
       'This may show only one narrow column or a few short lines.',
       'Copy only visible document text lines.',
-      'If the Student Response heading is visible, keep it and then copy every filled line directly underneath it.',
-      'Do not return only the heading when filled Student Response lines are visible.',
-      'Preserve condition wording exactly, especially phrases like "when requested," "except on," "unless," and "except for."',
+      `If the ${sectionName} heading is visible, keep it and then copy every filled line directly underneath it.`,
+      `Do not return only the heading when filled ${sectionName} lines are visible.`,
+      `Preserve condition wording exactly, especially phrases like ${conditionExamples}.`,
       'Do not simplify or drop exception wording from a visible line.',
       'Do not add example accommodations, missing categories, or instructions from this prompt.',
-      'Ignore neighboring columns, blank rows, and modifications text unless they directly change a visible Student Response line.',
+      `Ignore neighboring columns, blank rows, and modifications text unless they directly change a visible ${sectionName} line.`,
       'If even one filled line is readable, return that line instead of stopping at the heading.',
       'If part of a condition is hard to read, keep the readable words and use [unclear] for the rest.',
       'Return plain text only.',
@@ -185,6 +200,34 @@ export function buildAccommodationFocusedExtractionPrompt(
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+export function getAccommodationFocusedExtractionPromptOptionsForTile(
+  label: AccommodationPhotoRecoveryTileLabel,
+  photoMode?: boolean,
+): AccommodationPromptOptions {
+  if (label === 'setting_condition_lines') {
+    return {
+      conditionFocus: true,
+      conditionFocusSection: 'setting_scheduling',
+      photoMode,
+    }
+  }
+
+  if (
+    label === 'student_response_conditions'
+    || label === 'student_response_exception_lines'
+  ) {
+    return {
+      conditionFocus: true,
+      conditionFocusSection: 'student_response',
+      photoMode,
+    }
+  }
+
+  return {
+    photoMode,
+  }
 }
 
 export function buildAccommodationConsolidationPrompt(drafts: string[]) {

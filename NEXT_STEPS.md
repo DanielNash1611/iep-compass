@@ -2,6 +2,31 @@
 
 ## Recently Completed
 
+- Addressed a second browser annotation pass on navigation, persistence, and no-match recovery:
+  - saved the optional learning-disability/profile field in the same browser-local IEP details package as approved accommodation wording, with migration support for the previous saved-text format
+  - made the progress rail clickable so users can return to reviewed accommodations, start on assignment details when saved accommodations already exist, and revisit results when a result is available
+  - made the correction buttons scroll to and focus the enabled IEP or assignment correction fields
+  - expanded deterministic accommodation matching so `No penalty for spelling except on spelling task` is recognized as a spelling accommodation
+  - added a no-clear-match path that lists approved-but-not-obviously-relevant accommodations with reasons and lets the student start a focused follow-up question about one
+  - browser-checked saved-IEP assignment-first loading, progress navigation, and correction-field focus; targeted storage/spelling tests and full `npm run test`, `npm run lint`, and `npm run build` passed
+- Addressed the latest browser annotation pass on the main flow:
+  - replaced the broad yes/no follow-up for practice-vs-quiz accommodation focus with `Practice work`, `Quiz/test`, and `Both` choices
+  - added disabled-button hover reasons for `Check what may apply`, including the missing-title case
+  - let reviewed assignment uploads count as usable task source material and auto-include their interpreted source summary when generating results
+  - surfaced a `Gemma found` title suggestion when an interpreted upload can provide the missing task title
+  - kept the loading status text wrapped inside the dashed mobile loading panel
+  - moved `What to say` into each accommodation suggestion card with one initial script and expandable alternatives
+  - browser-checked the disabled-title state, loading wrap, embedded script cards, expandable alternatives, and clean console output
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+- Improved real phone-photo accommodation condition preservation without broad prompt rewriting:
+  - confirmed the recovery/selection path was working and `focused_recovery_tiled` was selected; the failure was in small condition-word OCR inside visible rows, not runtime, draft health, or final selection
+  - added two shared focused recovery tiles: `setting_condition_lines` for the left-column `when requested` row and `student_response_exception_lines` for the Student Response exception rows
+  - added a shared tile-to-prompt helper so the browser app path and the eval harness use the same section-specific focused prompts
+  - made accommodation condition scoring line-aware so `when requested` only satisfies the small-group accommodation when it appears on a matching line, not elsewhere on the page
+  - inspected the generated Student Response crop and corrected the real-phone eval expectation from `unless it is a grammar task` to the visible wording, `unless a grammar task`, avoiding invented condition language
+  - targeted `real_accommodation_page_phone_photo` app-model eval improved to `field=0.794` and `condition_preservation=1.000`; it still fails on metadata/OCR completeness and missing uncertainty markers
+  - full app-model accommodation comparison stayed at `pass_rate=0.6`, improved to `condition_preservation=1.000`, and kept `mixed_sections_page` in the existing `hallucinated_accommodation` failure bucket without a new regression
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
 - Resolved the local/PR conflict markers around the optional learning context work:
   - kept the newer task-title fallback behavior from reviewed uploads while preserving the learning-profile analysis handoff
   - moved the optional context field out of the IEP source editor footnote into a standalone Step 1 field labeled `Learning disabilities (optional)`
@@ -224,8 +249,7 @@
 - Validate the formatted upload-review text on real IEP photos and check whether section heading/bullet hierarchy makes correction faster on phone.
 - Try the new assignment review fields in the live app with the quiz-practice photo and confirm the overlay lets the user answer practice-vs-quiz and 30-minute timing without cluttering the main text box.
 - Re-run the full assignment image eval suite after the follow-up-question fallback and key-requirement normalization pass, then tune the remaining math/worksheet cases without weakening the no-answering guardrail.
-- Determine why the student-response condition-focused tile still returns weaker wording than the visible crop supports on the real phone photo.
-- Determine whether the next real-photo lift should merge a stronger line-level selector, a different condition-tile prompt, or one more crop specifically for the left-column "when requested" line.
+- Improve the real accommodation phone-photo metadata/OCR completeness and uncertainty handling now that condition preservation is no longer the primary failure.
 - Determine why the real accommodation phone-photo case still runs extremely slowly in stage-1 extraction even on the official Ollama SDK path.
 - Determine how to get the lighter `gemma4:e2b` real phone-photo case from “successful first draft plus unstable recovery” to a consistently high-scoring result.
 - Determine why the real accommodation phone-photo case still under-extracts on the lighter app-aligned comparison path now that the major sequential runtime drift is reduced.
@@ -242,12 +266,8 @@
 
 ## Up Next
 
-- Inspect why the condition-focused tile still collapses exception wording even though the crop visibly contains the full student-response lines.
-- Decide whether the next pass should be a line-level merge heuristic or a left-column condition-follow-up tile for "when requested" before any broader prompt rewrite.
 - Replace or expand the starter synthetic eval fixtures with redacted real-world uploads that cover skew, handwriting, dense forms, and multi-page page-order issues.
-- Inspect the real-phone-photo first-pass output now that recovery failures no longer erase it, and decide whether the next lift should be a shorter photo-specific first prompt, a different normalized target size, or a crop/tiling experiment.
-- Use the new selected-pass diagnostics to target the real-photo failure mode directly; the current verified full-pass output is still collapsing into `MODIFICATIONS` boilerplate before it reaches accommodation rows.
-- Decide whether the next real-photo lift should split the upright accommodations crop into smaller column/section tiles, because the lighter model still under-reads the full accommodations table even after rotation and top-cropping.
+- Use the selected-pass diagnostics to target the remaining real-phone-photo failures: missing student metadata, missing uncertainty markers, and incomplete OCR outside the focused accommodation rows.
 - Compare the remaining failed lighter-model cases against the saved per-pass diagnostics to decide whether the next fix should target mixed-section filtering, real-photo preprocessing, or prompt tightening.
 - Compare prompt revisions against the new failure-tag summaries to improve condition preservation, deadline extraction, and incomplete-image handling.
 - Add more real assignment-detail, worksheet, quiz/test, and rubric photos to exercise visible document kind and follow-up quality beyond the first real quiz-practice fixture.

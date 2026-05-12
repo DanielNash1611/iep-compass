@@ -20,6 +20,9 @@ const CONFIRMATION_COPY = {
 
 interface ResultsViewProps {
   analysis: AnalysisExecution
+  onAskAboutAccommodation?: (
+    item: AnalysisExecution['result']['notObviouslyRelevant'][number],
+  ) => void
 }
 
 interface SupportGroup {
@@ -64,7 +67,18 @@ function buildSupportGroups(
   ]
 }
 
-export function ResultsView({ analysis }: ResultsViewProps) {
+function buildAccommodationScript(name: string) {
+  return `I think my approved accommodation for ${name} may fit this task. Can we check how I should use it before I start?`
+}
+
+function buildAlternativeAccommodationScripts(name: string) {
+  return [
+    `Can I use my ${name} accommodation for this task?`,
+    `Could we look at my IEP wording for ${name} and decide how it applies here?`,
+  ]
+}
+
+export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewProps) {
   const supportGroups = buildSupportGroups(analysis)
   const likelyCount = supportGroups[0].items.length
   const confirmCount = supportGroups[1].items.length
@@ -126,6 +140,41 @@ export function ResultsView({ analysis }: ResultsViewProps) {
               </p>
             </div>
           </div>
+
+          {analysis.result.notObviouslyRelevant.length > 0 ? (
+            <div className="skipped-accommodation-list">
+              <div className="results-detail-block">
+                <h3>Want to ask about one anyway?</h3>
+                <p>
+                  These are approved accommodations from the source trail, but this
+                  pass did not have enough task evidence to connect them clearly.
+                </p>
+              </div>
+
+              {analysis.result.notObviouslyRelevant.map((item, index) => (
+                <article
+                  className="skipped-accommodation-card"
+                  key={`${item.name}-${index}`}
+                >
+                  <div>
+                    <h3>{item.name}</h3>
+                    <p>{item.reason}</p>
+                  </div>
+
+                  {onAskAboutAccommodation ? (
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() => onAskAboutAccommodation(item)}
+                    >
+                      <AppIcon name="quote" className="button-icon" />
+                      Ask about this
+                    </button>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : null}
         </SectionCard>
       ) : null}
 
@@ -196,6 +245,24 @@ export function ResultsView({ analysis }: ResultsViewProps) {
                       </h4>
                       <p>{CONFIRMATION_COPY[item.confidence]}</p>
                     </section>
+
+                    <section className="accommodation-pane accommodation-pane--script">
+                      <h4>
+                        <AppIcon name="quote" className="button-icon button-icon--sm" />
+                        <span>What to say</span>
+                      </h4>
+                      <blockquote className="quote-card quote-card--inline">
+                        <p>{buildAccommodationScript(item.name)}</p>
+                      </blockquote>
+                      <details className="script-options">
+                        <summary>Other ways to say it</summary>
+                        <ul className="support-list">
+                          {buildAlternativeAccommodationScripts(item.name).map((script) => (
+                            <li key={script}>{script}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    </section>
                   </div>
 
                   <details className="source-snippet">
@@ -213,30 +280,6 @@ export function ResultsView({ analysis }: ResultsViewProps) {
             </div>
           </SectionCard>
         ))}
-
-      <SectionCard
-        eyebrow="What to say"
-        title="How to ask for it"
-        description="Use these words to ask for the approved accommodation in a simple, respectful way."
-        icon={<AppIcon name="quote" />}
-      >
-        <div className="stacked-copy">
-          <blockquote className="quote-card quote-card--featured">
-            <p>{studentGuidance.suggestedScript}</p>
-          </blockquote>
-
-          {studentGuidance.alternativeScripts.length > 0 ? (
-            <div className="results-detail-block">
-              <h3>Other ways to say it</h3>
-              <ul className="support-list">
-                {studentGuidance.alternativeScripts.map((script) => (
-                  <li key={script}>{script}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      </SectionCard>
 
       <div className="results-sidecar-grid">
         <SectionCard
@@ -316,8 +359,8 @@ export function ResultsView({ analysis }: ResultsViewProps) {
               <h3>Not obviously relevant here</h3>
               {analysis.result.notObviouslyRelevant.length > 0 ? (
                 <ul className="support-list">
-                  {analysis.result.notObviouslyRelevant.map((item) => (
-                    <li key={`${item.name}-${item.reason}`}>
+                  {analysis.result.notObviouslyRelevant.map((item, index) => (
+                    <li key={`${item.name}-${index}`}>
                       <strong>{item.name}:</strong> {item.reason}
                     </li>
                   ))}

@@ -16,6 +16,7 @@ import {
   ACCOMMODATION_EXTRACTION_SYSTEM_PROMPT,
   buildAccommodationExtractionPrompt,
   buildAccommodationFocusedExtractionPrompt,
+  getAccommodationFocusedExtractionPromptOptionsForTile,
 } from '../../lib/text/accommodationExtractionPrompt'
 import {
   ACCOMMODATION_PHOTO_BROWSER_QUALITY,
@@ -27,6 +28,7 @@ import {
   shouldTriggerAccommodationFocusedRecovery,
   type AccommodationDraftHealth,
   type AccommodationImagePrepAsset,
+  type AccommodationPhotoRecoveryTileLabel,
 } from '../../lib/text/accommodationImagePrep'
 import type {
   AttachmentInterpretationPhase,
@@ -585,7 +587,7 @@ async function prepareAccommodationImageForReading(file: File) {
       | Array<{
         asset: AccommodationImagePrepAsset
         imageDataUrl: string
-        label: string
+        label: AccommodationPhotoRecoveryTileLabel
       }>
       | undefined
 
@@ -1153,7 +1155,7 @@ async function runIepTextReadingPasses(options: {
     asset: AccommodationImagePrepAsset
     imageDataUrl: string
     instruction: string
-    label: string
+    label: AccommodationPhotoRecoveryTileLabel
   }>
   normalizedAsset?: AccommodationImagePrepAsset
   originalAsset?: AccommodationImagePrepAsset
@@ -1236,7 +1238,7 @@ async function runIepTextReadingPasses(options: {
 
   if (focusedRecoveryTriggered && options.focusedRecoveryTiles?.length) {
     const tileDrafts: Array<{
-      label: string
+      label: AccommodationPhotoRecoveryTileLabel
       text: string
     }> = []
 
@@ -1760,10 +1762,10 @@ export async function runGemmaIepTextReading(
           attachment.kind,
           undefined,
           undefined,
-          {
-            conditionFocus: tile.label === 'student_response_conditions',
-            photoMode: preparedImage.photoMode,
-          },
+          getAccommodationFocusedExtractionPromptOptionsForTile(
+            tile.label,
+            preparedImage.photoMode,
+          ),
         ),
       })),
       normalizedAsset: preparedImage.normalizedAsset,

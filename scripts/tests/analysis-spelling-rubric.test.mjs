@@ -86,3 +86,18 @@ test('deterministic analysis still treats non-rubric spelling cases as more like
   assert.equal(spelling.confidence, 'likely_relevant')
   assert.match(spelling.plainLanguage, /should not lower the grade|should not count|may fit/i)
 })
+
+test('deterministic analysis recognizes no-penalty spelling wording from extracted IEP lines', () => {
+  const scenario = getScenario('essay-spelling-accommodation')
+  const result = runDeterministicAnalysis(toRequest({
+    ...scenario,
+    iepExcerpt: `Approved accommodations excerpt:
+- No penalty for spelling except on spelling task`,
+    taskText:
+      'Students are writing a personal narrative paragraph. The rubric focuses on idea development, organization, use of examples, and sentence clarity.',
+  }))
+  const spelling = getSpellingAccommodation(result)
+
+  assert.equal(spelling.confidence, 'likely_relevant')
+  assert.match(spelling.sourceText, /No penalty for spelling/i)
+})

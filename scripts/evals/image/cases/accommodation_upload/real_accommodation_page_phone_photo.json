@@ -49,7 +49,7 @@
         "label_keywords": ["no penalty", "grammar"],
         "source_evidence_keywords": ["unless", "grammar task"],
         "conditions": [
-          "unless it is a grammar task"
+          "unless a grammar task"
         ]
       },
       {
@@ -85,7 +85,7 @@
     ],
     "conditions": [
       "except on spelling task",
-      "unless it is a grammar task",
+      "unless a grammar task",
       "except for calculation tests"
     ],
     "must_not_include": [

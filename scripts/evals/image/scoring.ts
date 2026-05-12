@@ -28,6 +28,13 @@ function includesAllKeywords(haystack: string, keywords: string[]) {
   return keywords.every((keyword) => includesKeyword(haystack, keyword))
 }
 
+function getMeaningfulLines(text: string) {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 function buildScoreBlock(checks: EvalCheckResult[], threshold = 1): EvalScoreBlock {
   const totalChecks = checks.length || 1
   const passedChecks = checks.filter((check) => check.passed).length
@@ -62,6 +69,26 @@ function matchAccommodationByKeywords(
   ]
 
   return expectedKeywords.length === 0 || includesAllKeywords(outputText, expectedKeywords)
+}
+
+function matchConditionOnAccommodationLine(
+  outputText: string,
+  expected: LoadedAccommodationUploadEvalCase['expected']['expected_accommodations'][number],
+  condition: string,
+) {
+  const accommodationKeywords = [
+    ...expected.label_keywords,
+    ...expected.source_evidence_keywords,
+  ]
+
+  return getMeaningfulLines(outputText).some((line) => {
+    if (!includesKeyword(line, condition)) {
+      return false
+    }
+
+    return accommodationKeywords.length === 0
+      || accommodationKeywords.some((keyword) => includesKeyword(line, keyword))
+  })
 }
 
 function matchRequirement(
@@ -175,7 +202,11 @@ export function scoreAccommodationEvalCase(options: {
     }
 
     for (const condition of expectedAccommodation.conditions) {
-      const conditionPresent = includesKeyword(outputText, condition)
+      const conditionPresent = matchConditionOnAccommodationLine(
+        outputText,
+        expectedAccommodation,
+        condition,
+      )
 
       conditionChecks.push({
         details: condition,

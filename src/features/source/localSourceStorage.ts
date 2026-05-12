@@ -1,11 +1,22 @@
 import type { SourceMaterial } from '../../types/analysis'
 
 const IEP_SOURCE_STORAGE_KEY = 'iep-compass:iep-source'
-const IEP_SOURCE_STORAGE_VERSION = 1
+const IEP_SOURCE_STORAGE_VERSION = 2
 
 interface PersistedIepSourceV1 {
   text: string
+  version: 1
+}
+
+interface PersistedIepSourceV2 {
+  learningProfile: string
+  text: string
   version: typeof IEP_SOURCE_STORAGE_VERSION
+}
+
+interface PersistedIepDetails {
+  learningProfile: string
+  source: SourceMaterial
 }
 
 function getLocalStorage() {
@@ -28,25 +39,44 @@ function isPersistedIepSourceV1(
     value !== null &&
     'version' in value &&
     'text' in value &&
-    value.version === IEP_SOURCE_STORAGE_VERSION &&
+    value.version === 1 &&
     typeof value.text === 'string'
   )
 }
 
 export function serializePersistedIepSource(
   source: Pick<SourceMaterial, 'text'>,
+  learningProfile = '',
 ) {
-  if (!source.text.trim()) {
+  if (!source.text.trim() && !learningProfile.trim()) {
     return null
   }
 
   return JSON.stringify({
+    learningProfile,
     text: source.text,
     version: IEP_SOURCE_STORAGE_VERSION,
-  } satisfies PersistedIepSourceV1)
+  } satisfies PersistedIepSourceV2)
 }
 
-export function deserializePersistedIepSource(rawValue: string | null) {
+function isPersistedIepSourceV2(
+  value: unknown,
+): value is PersistedIepSourceV2 {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'version' in value &&
+    'text' in value &&
+    'learningProfile' in value &&
+    value.version === IEP_SOURCE_STORAGE_VERSION &&
+    typeof value.text === 'string' &&
+    typeof value.learningProfile === 'string'
+  )
+}
+
+export function deserializePersistedIepDetails(
+  rawValue: string | null,
+): PersistedIepDetails | null {
   if (!rawValue) {
     return null
   }
@@ -54,20 +84,46 @@ export function deserializePersistedIepSource(rawValue: string | null) {
   try {
     const parsedValue = JSON.parse(rawValue)
 
-    if (!isPersistedIepSourceV1(parsedValue) || !parsedValue.text.trim()) {
+    if (isPersistedIepSourceV1(parsedValue)) {
+      if (!parsedValue.text.trim()) {
+        return null
+      }
+
+      return {
+        learningProfile: '',
+        source: {
+          attachments: [],
+          text: parsedValue.text,
+        },
+      }
+    }
+
+    if (
+      !isPersistedIepSourceV2(parsedValue) ||
+      (!parsedValue.text.trim() && !parsedValue.learningProfile.trim())
+    ) {
       return null
     }
 
     return {
-      attachments: [],
-      text: parsedValue.text,
-    } satisfies SourceMaterial
+      learningProfile: parsedValue.learningProfile,
+      source: {
+        attachments: [],
+        text: parsedValue.text,
+      },
+    }
   } catch {
     return null
   }
 }
 
-export function loadPersistedIepSource() {
+export function deserializePersistedIepSource(rawValue: string | null) {
+  const details = deserializePersistedIepDetails(rawValue)
+
+  return details?.source.text.trim() ? details.source : null
+}
+
+export function loadPersistedIepDetails() {
   const storage = getLocalStorage()
 
   if (!storage) {
@@ -75,27 +131,34 @@ export function loadPersistedIepSource() {
   }
 
   const rawValue = storage.getItem(IEP_SOURCE_STORAGE_KEY)
-  const savedSource = deserializePersistedIepSource(rawValue)
+  const savedDetails = deserializePersistedIepDetails(rawValue)
 
-  if (!savedSource && rawValue) {
+  if (!savedDetails && rawValue) {
     storage.removeItem(IEP_SOURCE_STORAGE_KEY)
   }
 
-  return savedSource
+  return savedDetails
+}
+
+export function loadPersistedIepSource() {
+  return loadPersistedIepDetails()?.source ?? null
 }
 
 export function hasPersistedIepSource() {
-  return loadPersistedIepSource() !== null
+  return loadPersistedIepDetails() !== null
 }
 
-export function persistIepSource(source: Pick<SourceMaterial, 'text'>) {
+export function persistIepSource(
+  source: Pick<SourceMaterial, 'text'>,
+  learningProfile = '',
+) {
   const storage = getLocalStorage()
 
   if (!storage) {
     return false
   }
 
-  const serializedSource = serializePersistedIepSource(source)
+  const serializedSource = serializePersistedIepSource(source, learningProfile)
 
   if (!serializedSource) {
     storage.removeItem(IEP_SOURCE_STORAGE_KEY)

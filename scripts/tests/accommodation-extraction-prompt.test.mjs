@@ -5,6 +5,7 @@ import {
   buildAccommodationConsolidationPrompt,
   buildAccommodationExtractionPrompt,
   buildAccommodationFocusedExtractionPrompt,
+  getAccommodationFocusedExtractionPromptOptionsForTile,
 } from '../../src/lib/text/accommodationExtractionPrompt.ts'
 import { selectAccommodationDraft } from '../../src/lib/text/accommodationDraftSelection.ts'
 import { formatAccommodationReviewText } from '../../src/lib/text/accommodationReviewFormatting.ts'
@@ -59,6 +60,47 @@ test('buildAccommodationFocusedExtractionPrompt can focus on condition wording i
   assert.match(prompt, /Preserve condition wording exactly/i)
   assert.match(prompt, /when requested," "except on," "unless," and "except for/i)
   assert.match(prompt, /Ignore neighboring columns, blank rows, and modifications text/i)
+})
+
+test('buildAccommodationFocusedExtractionPrompt can focus on setting condition wording in a narrow crop', () => {
+  const prompt = buildAccommodationFocusedExtractionPrompt({
+    attachmentKind: 'image',
+    attachmentName: 'accommodations.jpg',
+  }, {
+    conditionFocus: true,
+    conditionFocusSection: 'setting_scheduling',
+    photoMode: true,
+  })
+
+  assert.match(prompt, /Setting \/ Scheduling accommodation rows/i)
+  assert.match(prompt, /Preserve condition wording exactly, especially phrases like "when requested"\./)
+  assert.match(prompt, /Do not return only the heading when filled Setting \/ Scheduling lines are visible\./)
+  assert.doesNotMatch(prompt, /except for calculation tests/)
+})
+
+test('getAccommodationFocusedExtractionPromptOptionsForTile maps condition tiles to section-specific prompts', () => {
+  assert.deepEqual(
+    getAccommodationFocusedExtractionPromptOptionsForTile('setting_condition_lines', true),
+    {
+      conditionFocus: true,
+      conditionFocusSection: 'setting_scheduling',
+      photoMode: true,
+    },
+  )
+  assert.deepEqual(
+    getAccommodationFocusedExtractionPromptOptionsForTile('student_response_exception_lines', true),
+    {
+      conditionFocus: true,
+      conditionFocusSection: 'student_response',
+      photoMode: true,
+    },
+  )
+  assert.deepEqual(
+    getAccommodationFocusedExtractionPromptOptionsForTile('left', true),
+    {
+      photoMode: true,
+    },
+  )
 })
 
 test('photo-mode accommodation prompts stay rotation-aware and boilerplate-averse', () => {

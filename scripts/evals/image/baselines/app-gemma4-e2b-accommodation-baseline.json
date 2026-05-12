@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-18T05:42:38.349Z",
+  "generated_at": "2026-05-11T20:48:29.558Z",
   "judge_mode": "off",
   "judge_model": "gemma4:31b",
   "model": "gemma4:e2b",
@@ -75,7 +75,7 @@
                 "failureMode": "none",
                 "outputPreview": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
                 "passLabel": "full",
-                "runtimeMs": 5862
+                "runtimeMs": 4675
               }
             ],
             "pipeline": "vision_extract_text",
@@ -117,12 +117,12 @@
             },
             "selectedPassLabel": "full",
             "extractionPreview": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
-            "extractionRuntimeMs": 5862,
-            "runtimeMs": 6002,
+            "extractionRuntimeMs": 4675,
+            "runtimeMs": 4821,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 6132,
+                "durationMs": 4942,
                 "failureMode": "none",
                 "status": "passed"
               }
@@ -239,7 +239,7 @@
           "deterministic": {
             "checks": [
               {
-                "details": "length=271",
+                "details": "length=210",
                 "key": "plain_text_present",
                 "passed": true
               },
@@ -256,9 +256,9 @@
             "attempts": [
               {
                 "failureMode": "none",
-                "outputPreview": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when need",
+                "outputPreview": "Classroom Accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
                 "passLabel": "full",
-                "runtimeMs": 5899
+                "runtimeMs": 5420
               }
             ],
             "pipeline": "vision_extract_text",
@@ -296,16 +296,16 @@
               "lowSignalLineCount": false,
               "sectionHeadingCount": 0,
               "signalLineCount": 3,
-              "totalLineCount": 7
+              "totalLineCount": 5
             },
             "selectedPassLabel": "full",
-            "extractionPreview": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
-            "extractionRuntimeMs": 5899,
-            "runtimeMs": 6041,
+            "extractionPreview": "Classroom Accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
+            "extractionRuntimeMs": 5420,
+            "runtimeMs": 5569,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 6162,
+                "durationMs": 5695,
                 "failureMode": "none",
                 "status": "passed"
               }
@@ -368,8 +368,8 @@
             "uncertainty_handling_score": 1
           },
           "model": "gemma4:e2b",
-          "output": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
-          "raw_content": "Classroom Accommodations\nStudent name: not shown on this page\nApproved accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
+          "output": "Classroom Accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
+          "raw_content": "Classroom Accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
           "status": "passed"
         },
         {
@@ -448,7 +448,7 @@
                 "failureMode": "none",
                 "outputPreview": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
                 "passLabel": "full",
-                "runtimeMs": 4969
+                "runtimeMs": 4841
               }
             ],
             "pipeline": "vision_extract_text",
@@ -490,12 +490,12 @@
             },
             "selectedPassLabel": "full",
             "extractionPreview": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
-            "extractionRuntimeMs": 4969,
-            "runtimeMs": 5112,
+            "extractionRuntimeMs": 4841,
+            "runtimeMs": 4986,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 5239,
+                "durationMs": 5106,
                 "failureMode": "none",
                 "status": "passed"
               }
@@ -614,7 +614,7 @@
           "deterministic": {
             "checks": [
               {
-                "details": "length=205",
+                "details": "length=183",
                 "key": "plain_text_present",
                 "passed": true
               },
@@ -631,9 +631,9 @@
             "attempts": [
               {
                 "failureMode": "none",
-                "outputPreview": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+                "outputPreview": "Goals improve oral reading rate.\nServices 30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
                 "passLabel": "full",
-                "runtimeMs": 6948
+                "runtimeMs": 4635
               }
             ],
             "pipeline": "vision_extract_text",
@@ -671,16 +671,16 @@
               "lowSignalLineCount": false,
               "sectionHeadingCount": 0,
               "signalLineCount": 2,
-              "totalLineCount": 7
+              "totalLineCount": 5
             },
             "selectedPassLabel": "full",
-            "extractionPreview": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
-            "extractionRuntimeMs": 6948,
-            "runtimeMs": 7089,
+            "extractionPreview": "Goals improve oral reading rate.\nServices 30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+            "extractionRuntimeMs": 4635,
+            "runtimeMs": 4786,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 7218,
+                "durationMs": 4914,
                 "failureMode": "none",
                 "status": "failed"
               }
@@ -715,7 +715,7 @@
               {
                 "details": "reading fluency goal",
                 "key": "must_not_include_reading fluency goal",
-                "passed": false
+                "passed": true
               },
               {
                 "details": "30 minutes weekly counseling",
@@ -728,20 +728,20 @@
                 "passed": true
               }
             ],
-            "passed": false,
-            "score": 0.7142857142857143
+            "passed": true,
+            "score": 0.8571428571428571
           },
           "judge": null,
           "metrics": {
             "condition_preservation_score": null,
-            "field_score": 0.7142857142857143,
+            "field_score": 0.8571428571428571,
             "hallucination_flagged": 1,
             "incomplete_image_handling_score": null,
             "uncertainty_handling_score": 1
           },
           "model": "gemma4:e2b",
-          "output": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
-          "raw_content": "Goals\nReading fluency goal: improve oral reading rate.\nServices\n30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+          "output": "Goals improve oral reading rate.\nServices 30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
+          "raw_content": "Goals improve oral reading rate.\nServices 30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
           "status": "failed"
         },
         {
@@ -757,7 +757,7 @@
             "expected": {
               "conditions": [
                 "except on spelling task",
-                "unless it is a grammar task",
+                "unless a grammar task",
                 "except for calculation tests"
               ],
               "document_type": "iep_accommodation_page",
@@ -818,7 +818,7 @@
                 {
                   "category": "writing",
                   "conditions": [
-                    "unless it is a grammar task"
+                    "unless a grammar task"
                   ],
                   "label_keywords": [
                     "no penalty",
@@ -878,7 +878,7 @@
           "deterministic": {
             "checks": [
               {
-                "details": "length=697",
+                "details": "length=695",
                 "key": "plain_text_present",
                 "passed": true
               },
@@ -895,33 +895,45 @@
             "attempts": [
               {
                 "failureMode": "none",
-                "outputPreview": "Student Information\nACCOMMODATIONS\nSetting / Scheduling\nTeacher Directions\nStudent Response\nOrganization / Study Skills\nPersonal Care / Equipment\n\n[unclear]\n[unclear]\n[unclear]\n[unclear]\n[unclear]\n[unclear]\nNone\nNone\nNone\nNone\nNone\nNone\nNon",
+                "outputPreview": "Student Information\nExtracted Accommodations Details\nSetting / Scheduling\nTeacher Directions\nStudent Response\nOrganization / Study Skills\nPersonal Care / Equipment",
                 "passLabel": "full",
-                "runtimeMs": 7446
+                "runtimeMs": 8648
               },
               {
                 "failureMode": "none",
                 "outputPreview": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone",
                 "passLabel": "focused_recovery_tile_left",
-                "runtimeMs": 5750
+                "runtimeMs": 5338
               },
               {
                 "failureMode": "none",
                 "outputPreview": "TEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\n\nORGANIZATION / STUDY SKILLS\nGraphic",
                 "passLabel": "focused_recovery_tile_middle",
-                "runtimeMs": 1375
+                "runtimeMs": 8445
               },
               {
                 "failureMode": "none",
-                "outputPreview": "SPEECH-TO-TEXT application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT\nNone",
+                "outputPreview": "Speech-to-text application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
                 "passLabel": "focused_recovery_tile_right",
-                "runtimeMs": 4158
+                "runtimeMs": 5667
               },
               {
                 "failureMode": "none",
-                "outputPreview": "STUDENT RESPONSE\nSpeech-to-text application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
+                "outputPreview": "Speech-to-text application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
                 "passLabel": "focused_recovery_tile_student_response_conditions",
-                "runtimeMs": 1365
+                "runtimeMs": 5538
+              },
+              {
+                "failureMode": "none",
+                "outputPreview": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise",
+                "passLabel": "focused_recovery_tile_setting_condition_lines",
+                "runtimeMs": 4697
+              },
+              {
+                "failureMode": "none",
+                "outputPreview": "STUDENT RESPONSE\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
+                "passLabel": "focused_recovery_tile_student_response_exception_lines",
+                "runtimeMs": 5725
               }
             ],
             "pipeline": "vision_extract_text",
@@ -947,7 +959,7 @@
               },
               "format": "jpeg",
               "mimeType": "image/jpeg",
-              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-UlKPxP/real_accommodation_page_phone_photo-comparison-rotated-cropped.jpg"
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-lNOq08/real_accommodation_page_phone_photo-comparison-rotated-cropped.jpg"
             },
             "focusedRecoveryTriggered": true,
             "normalizedAsset": {
@@ -958,10 +970,10 @@
               },
               "format": "jpeg",
               "mimeType": "image/jpeg",
-              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-UlKPxP/real_accommodation_page_phone_photo-comparison.jpg"
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-lNOq08/real_accommodation_page_phone_photo-comparison.jpg"
             },
             "photoMode": true,
-            "preprocessRuntimeMs": 725,
+            "preprocessRuntimeMs": 832,
             "draftHealth": {
               "boilerplateLineCount": 0,
               "hasModificationsPreamble": false,
@@ -969,16 +981,16 @@
               "lowSignalLineCount": true,
               "sectionHeadingCount": 5,
               "signalLineCount": 0,
-              "totalLineCount": 20
+              "totalLineCount": 7
             },
             "selectedPassLabel": "focused_recovery_tiled",
-            "extractionPreview": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSPEECH-TO-TEXT applic",
-            "extractionRuntimeMs": 20094,
-            "runtimeMs": 20971,
+            "extractionPreview": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text a",
+            "extractionRuntimeMs": 44058,
+            "runtimeMs": 45063,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 21101,
+                "durationMs": 45192,
                 "failureMode": "none",
                 "status": "failed"
               }
@@ -986,7 +998,6 @@
             "runnerIsolation": "fresh_process"
           },
           "failure_tags": [
-            "lost_condition",
             "ocr_failure",
             "overconfident_on_unclear_text"
           ],
@@ -1135,12 +1146,12 @@
               {
                 "details": "except on spelling task",
                 "key": "condition_spelling_mechanics_flexibility_except on spelling task",
-                "passed": false
+                "passed": true
               },
               {
-                "details": "unless it is a grammar task",
-                "key": "condition_other_unless it is a grammar task",
-                "passed": false
+                "details": "unless a grammar task",
+                "key": "condition_other_unless a grammar task",
+                "passed": true
               },
               {
                 "details": "except for calculation tests",
@@ -1150,12 +1161,12 @@
               {
                 "details": "except on spelling task",
                 "key": "expected_condition_except on spelling task",
-                "passed": false
+                "passed": true
               },
               {
-                "details": "unless it is a grammar task",
-                "key": "expected_condition_unless it is a grammar task",
-                "passed": false
+                "details": "unless a grammar task",
+                "key": "expected_condition_unless a grammar task",
+                "passed": true
               },
               {
                 "details": "except for calculation tests",
@@ -1164,25 +1175,25 @@
               }
             ],
             "passed": false,
-            "score": 0.6764705882352942
+            "score": 0.7941176470588235
           },
           "judge": null,
           "metrics": {
-            "condition_preservation_score": 0.42857142857142855,
-            "field_score": 0.6764705882352942,
+            "condition_preservation_score": 1,
+            "field_score": 0.7941176470588235,
             "hallucination_flagged": 0,
             "incomplete_image_handling_score": null,
             "uncertainty_handling_score": 0
           },
           "model": "gemma4:e2b",
-          "output": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSPEECH-TO-TEXT application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT\nSTUDENT RESPONSE",
-          "raw_content": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSPEECH-TO-TEXT application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT\nSTUDENT RESPONSE",
+          "output": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nSTUDENT RESPONSE",
+          "raw_content": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nSTUDENT RESPONSE",
           "status": "failed"
         }
       ],
       "suite": "accommodation_upload",
       "summary": {
-        "average_field_score": 0.878,
+        "average_field_score": 0.93,
         "average_judge_dimensions": {},
         "average_judge_overall": null,
         "average_uncertainty_handling_score": 0.8,
@@ -1190,12 +1201,11 @@
           "mixed_sections_page",
           "real_accommodation_page_phone_photo"
         ],
-        "condition_preservation_score": 0.714,
+        "condition_preservation_score": 1,
         "executed_cases": 5,
         "failed_cases": 2,
         "failure_tag_counts": {
           "hallucinated_accommodation": 1,
-          "lost_condition": 1,
           "ocr_failure": 1,
           "overconfident_on_unclear_text": 1
         },

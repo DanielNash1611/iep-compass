@@ -7,7 +7,11 @@ import {
   buildAccommodationConsolidationPrompt,
   buildAccommodationExtractionPrompt,
   buildAccommodationFocusedExtractionPrompt,
+  getAccommodationFocusedExtractionPromptOptionsForTile,
 } from '../../../src/lib/text/accommodationExtractionPrompt.ts'
+import type {
+  AccommodationPhotoRecoveryTileLabel,
+} from '../../../src/lib/text/accommodationImagePrep.ts'
 
 const DOCUMENT_TYPES = imageDocumentTypeSchema.options.join(', ')
 const ASSIGNMENT_TYPES = assignmentTypeSchema.options.join(', ')
@@ -80,12 +84,24 @@ export function buildAccommodationImageManualFlowPrompt(
 
 export function buildAccommodationImageFocusedPrompt(options?: {
   conditionFocus?: boolean
+  conditionFocusSection?: 'setting_scheduling' | 'student_response'
   photoMode?: boolean
 }) {
   return buildAccommodationFocusedExtractionPrompt(undefined, {
     conditionFocus: options?.conditionFocus,
+    conditionFocusSection: options?.conditionFocusSection,
     photoMode: options?.photoMode,
   })
+}
+
+export function buildAccommodationImageFocusedPromptForTile(
+  label: AccommodationPhotoRecoveryTileLabel,
+  photoMode?: boolean,
+) {
+  return buildAccommodationFocusedExtractionPrompt(
+    undefined,
+    getAccommodationFocusedExtractionPromptOptionsForTile(label, photoMode),
+  )
 }
 
 export function buildAccommodationImageConsolidationPrompt(drafts: string[]) {

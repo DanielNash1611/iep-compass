@@ -74,7 +74,7 @@ const CATEGORY_PATTERNS: Array<{
   {
     category: 'spelling_flexibility',
     pattern:
-      /(spelling (errors )?(should not|do not|must not).*(grade|count|penalt)|do not grade spelling|spelling is not the skill being measured)/i,
+      /(spelling (errors )?(should not|do not|must not).*(grade|count|penalt)|do not grade spelling|no penalty for spelling|spelling.*not.*penali[sz]ed|spelling is not the skill being measured)/i,
   },
   {
     category: 'check_ins',

@@ -59,16 +59,24 @@ export interface AccommodationDraftHealth {
   totalLineCount: number
 }
 
+export type AccommodationPhotoRecoveryTileLabel =
+  | 'left'
+  | 'middle'
+  | 'right'
+  | 'setting_condition_lines'
+  | 'student_response_conditions'
+  | 'student_response_exception_lines'
+
 export interface AccommodationPhotoRecoveryTileRect {
   height: number
-  label: string
+  label: AccommodationPhotoRecoveryTileLabel
   width: number
   x: number
   y: number
 }
 
 export interface AccommodationPhotoRecoveryTileDraft {
-  label: string
+  label: AccommodationPhotoRecoveryTileLabel
   text: string
 }
 
@@ -157,7 +165,7 @@ export function getAccommodationPhotoRecoveryTileRects(dimensions: {
     ),
   )
 
-  return [
+  const tiles: AccommodationPhotoRecoveryTileRect[] = [
     {
       height: tileHeight,
       label: 'left',
@@ -186,7 +194,23 @@ export function getAccommodationPhotoRecoveryTileRects(dimensions: {
       x: Math.max(0, Math.round(dimensions.width * 0.65)),
       y: Math.max(0, Math.round(dimensions.height * 0.08)),
     },
-  ].map((tile) => ({
+    {
+      height: Math.max(1, Math.round(dimensions.height * 0.18)),
+      label: 'setting_condition_lines',
+      width: Math.max(1, Math.round(dimensions.width * 0.28)),
+      x: Math.max(0, Math.round(dimensions.width * 0.04)),
+      y: Math.max(0, Math.round(dimensions.height * 0.1)),
+    },
+    {
+      height: Math.max(1, Math.round(dimensions.height * 0.3)),
+      label: 'student_response_exception_lines',
+      width: Math.max(1, Math.round(dimensions.width * 0.38)),
+      x: Math.max(0, Math.round(dimensions.width * 0.6)),
+      y: Math.max(0, Math.round(dimensions.height * 0.12)),
+    },
+  ]
+
+  return tiles.map((tile) => ({
     ...tile,
     height: Math.min(tile.height, dimensions.height - tile.y),
     width: Math.min(tile.width, dimensions.width - tile.x),
