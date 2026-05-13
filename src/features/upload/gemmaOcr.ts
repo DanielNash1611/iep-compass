@@ -3,6 +3,10 @@ import {
   type DocumentReadingResult,
 } from '../../lib/schema/ocrSchema'
 import {
+  buildGemmaDocumentPlan,
+  type GemmaDocumentPlan,
+} from './documentReadingSupport'
+import {
   buildTaskDocumentResultFromPlainText,
 } from '../../lib/schema/taskDocumentFromText'
 import {
@@ -48,13 +52,6 @@ interface GemmaDocumentConfig {
   apiKey?: string
   baseUrl?: string
   fallbackModel?: string
-  isRemote: boolean
-  primaryModel: string
-  runtimeLabel: string
-}
-
-export interface GemmaDocumentPlan {
-  configured: boolean
   isRemote: boolean
   primaryModel: string
   runtimeLabel: string
@@ -1480,12 +1477,12 @@ function mergeDocumentResults(results: DocumentReadingResult[]): DocumentReading
 export function readGemmaDocumentPlan(): GemmaDocumentPlan {
   const config = readConfig()
 
-  return {
-    configured: Boolean(config.baseUrl),
-    isRemote: config.isRemote,
+  return buildGemmaDocumentPlan({
+    endpointBaseUrl: config.baseUrl,
+    endpointIsRemote: config.isRemote,
     primaryModel: formatModelLabel(config.primaryModel),
     runtimeLabel: config.runtimeLabel,
-  }
+  })
 }
 
 export async function runGemmaDocumentReading(

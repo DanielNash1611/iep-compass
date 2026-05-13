@@ -330,6 +330,15 @@
   color: #7f5c1d;
 }
 
+.field-message--status-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-message--status-list p {
+  margin: 0;
+}
+
 .field-message--live {
   display: flex;
   align-items: center;

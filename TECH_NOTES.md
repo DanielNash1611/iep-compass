@@ -6,6 +6,7 @@
 - The official `@mediapipe/tasks-genai` package README links directly to the Gemma 4 E2B web asset `gemma-4-E2B-it-web.task`.
 - The official LiteRT community Gemma 4 E2B model page shows browser support through the LLM Inference Engine and lists the web artifact name `gemma-4-E2B-it-web.task`.
 - Google’s Gemma 4 prompt-formatting docs show the current control-token format for chat turns using `<|turn>` and `<turn|>`.
+- The installed `@mediapipe/tasks-genai` package exposes image prompt parts and `maxNumImages`, but its README says image and audio input are supported for Gemma 3n models. The current MediaPipe Web guide also scopes multimodal prompting examples to Gemma-3n. This repo does not treat Gemma 4 E2B `gemma-4-E2B-it-web.task` as a browser image-input path.
 
 ## Why The App Gates Low-Capability Devices
 
@@ -32,7 +33,9 @@ That separation is a best-effort engineering judgment based on the official brow
 - A cached model can bypass a later remote asset-reachability failure, but it cannot bypass WebGPU, browser-family, secure-context, or memory checks.
 - The stable web demo avoids live phone image upload by using synthetic pre-reviewed sample images stored under `public/demo/`. Browser Gemma performs only the reviewed-text accommodation mapping step for that demo.
 - Demo mapping is constrained to a seeded list of allowed accommodation IDs. If the model returns an unsupported ID, the app ignores it instead of creating a new accommodation.
-- The intended production product direction is a native Android app using Google AI Edge so private image capture, model storage, and on-device inference can be handled by the phone app rather than by browser tab storage and WebGPU memory.
+- Browser Gemma text reasoning and browser Gemma image interpretation are separate product states. Text mapping can be available while image interpretation remains unavailable.
+- The endpoint-backed `gemmaOcr.ts` flow is a development fallback for live image/PDF reading, not proof that browser Gemma can read images directly.
+- The intended production product direction is a native Android app using Google AI Edge so private image capture, model storage, and on-device image inference can be handled by the phone app rather than by browser tab storage and WebGPU memory.
 - Detailed byte-level download progress is not shown because the current user-facing path saves and streams the large model through browser storage instead of maintaining a custom progress UI.
 - The default model path is same-origin (`/models/gemma-4-E2B-it-web.task`) instead of hot-linking the Hugging Face URL. This keeps deployment simpler and avoids relying on cross-origin behavior for a multi-GB asset.
 - The browser model UI is embedded as an optional testing surface inside the existing app rather than becoming the whole product shell. That is an engineering choice to preserve the main user journey while the on-device path is still being validated.

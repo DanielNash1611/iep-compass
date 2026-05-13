@@ -2,27 +2,20 @@
 
 ## Recently Completed
 
-- Switched the seeded Jordan demo to run Gemma 4 live on the demo images and registered the previously hard-coded text/draft as image-eval references:
-  - `createJordanDemoSources` now fetches the two `public/demo/...` JPEGs and inserts them as `interpret_ready` attachments instead of preloading `extractedText` / `documentDraft`
-  - `applyExample` is now async so the demo click awaits the image bytes before showing step 1
-  - tapping `Interpret with Gemma 4` on the IEP and task uploads exercises the same accommodation reader and document reader the live app uses for any other upload
-  - the prior reviewed text and task draft are still exported as `jordanDemoReviewedIepText` and `jordanDemoTaskDraft` so they stay available for eval reference
-  - added `scripts/evals/image/cases/accommodation_upload/jordan_demo_iep_snapshot.json` and `scripts/evals/image/cases/assignment_upload/jordan_demo_character_change_paragraph.json`, both pointing at the seeded `public/demo/` images, with expectations derived from the formerly hard-coded text/draft
-  - updated `scripts/tests/demo-case.test.mjs` and `scripts/tests/demo-browser-mapping.test.mjs` to await the async loader and assert the new `interpret_ready` shape
-  - README updated to describe the live-extraction demo path and call out the matching eval cases
-  - `npm run lint`, `npm run test`, and `npm run build` all passed
-- Surfaced the seeded `Jordan M. writing assignment` demo for the hackathon presentation path:
-  - opened the step-1 sample picker by default so the seeded demo is visible without a tap
-  - re-labeled the picker summary to `Try the seeded demo or a preview scenario` and updated the helper copy to call out the pre-reviewed images
-  - added a `Seeded demo` badge on the Jordan card so it reads as the demo entry point next to the typed previews
-  - browser-checked the full flow: load demo → apply IEP extracted text → apply task draft → `Check what may apply` → results render `4 strong matches` and `3 items to confirm` with no console errors
-  - `npm run lint`, `npm run test`, and `npm run build` all passed
-- Added a stable web-demo path with preloaded synthetic images:
+- Clarified live image interpretation availability for the browser Gemma path:
+  - confirmed the installed MediaPipe web package exposes a generic image prompt shape, but current package/docs scope multimodal web prompting to Gemma-3n rather than this app's Gemma 4 E2B `-web.task` path
+  - kept browser Gemma available for reviewed-text mapping while marking browser image interpretation unavailable
+  - kept the existing `VITE_GEMMA_BASE_URL` endpoint path as a development-only image/PDF fallback
+  - restored the Jordan demo's labeled Ollama fallback so static seeded images are read through the small endpoint model to create new review drafts while the final reviewed-text mapping still uses browser Gemma
+  - changed the Jordan demo sources so they start as interpret-ready sample images, not hidden reviewed drafts
+  - updated upload review copy so Android Chrome users can see browser text reasoning, browser image interpretation, and endpoint fallback as separate states
+  - updated demo Browser Gemma mapping to select accommodation IDs from the reviewed source trail created during the current demo run
+- Added a stable web-demo path with synthetic images:
   - added the `Jordan M. writing assignment` seeded case using static demo images under `public/demo/`
-  - preloaded the IEP image as reviewable extracted accommodation text and the assignment image as a structured task draft, without auto-including either source
+  - loads the IEP and assignment images as interpret-ready materials, without auto-including either source
   - kept demo image previews static so the phone session does not depend on live camera/file state
   - added a constrained browser-Gemma mapping path that selects from allowed accommodation IDs and rejects invented IDs
-  - updated README and TECH_NOTES to state that the web demo uses pre-reviewed images while the intended final product is a native Android app using Google AI Edge
+  - updated README and TECH_NOTES to state that the web demo uses labeled endpoint image reading while the intended final product is a native Android app using Google AI Edge
 - Added a Wi-Fi-safe production model saving experience for Android/mobile launch:
   - production now stops before the main app opens, checks browser support, checks whether the connection is safe for a large model download, and blocks Gemma loading on mobile data or Data Saver
   - added explicit `Get Gemma`/saving/saved states so users can see when the browser model file is ready and get actionable error messaging when it is not

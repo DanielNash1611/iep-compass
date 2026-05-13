@@ -13,10 +13,14 @@ import {
   getPendingReviewAttachments,
   getSourceReadyAttachments,
 } from './sourceText'
-import type { GemmaDocumentPlan } from '../upload/gemmaOcr'
+import type { GemmaDocumentPlan } from '../upload/documentReadingSupport'
+import {
+  getDocumentReadingStatusMessages,
+} from '../upload/documentReadingSupport'
 import { formatElapsedTime } from '../upload/fileUtils'
 import { formatAccommodationReviewText } from '../../lib/text/accommodationReviewFormatting'
 import { toStudentFacingFollowUp } from '../../lib/text/assignmentFollowUps'
+import { getAttachmentInterpretationAction } from './interpretationAvailability'
 
 interface SourceEditorProps {
   attachments: UploadedAttachment[]
@@ -230,22 +234,6 @@ function formatFollowUpAnswer(question: string, answer: string) {
   const trimmedAnswer = answer.trim()
 
   return trimmedAnswer ? `${trimmedQuestion} Answer: ${trimmedAnswer}` : trimmedQuestion
-}
-
-function canRunInterpretation(
-  attachment: UploadedAttachment,
-  documentPlan: GemmaDocumentPlan,
-) {
-  return (
-    documentPlan.configured &&
-    !attachment.isDemoSeed &&
-    (attachment.kind === 'image' || attachment.kind === 'pdf') &&
-    (
-      attachment.status === 'interpret_ready'
-      || attachment.status === 'review_ready'
-      || attachment.status === 'failed'
-    )
-  )
 }
 
 function renderRawTranscript(rawTranscript?: string) {
@@ -1334,25 +1322,21 @@ export function SourceEditor({
           </p>
         ) : null}
 
-        {documentPlan.isRemote &&
-        attachments.some(
+        {attachments.some(
           (attachment) => attachment.kind === 'image' || attachment.kind === 'pdf',
         ) ? (
-          <p className="field-message">
-            If you choose <strong>Interpret with Gemma 4</strong>, this step sends
-            the file image to your configured model endpoint so it can build
-            reviewable text or a structured task draft.
-          </p>
-        ) : null}
-
-        {!documentPlan.configured &&
-        attachments.some(
-          (attachment) => attachment.kind === 'image' || attachment.kind === 'pdf',
-        ) ? (
-          <p className="field-message field-message--warning">
-            Gemma document reading is not configured yet, so image and PDF review
-            will stay manual for now.
-          </p>
+          <div className="field-message field-message--status-list">
+            {getDocumentReadingStatusMessages(documentPlan).map((message) => (
+              <p key={message}>{message}</p>
+            ))}
+            {documentPlan.isRemote ? (
+              <p>
+                Choosing the endpoint action sends the file image to your configured
+                model endpoint so it can build reviewable text or a structured task
+                draft.
+              </p>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="upload-actions">
@@ -1386,16 +1370,11 @@ export function SourceEditor({
         {attachments.length > 0 ? (
           <div className="attachment-list">
             {attachments.map((attachment) => {
-              const canInterpret = canRunInterpretation(attachment, documentPlan)
+              const interpretationAction = getAttachmentInterpretationAction(
+                attachment,
+                documentPlan,
+              )
               const canOpenTextReview = canReviewExtractedText(attachment)
-              const interpretationNeedsModel =
-                !documentPlan.configured &&
-                (attachment.kind === 'image' || attachment.kind === 'pdf') &&
-                (
-                  attachment.status === 'interpret_ready'
-                  || attachment.status === 'review_ready'
-                  || attachment.status === 'failed'
-                )
 
               return (
                 <article key={attachment.id} className="attachment-card">
@@ -1432,21 +1411,19 @@ export function SourceEditor({
                   </div>
 
                   <div className="attachment-card__actions">
-                    {canInterpret ? (
+                    {interpretationAction.canInterpret ? (
                       <button
                         className="ghost-button"
                         type="button"
                         onClick={() => void onRunAttachmentInterpretation(attachment.id)}
                       >
-                        Interpret with Gemma 4
+                        {interpretationAction.label}
                       </button>
                     ) : null}
 
-                    {interpretationNeedsModel ? (
+                    {interpretationAction.note ? (
                       <p className="attachment-card__model-note">
-                        Gemma file interpretation is not ready in this session.
-                        Use pasted text for now, or come back after the document
-                        reading endpoint is configured.
+                        {interpretationAction.note}
                       </p>
                     ) : null}
 

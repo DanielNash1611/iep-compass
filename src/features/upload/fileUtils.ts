@@ -95,12 +95,12 @@ function buildStatusNotes(
     case 'interpret_ready':
       return attachment.kind === 'pdf'
         ? [
-            'Ready for structured document reading with Gemma 4 when you choose it.',
+            'Ready for document reading when a supported browser path or configured development endpoint is available.',
             'This phase interprets up to the first 3 PDF pages.',
           ]
         : [
-            'Ready for structured document reading with Gemma 4 when you choose it.',
-            'Run this only if you want the visible document details reviewed here.',
+            'Ready for document reading when a supported browser path or configured development endpoint is available.',
+            'Use this only when the visible document details can be reviewed here.',
           ]
     case 'interpret_running':
       return [

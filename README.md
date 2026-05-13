@@ -4,7 +4,7 @@ This repo keeps the main IEP Compass experience intact while adding an embedded 
 
 ## Current Feasibility
 
-**Yes, Gemma 4 E2B browser inference is currently feasible.**
+**Yes, Gemma 4 E2B browser text inference is currently feasible. Live image interpretation is not enabled for the current Gemma 4 E2B browser path.**
 
 What is verified:
 
@@ -12,6 +12,7 @@ What is verified:
 - The official `@mediapipe/tasks-genai` package README links directly to a Gemma 4 E2B browser asset.
 - The official LiteRT community model page lists the browser-ready file as:
   - `gemma-4-E2B-it-web.task`
+- The installed `@mediapipe/tasks-genai` API exposes image prompt parts and `maxNumImages`, but the current MediaPipe web guide and package README document image/audio prompting for Gemma-3n models. IEP Compass therefore treats the Gemma 4 E2B browser path as text reasoning only until Google documents image input for that specific web task.
 
 Important limitation:
 
@@ -27,10 +28,12 @@ That is deliberate. The app is wired for the official asset, but it will not pre
 - The main `IEP Compass` flow remains the primary UX.
 - The Gemma 4 browser test surface now lives as an optional card inside the assignment step.
 - The browser path is the primary competition path.
-- The stable phone demo uses synthetic pre-loaded sample images from `public/demo/` so the presenter does not need to take a fresh phone photo. The images go through the same Gemma 4 interpretation path as any other upload — they are not pre-extracted.
-- Browser Gemma both reads the demo images and maps the reviewed accommodations text to accommodation guidance.
-- A local endpoint can be configured as a backup for development testing only. It is not part of the user-facing demo or intended product path.
-- The intended final product direction is a native Android app using Google AI Edge for private on-device capture and inference.
+- The stable phone demo uses synthetic sample images from `public/demo/` so Android Chrome does not need to keep a live camera upload and the browser model loaded at the same time.
+- Browser Gemma maps reviewed source-trail text to accommodation guidance after the document images have been interpreted and reviewed.
+- Browser Gemma image interpretation is shown as unavailable for the current web stack, even when browser text reasoning can work.
+- A local endpoint can be configured as a backup for development testing only. In the Jordan demo, the seeded sample images can be read through this labeled Ollama fallback so viewers can see the small model interpret the documents. It is the only live image/PDF interpretation path in the web app right now and may send image data to the configured endpoint.
+- The reviewed-text mapping step remains browser Gemma first for the Jordan demo, so the fallback image reader does not turn the final text reasoning flow back into an Ollama flow.
+- The intended final product direction is a native Android app using Google AI Edge for private on-device capture and image inference, unless Google documents a Gemma 4 E2B browser image path.
 
 ## Image Eval Loop
 
@@ -153,9 +156,15 @@ The seeded demo case, `Jordan M. writing assignment`, uses two synthetic sample 
 - `public/demo/jordan-accommodation-snapshot.jpg`
 - `public/demo/jordan-character-change-paragraph.jpg`
 
-Loading the demo fetches those two images and inserts them as upload attachments in the IEP and assignment steps. They are not pre-extracted. The user (or presenter) taps `Interpret with Gemma 4` on each upload to run the model live, reviews the extracted text and task draft, and then sees the constrained Jordan demo mapping in the results. This skips the fragile fresh-camera capture step while still exercising Gemma for the image-reading half of the flow.
+Those images load as pre-uploaded materials, but they are not automatically trusted and do not include hidden prepared text. In the demo, choose the labeled Ollama fallback action to create a new review draft from each sample image, then review and include the generated text before analysis.
 
-The same pair of images is registered as image-eval fixtures so the live demo extraction can be measured against the previously hard-coded reference text. See [scripts/evals/image/cases/accommodation_upload/jordan_demo_iep_snapshot.json](scripts/evals/image/cases/accommodation_upload/jordan_demo_iep_snapshot.json) and [scripts/evals/image/cases/assignment_upload/jordan_demo_character_change_paragraph.json](scripts/evals/image/cases/assignment_upload/jordan_demo_character_change_paragraph.json).
+In the web demo, the image-reading step is handled by the configured endpoint fallback when available. Browser Gemma is used for the later mapping step: choosing from allowed accommodation IDs based on reviewed source text. The app rejects model-suggested IDs that are not in the seeded allowed list.
+
+The upload UI distinguishes three states:
+
+- browser Gemma text reasoning: available after the model gate passes
+- browser Gemma image interpretation: unavailable for the current Gemma 4 E2B web path
+- endpoint-based document reading: optional development fallback, configured only when `VITE_GEMMA_BASE_URL` is set
 
 ### 4. Run locally
 

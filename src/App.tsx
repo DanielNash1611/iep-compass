@@ -633,7 +633,7 @@ function IepCompassApp() {
         ...current,
         interpretationProgress: buildRunningInterpretationProgress(
           {
-            detail: 'Checking the configured Gemma endpoint before reading the upload.',
+            detail: 'Checking the available Gemma document-reading path before reading the upload.',
             label: 'Getting Gemma ready',
             phase: 'checking_model',
             stepIndex: 1,
@@ -817,7 +817,7 @@ function IepCompassApp() {
         ...current,
         interpretationProgress: buildRunningInterpretationProgress(
           {
-            detail: 'Checking the configured Gemma endpoint before reading the upload.',
+            detail: 'Checking the available Gemma document-reading path before reading the upload.',
             label: 'Getting Gemma ready',
             phase: 'checking_model',
             stepIndex: 1,
