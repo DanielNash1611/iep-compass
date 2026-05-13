@@ -2,6 +2,12 @@
 
 ## Recently Completed
 
+- Surfaced the seeded `Jordan M. writing assignment` demo for the hackathon presentation path:
+  - opened the step-1 sample picker by default so the seeded demo is visible without a tap
+  - re-labeled the picker summary to `Try the seeded demo or a preview scenario` and updated the helper copy to call out the pre-reviewed images
+  - added a `Seeded demo` badge on the Jordan card so it reads as the demo entry point next to the typed previews
+  - browser-checked the full flow: load demo → apply IEP extracted text → apply task draft → `Check what may apply` → results render `4 strong matches` and `3 items to confirm` with no console errors
+  - `npm run lint`, `npm run test`, and `npm run build` all passed
 - Added a stable web-demo path with preloaded synthetic images:
   - added the `Jordan M. writing assignment` seeded case using static demo images under `public/demo/`
   - preloaded the IEP image as reviewable extracted accommodation text and the assignment image as a structured task draft, without auto-including either source

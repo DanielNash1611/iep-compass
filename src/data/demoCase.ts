@@ -12,7 +12,7 @@ export const jordanDemoScenario: ExampleScenario = {
   id: JORDAN_DEMO_EXAMPLE_ID,
   iepExcerpt: '',
   summary:
-    'Preloaded synthetic IEP and assignment photos for a stable phone demo.',
+    'Pre-reviewed IEP snapshot and a writing assignment photo, ready to walk through the full flow without a live upload.',
   taskText: '',
   taskTitle: 'Character Change Paragraph',
   title: 'Jordan M. writing assignment',

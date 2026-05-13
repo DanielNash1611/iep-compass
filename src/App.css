@@ -1026,6 +1026,26 @@
   background: rgba(239, 248, 245, 0.88);
 }
 
+.example-card--demo {
+  border-color: rgba(46, 117, 106, 0.35);
+  box-shadow: 0 1px 0 rgba(46, 117, 106, 0.12);
+}
+
+.example-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(46, 117, 106, 0.12);
+  color: var(--text-strong);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .example-card__title {
   margin: 0;
   font-size: 1rem;
