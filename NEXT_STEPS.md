@@ -2,6 +2,21 @@
 
 ## Recently Completed
 
+- Switched the seeded Jordan demo to run Gemma 4 live on the demo images and registered the previously hard-coded text/draft as image-eval references:
+  - `createJordanDemoSources` now fetches the two `public/demo/...` JPEGs and inserts them as `interpret_ready` attachments instead of preloading `extractedText` / `documentDraft`
+  - `applyExample` is now async so the demo click awaits the image bytes before showing step 1
+  - tapping `Interpret with Gemma 4` on the IEP and task uploads exercises the same accommodation reader and document reader the live app uses for any other upload
+  - the prior reviewed text and task draft are still exported as `jordanDemoReviewedIepText` and `jordanDemoTaskDraft` so they stay available for eval reference
+  - added `scripts/evals/image/cases/accommodation_upload/jordan_demo_iep_snapshot.json` and `scripts/evals/image/cases/assignment_upload/jordan_demo_character_change_paragraph.json`, both pointing at the seeded `public/demo/` images, with expectations derived from the formerly hard-coded text/draft
+  - updated `scripts/tests/demo-case.test.mjs` and `scripts/tests/demo-browser-mapping.test.mjs` to await the async loader and assert the new `interpret_ready` shape
+  - README updated to describe the live-extraction demo path and call out the matching eval cases
+  - `npm run lint`, `npm run test`, and `npm run build` all passed
+- Surfaced the seeded `Jordan M. writing assignment` demo for the hackathon presentation path:
+  - opened the step-1 sample picker by default so the seeded demo is visible without a tap
+  - re-labeled the picker summary to `Try the seeded demo or a preview scenario` and updated the helper copy to call out the pre-reviewed images
+  - added a `Seeded demo` badge on the Jordan card so it reads as the demo entry point next to the typed previews
+  - browser-checked the full flow: load demo → apply IEP extracted text → apply task draft → `Check what may apply` → results render `4 strong matches` and `3 items to confirm` with no console errors
+  - `npm run lint`, `npm run test`, and `npm run build` all passed
 - Added a stable web-demo path with preloaded synthetic images:
   - added the `Jordan M. writing assignment` seeded case using static demo images under `public/demo/`
   - preloaded the IEP image as reviewable extracted accommodation text and the assignment image as a structured task draft, without auto-including either source

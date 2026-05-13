@@ -1304,7 +1304,7 @@ function IepCompassApp() {
     }
   }
 
-  function applyExample(exampleId: string) {
+  async function applyExample(exampleId: string) {
     const nextExample = exampleScenarios.find((example) => example.id === exampleId)
 
     if (!nextExample) {
@@ -1312,7 +1312,7 @@ function IepCompassApp() {
     }
 
     if (nextExample.id === JORDAN_DEMO_EXAMPLE_ID) {
-      const demoSources = createJordanDemoSources()
+      const demoSources = await createJordanDemoSources()
 
       replaceIepSource(demoSources.iepSource, { persist: false })
       replaceTaskSource(demoSources.taskSource)
@@ -1956,35 +1956,46 @@ function IepCompassApp() {
                     above.
                   </span>
                 </label>
-                <details className="optional-panel">
+                <details className="optional-panel" open>
                   <summary className="optional-panel__summary">
                     <span className="summary-label">
                       <AppIcon name="spark" className="button-icon button-icon--sm" />
-                      Prefer a preview first?
+                      Try the seeded demo or a preview scenario
                     </span>
                     <span className="meta-badge">Load a sample</span>
                   </summary>
 
                   <div className="optional-panel__body">
                     <p className="field-message">
-                      Use a realistic scenario to preview the flow before you enter
-                      a real student&apos;s materials.
+                      The Jordan M. case loads two pre-reviewed sample images so
+                      the phone demo can walk through accommodation review, task
+                      review, and results without a live upload. The other
+                      scenarios are typed-only previews.
                     </p>
 
                     <div className="example-grid">
                       {exampleScenarios.map((example) => {
                         const isActive = example.id === activeExampleId
+                        const isSeededDemo = example.id === JORDAN_DEMO_EXAMPLE_ID
 
                         return (
                           <button
                             key={example.id}
                             className={`example-card${
                               isActive ? ' example-card--active' : ''
-                            }`}
+                            }${isSeededDemo ? ' example-card--demo' : ''}`}
                             type="button"
-                            onClick={() => applyExample(example.id)}
+                            onClick={() => {
+                              void applyExample(example.id)
+                            }}
                           >
                             <div>
+                              {isSeededDemo ? (
+                                <span className="example-card__badge">
+                                  <AppIcon name="star" className="button-icon button-icon--sm" />
+                                  Seeded demo
+                                </span>
+                              ) : null}
                               <h3 className="example-card__title">{example.title}</h3>
                               <p className="example-card__summary">{example.summary}</p>
                             </div>
