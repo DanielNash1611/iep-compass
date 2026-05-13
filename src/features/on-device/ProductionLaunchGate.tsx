@@ -45,11 +45,19 @@ async function loadCapabilityReport() {
   return report
 }
 
+function hasCompletedCurrentModelSetup() {
+  return hasReusableModelLoadSession(DEFAULT_MODEL_ASSET_PATH)
+}
+
 export function ProductionLaunchGate({
   children,
   enabled,
 }: ProductionLaunchGateProps) {
-  const [gateState, setGateState] = useState<GateState>({ status: 'checking' })
+  const [gateState, setGateState] = useState<GateState>(() =>
+    enabled && hasCompletedCurrentModelSetup()
+      ? { status: 'ready' }
+      : { status: 'checking' },
+  )
   const [checkCount, setCheckCount] = useState(0)
   const loadIdRef = useRef(0)
   const loadStartedAtRef = useRef<number | null>(null)
@@ -57,6 +65,11 @@ export function ProductionLaunchGate({
 
   useEffect(() => {
     if (!enabled) {
+      return
+    }
+
+    if (hasCompletedCurrentModelSetup()) {
+      setGateState({ status: 'ready' })
       return
     }
 
@@ -104,6 +117,35 @@ export function ProductionLaunchGate({
       isMounted = false
     }
   }, [checkCount, enabled])
+
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
+    function resumeReadyModelSession() {
+      if (document.visibilityState === 'hidden') {
+        return
+      }
+
+      setGateState((current) =>
+        current.status !== 'ready' && hasCompletedCurrentModelSetup()
+          ? { status: 'ready' }
+          : current,
+      )
+    }
+
+    window.addEventListener('focus', resumeReadyModelSession)
+    window.addEventListener('pageshow', resumeReadyModelSession)
+    document.addEventListener('visibilitychange', resumeReadyModelSession)
+    resumeReadyModelSession()
+
+    return () => {
+      window.removeEventListener('focus', resumeReadyModelSession)
+      window.removeEventListener('pageshow', resumeReadyModelSession)
+      document.removeEventListener('visibilitychange', resumeReadyModelSession)
+    }
+  }, [enabled])
 
   useEffect(() => {
     if (!enabled) {
