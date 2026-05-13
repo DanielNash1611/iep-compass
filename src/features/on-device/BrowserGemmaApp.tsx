@@ -38,6 +38,8 @@ async function loadCapabilityReport() {
 
 function formatStatusLabel(state: ModelStatus) {
   switch (state) {
+    case 'checking-cache':
+      return 'Checking saved model'
     case 'ready-to-download':
       return 'Ready to download'
     default:
@@ -50,6 +52,7 @@ function getStatusTone(state: ModelStatus) {
     case 'ready':
       return 'ready'
     case 'generating':
+    case 'checking-cache':
     case 'downloading':
     case 'loading':
       return 'busy'

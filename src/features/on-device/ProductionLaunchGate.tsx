@@ -14,10 +14,7 @@ import {
   getModelDownloadNetworkStatus,
   type ModelDownloadNetworkStatus,
 } from '../../lib/on-device/modelDownloadNetwork'
-import {
-  hasReusableModelLoadSession,
-  rememberModelLoadSession,
-} from '../../lib/on-device/modelLoadSession'
+import { hasCachedModelAsset } from '../../lib/on-device/modelAssetCache'
 import { buildProductionLaunchGateDecision } from '../../lib/on-device/productionLaunchGate'
 import type { CapabilityReport } from '../../lib/on-device/types'
 
@@ -45,19 +42,11 @@ async function loadCapabilityReport() {
   return report
 }
 
-function hasCompletedCurrentModelSetup() {
-  return hasReusableModelLoadSession(DEFAULT_MODEL_ASSET_PATH)
-}
-
 export function ProductionLaunchGate({
   children,
   enabled,
 }: ProductionLaunchGateProps) {
-  const [gateState, setGateState] = useState<GateState>(() =>
-    enabled && hasCompletedCurrentModelSetup()
-      ? { status: 'ready' }
-      : { status: 'checking' },
-  )
+  const [gateState, setGateState] = useState<GateState>({ status: 'checking' })
   const [checkCount, setCheckCount] = useState(0)
   const loadIdRef = useRef(0)
   const loadStartedAtRef = useRef<number | null>(null)
@@ -65,11 +54,6 @@ export function ProductionLaunchGate({
 
   useEffect(() => {
     if (!enabled) {
-      return
-    }
-
-    if (hasCompletedCurrentModelSetup()) {
-      setGateState({ status: 'ready' })
       return
     }
 
@@ -85,17 +69,31 @@ export function ProductionLaunchGate({
           return
         }
 
-        setGateState(
-          report.shouldAttempt
-            ? hasReusableModelLoadSession(report.modelAssetPath)
-              ? { status: 'ready' }
-              : {
-                  networkStatus: getModelDownloadNetworkStatus(),
-                  report,
-                  status: 'needs-load',
-                }
-            : { report, status: 'blocked' },
-        )
+        if (!report.shouldAttempt) {
+          setGateState({ report, status: 'blocked' })
+          return
+        }
+
+        const modelAlreadyCached = await hasCachedModelAsset(report.modelAssetPath)
+
+        if (!isMounted) {
+          return
+        }
+
+        if (modelAlreadyCached) {
+          loadIdRef.current += 1
+          void loadBrowserModel(loadIdRef.current, {
+            autoStartWhenLoaded: true,
+            precheckedReport: report,
+          })
+          return
+        }
+
+        setGateState({
+          networkStatus: getModelDownloadNetworkStatus(),
+          report,
+          status: 'needs-load',
+        })
       } catch (error) {
         if (!isMounted) {
           return
@@ -123,29 +121,37 @@ export function ProductionLaunchGate({
       return
     }
 
-    function resumeReadyModelSession() {
+    async function resumeReadyModelSession() {
       if (document.visibilityState === 'hidden') {
         return
       }
 
-      setGateState((current) =>
-        current.status !== 'ready' && hasCompletedCurrentModelSetup()
-          ? { status: 'ready' }
-          : current,
-      )
+      if (gateState.status === 'ready' || gateState.status === 'loading-model') {
+        return
+      }
+
+      if (await hasCachedModelAsset(DEFAULT_MODEL_ASSET_PATH)) {
+        loadIdRef.current += 1
+        void loadBrowserModel(loadIdRef.current, {
+          autoStartWhenLoaded: true,
+        })
+      }
     }
 
-    window.addEventListener('focus', resumeReadyModelSession)
-    window.addEventListener('pageshow', resumeReadyModelSession)
-    document.addEventListener('visibilitychange', resumeReadyModelSession)
-    resumeReadyModelSession()
+    const handleResume = () => {
+      void resumeReadyModelSession()
+    }
+
+    window.addEventListener('focus', handleResume)
+    window.addEventListener('pageshow', handleResume)
+    document.addEventListener('visibilitychange', handleResume)
 
     return () => {
-      window.removeEventListener('focus', resumeReadyModelSession)
-      window.removeEventListener('pageshow', resumeReadyModelSession)
-      document.removeEventListener('visibilitychange', resumeReadyModelSession)
+      window.removeEventListener('focus', handleResume)
+      window.removeEventListener('pageshow', handleResume)
+      document.removeEventListener('visibilitychange', handleResume)
     }
-  }, [enabled])
+  }, [enabled, gateState.status])
 
   useEffect(() => {
     if (!enabled) {
@@ -263,17 +269,24 @@ export function ProductionLaunchGate({
     />
   )
 
-  async function loadBrowserModel(currentLoadId: number) {
+  async function loadBrowserModel(
+    currentLoadId: number,
+    options: {
+      autoStartWhenLoaded?: boolean
+      precheckedReport?: CapabilityReport
+    } = {},
+  ) {
     try {
-      const report = await loadCapabilityReport()
+      const report = options.precheckedReport ?? await loadCapabilityReport()
       const networkStatus = getModelDownloadNetworkStatus()
+      const modelAlreadyCached = await hasCachedModelAsset(report.modelAssetPath)
 
       if (!report.shouldAttempt) {
         setGateState({ report, status: 'blocked' })
         return
       }
 
-      if (!networkStatus.canDownload) {
+      if (!modelAlreadyCached && !networkStatus.canDownload) {
         setGateState({
           networkStatus,
           report,
@@ -304,9 +317,11 @@ export function ProductionLaunchGate({
               current.status === 'loading-model' ? current.elapsedMs : 0,
             phaseDetail: phase.detail,
             phaseLabel:
-              phase.state === 'downloading'
-                ? 'Getting the model'
-                : 'Loading Gemma',
+              phase.state === 'checking-cache'
+                ? 'Checking saved model'
+                : phase.state === 'downloading'
+                  ? 'Saving the model'
+                  : 'Loading Gemma',
             status: 'loading-model',
           }))
         },
@@ -319,8 +334,9 @@ export function ProductionLaunchGate({
 
       disposeRef.current?.()
       disposeRef.current = resources.dispose
-      rememberModelLoadSession(report.modelAssetPath)
-      setGateState({ status: 'model-loaded' })
+      setGateState(
+        options.autoStartWhenLoaded ? { status: 'ready' } : { status: 'model-loaded' },
+      )
     } catch (error) {
       if (loadIdRef.current !== currentLoadId) {
         return
@@ -384,7 +400,8 @@ function ModelLoadScreen({
         <p className="production-gate__copy">
           This is a large browser model. The app will not start the download on
           mobile data or while Data Saver is on. Connect to Wi-Fi, keep this tab
-          open, then load the model.
+          open, then download and load the model. Future visits can reuse the
+          saved file until browser storage is cleared or evicted.
         </p>
 
         <div className="screen-actions">
@@ -395,7 +412,7 @@ function ModelLoadScreen({
             onClick={onLoad}
           >
             <AppIcon name="spark" className="button-icon" />
-            Load Gemma on Wi-Fi
+            Download and load Gemma
           </button>
 
           <button className="ghost-button" type="button" onClick={onRecheck}>
@@ -430,8 +447,8 @@ function ModelLoadingScreen({
         <h1>Gemma is loading</h1>
         <LoadingIndicator label={`${phaseDetail} ${formatElapsedTime(elapsedMs)} elapsed.`} />
         <p className="production-gate__copy">
-          Leave this tab open and stay on Wi-Fi. The browser model can take a
-          while the first time; that is expected for a model this large.
+          Leave this tab open. The first Wi-Fi download can take a while; later
+          visits should load from the model saved in this browser.
         </p>
       </main>
     </div>

@@ -1,9 +1,15 @@
 import { FilesetResolver, LlmInference, type LlmInferenceOptions } from '@mediapipe/tasks-genai'
+import {
+  getOrCacheModelAsset,
+  requestPersistentModelStorage,
+  type CachedModelAssetSource,
+} from './modelAssetCache'
 import { DEFAULT_WASM_ROOT } from './modelConfig'
 
 export interface BootstrapPhase {
   detail: string
-  state: 'downloading' | 'loading'
+  source?: CachedModelAssetSource
+  state: 'checking-cache' | 'downloading' | 'loading'
 }
 
 export interface BootstrapOptions {
@@ -37,15 +43,38 @@ export async function bootstrapGemma4Model(
 
   onPhaseChange?.({
     detail:
-      'Preparing the WebAssembly runtime and starting the browser-managed model fetch.',
-    state: 'downloading',
+      'Checking whether this browser can keep Gemma saved for later visits.',
+    state: 'checking-cache',
+  })
+
+  const storageResult = await requestPersistentModelStorage()
+
+  onPhaseChange?.({
+    detail: storageResult.granted
+      ? 'Chrome agreed to keep IEP Compass model storage more persistently.'
+      : 'Preparing the WebAssembly runtime and checking for a saved Gemma model.',
+    state: 'checking-cache',
   })
 
   const wasmFileset = await FilesetResolver.forGenAiTasks(wasmRoot)
   const device = await LlmInference.createWebGpuDevice()
+  const modelAsset = await getOrCacheModelAsset(
+    options.modelAssetPath,
+    (progress) => {
+      onPhaseChange?.({
+        detail: progress.detail,
+        source: progress.source,
+        state: progress.source === 'cache-storage' ? 'checking-cache' : 'downloading',
+      })
+    },
+  )
 
   onPhaseChange?.({
-    detail: 'Initializing WebGPU resources and loading Gemma 4 E2B into memory.',
+    detail:
+      modelAsset.source === 'cache-storage'
+        ? 'Initializing WebGPU resources and loading Gemma from this browser.'
+        : 'Initializing WebGPU resources and loading the newly saved Gemma model.',
+    source: modelAsset.source,
     state: 'loading',
   })
 
@@ -55,7 +84,7 @@ export async function bootstrapGemma4Model(
       gpuOptions: {
         device,
       },
-      modelAssetPath: options.modelAssetPath,
+      modelAssetBuffer: modelAsset.reader,
     },
     maxTokens: modeOptions.maxTokens,
     randomSeed: 7,

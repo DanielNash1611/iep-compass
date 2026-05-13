@@ -10,9 +10,6 @@ import {
 import {
   classifyModelDownloadNetwork,
 } from '../../src/lib/on-device/modelDownloadNetwork.ts'
-import {
-  canReuseModelLoadSession,
-} from '../../src/lib/on-device/modelLoadSession.ts'
 
 function buildReport(overrides = {}) {
   return {
@@ -187,55 +184,4 @@ test('model download network blocks Data Saver', () => {
   assert.equal(status.canDownload, false)
   assert.equal(status.state, 'blocked')
   assert.match(status.detail, /Data Saver/i)
-})
-
-test('model load session can be reused for the same model path in this tab', () => {
-  const now = 1_000_000
-  const rawValue = JSON.stringify({
-    loadedAt: now - 30_000,
-    modelAssetPath: 'https://example.com/gemma-4-E2B-it-web.task',
-  })
-
-  assert.equal(
-    canReuseModelLoadSession(
-      rawValue,
-      'https://example.com/gemma-4-E2B-it-web.task',
-      now,
-    ),
-    true,
-  )
-})
-
-test('model load session is not reused for a different model path', () => {
-  const now = 1_000_000
-  const rawValue = JSON.stringify({
-    loadedAt: now - 30_000,
-    modelAssetPath: 'https://example.com/old-model.task',
-  })
-
-  assert.equal(
-    canReuseModelLoadSession(
-      rawValue,
-      'https://example.com/gemma-4-E2B-it-web.task',
-      now,
-    ),
-    false,
-  )
-})
-
-test('model load session expires after the current setup window', () => {
-  const now = 13 * 60 * 60 * 1000
-  const rawValue = JSON.stringify({
-    loadedAt: 0,
-    modelAssetPath: 'https://example.com/gemma-4-E2B-it-web.task',
-  })
-
-  assert.equal(
-    canReuseModelLoadSession(
-      rawValue,
-      'https://example.com/gemma-4-E2B-it-web.task',
-      now,
-    ),
-    false,
-  )
 })

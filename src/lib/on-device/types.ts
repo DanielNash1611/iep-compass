@@ -1,6 +1,7 @@
 export type ModelStatus =
   | 'unsupported'
   | 'ready-to-download'
+  | 'checking-cache'
   | 'downloading'
   | 'loading'
   | 'ready'

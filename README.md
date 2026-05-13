@@ -186,6 +186,8 @@ This app is designed around memory pressure, not around maximum model capability
 What it does on purpose:
 
 - model loading is explicit and user-triggered
+- the first browser-model download is saved in Cache Storage when available
+- later visits can load from the saved browser file until site storage is cleared or evicted
 - light mode is enabled by default
 - prompts are capped aggressively
 - context history is not retained
@@ -242,6 +244,7 @@ Same-origin hosting is recommended for production-minded deployments.
 Production launch note:
 
 - Production builds now require the configured browser model to be reachable before the main app opens.
+- The launch gate downloads the model only after a user action and only when the network check allows it; if the model is already cached, the gate loads it from browser storage instead of requiring another download.
 - Unsupported browsers and devices, including iPhone and iPad browsers for this launch, receive an unsupported-device message instead of a non-AI fallback.
 
 ## Architecture

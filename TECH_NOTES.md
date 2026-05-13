@@ -27,7 +27,8 @@ That separation is a best-effort engineering judgment based on the official brow
 ## Other Engineering Judgments In This Repo
 
 - Light mode defaults to single-turn use, short prompts, and a low total token budget.
-- Detailed byte-level download progress is not shown because the current official browser API does not expose a documented model-download progress callback for `createFromOptions`.
+- The app caches the downloaded browser model in Cache Storage and asks for persistent storage when the browser supports it. This should last until site storage is cleared or evicted, but it is still browser-managed storage rather than a permanent app install.
+- Detailed byte-level download progress is not shown because the current user-facing path saves and streams the large model through browser storage instead of maintaining a custom progress UI.
 - The default model path is same-origin (`/models/gemma-4-E2B-it-web.task`) instead of hot-linking the Hugging Face URL. This keeps deployment simpler and avoids relying on cross-origin behavior for a multi-GB asset.
 - The browser model UI is embedded as an optional testing surface inside the existing app rather than becoming the whole product shell. That is an engineering choice to preserve the main user journey while the on-device path is still being validated.
 - A local endpoint can be used as a backup for development testing, but it is intentionally labeled as non-primary so the competition path remains browser-first.
