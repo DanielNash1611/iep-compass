@@ -5,6 +5,10 @@ import { LoadingIndicator } from './components/LoadingIndicator'
 import { SectionCard } from './components/SectionCard'
 import BrowserGemmaApp from './features/on-device/BrowserGemmaApp'
 import { ProductionLaunchGate } from './features/on-device/ProductionLaunchGate'
+import {
+  createJordanDemoSources,
+  JORDAN_DEMO_EXAMPLE_ID,
+} from './data/demoCase.ts'
 import { exampleScenarios } from './data/examples'
 import { TaskSetupFields } from './features/input/TaskSetupFields'
 import { ResultsView } from './features/results/ResultsView'
@@ -954,6 +958,8 @@ function IepCompassApp() {
     mode: 'add' | 'dismiss' | 'replace',
   ) {
     const reviewedText = nextValue.trim()
+    const keepDemoIepEphemeral =
+      sourceKey === 'iep' && activeExampleId === JORDAN_DEMO_EXAMPLE_ID
 
     patchMainAttachment(sourceKey, attachmentId, (attachment) =>
       refreshAttachmentNotes({
@@ -975,6 +981,10 @@ function IepCompassApp() {
           ? reviewedText
           : addMissingSourceTextBlock(current.text, reviewedText),
     }))
+
+    if (keepDemoIepEphemeral) {
+      setShouldPersistIepSource(false)
+    }
   }
 
   function applyCorrectionAttachmentTextReview(
@@ -1298,6 +1308,35 @@ function IepCompassApp() {
     const nextExample = exampleScenarios.find((example) => example.id === exampleId)
 
     if (!nextExample) {
+      return
+    }
+
+    if (nextExample.id === JORDAN_DEMO_EXAMPLE_ID) {
+      const demoSources = createJordanDemoSources()
+
+      replaceIepSource(demoSources.iepSource, { persist: false })
+      replaceTaskSource(demoSources.taskSource)
+      cancelPendingAnalysis()
+      setActiveExampleId(nextExample.id)
+      setContextTags(demoSources.contextTags)
+      setTaskTitle(demoSources.taskTitle)
+      setLearningProfile(demoSources.learningProfile)
+      setTeacherConcern(nextExample.teacherConcern ?? '')
+      setAnalysis(null)
+      setAnalysisError(null)
+      setCorrectionIepSource((current) => {
+        revokeRemovedAttachments(current.attachments, [])
+        return createBlankSource()
+      })
+      setCorrectionTaskSource((current) => {
+        revokeRemovedAttachments(current.attachments, [])
+        return createBlankSource()
+      })
+      setCorrectionTaskTitle(demoSources.taskTitle)
+      setCorrectionTeacherConcern(nextExample.teacherConcern ?? '')
+      setCorrectionContextTags(demoSources.contextTags)
+      setCorrectionTarget(null)
+      setScreen('iep')
       return
     }
 

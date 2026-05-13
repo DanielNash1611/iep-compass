@@ -238,6 +238,7 @@ function canRunInterpretation(
 ) {
   return (
     documentPlan.configured &&
+    !attachment.isDemoSeed &&
     (attachment.kind === 'image' || attachment.kind === 'pdf') &&
     (
       attachment.status === 'interpret_ready'
@@ -1399,7 +1400,13 @@ export function SourceEditor({
               return (
                 <article key={attachment.id} className="attachment-card">
                   <div className="attachment-card__header">
-                    <div>
+                    {attachment.previewUrl ? (
+                      <div className="attachment-card__inline-preview">
+                        <img src={attachment.previewUrl} alt={`Preview of ${attachment.name}`} />
+                      </div>
+                    ) : null}
+
+                    <div className="attachment-card__heading-copy">
                       <p className="attachment-card__eyebrow">
                         <AppIcon
                           name={getAttachmentIconName(attachment)}

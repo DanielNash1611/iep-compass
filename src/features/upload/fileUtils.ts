@@ -237,9 +237,9 @@ export async function loadLocalTextAttachment(
 }
 
 export function revokeAttachmentPreview(
-  attachment: Pick<UploadedAttachment, 'previewUrl'>,
+  attachment: Pick<UploadedAttachment, 'previewUrl' | 'previewUrlIsStatic'>,
 ) {
-  if (attachment.previewUrl) {
+  if (attachment.previewUrl && !attachment.previewUrlIsStatic) {
     URL.revokeObjectURL(attachment.previewUrl)
   }
 }

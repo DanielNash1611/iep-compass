@@ -27,7 +27,10 @@ That is deliberate. The app is wired for the official asset, but it will not pre
 - The main `IEP Compass` flow remains the primary UX.
 - The Gemma 4 browser test surface now lives as an optional card inside the assignment step.
 - The browser path is the primary competition path.
-- A local endpoint can be configured as a backup for development testing only.
+- The stable phone demo uses synthetic pre-reviewed sample images from `public/demo/` so Android Chrome does not need to keep a live camera upload and the browser model loaded at the same time.
+- Browser Gemma maps reviewed demo text to accommodation guidance; it does not perform live OCR in the demo path.
+- A local endpoint can be configured as a backup for development testing only. It is not part of the user-facing demo or intended product path.
+- The intended final product direction is a native Android app using Google AI Edge for private on-device capture and inference.
 
 ## Image Eval Loop
 
@@ -137,11 +140,22 @@ Default values:
 Local backup notes:
 
 - `VITE_GEMMA_BASE_URL` is optional and exists only for development fallback testing.
-- Production builds do not rely on the local `/api/ollama` proxy by default.
+- Production demo builds do not rely on the local `/api/ollama` proxy.
 - `VITE_GEMMA_APP_MODEL` is the explicit user-facing app model knob and should stay on the lighter Gemma model unless you are intentionally testing something else.
 - `VITE_GEMMA_PRIMARY_MODEL` remains as a legacy fallback for older local setups, but the app prefers `VITE_GEMMA_APP_MODEL` when it is present.
 - With the default Vite proxy, `/api/ollama` forwards to `http://127.0.0.1:11434/v1`.
-- This backup path is helpful when browser inference is blocked on a device, but it is not the competition delivery path.
+- This backup path is helpful for developer experiments, but it is not the competition delivery path and should not be expected from users.
+
+## Stable Phone Demo
+
+The seeded demo case, `Jordan M. writing assignment`, uses two synthetic sample images:
+
+- `public/demo/jordan-accommodation-snapshot.jpg`
+- `public/demo/jordan-character-change-paragraph.jpg`
+
+Those images load as pre-uploaded materials, but they are not automatically trusted. The user still reviews the accommodation text and task draft before either source joins the analysis trail. This keeps the demo honest about source review while avoiding the fragile Android browser combination of live image upload, tab focus changes, and a large in-browser model.
+
+In the web demo, the image-reading step is represented by pre-reviewed sample drafts. Browser Gemma is used for the later mapping step: choosing from allowed accommodation IDs based on reviewed source text. The app rejects model-suggested IDs that are not in the seeded allowed list.
 
 ### 4. Run locally
 

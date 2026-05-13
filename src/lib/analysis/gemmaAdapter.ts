@@ -25,6 +25,10 @@ import {
   runDeterministicAnalysis,
   runTeacherConcernAnalysis,
 } from './mockAnalysis'
+import {
+  analyzeJordanDemoWithBrowserGemma,
+  isJordanDemoRequest,
+} from './demoBrowserMapping.ts'
 import { getSourceReadyAttachments } from '../../features/source/sourceText'
 import type {
   AnalysisExecution,
@@ -120,6 +124,26 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
   async analyze(request: AnalysisRequest): Promise<AnalysisExecution> {
     const attachmentNotes = this.buildAnalysisNotes(request)
     const primaryLabel = formatModelLabel(this.config.primaryModel)
+
+    if (isJordanDemoRequest(request)) {
+      const demoResult = await analyzeJordanDemoWithBrowserGemma()
+
+      return {
+        meta: {
+          adapterLabel: 'Browser Gemma demo adapter',
+          mode: demoResult.usedFallback ? 'demo' : 'live',
+          model: demoResult.usedFallback ? STRUCTURED_DEMO_LABEL : 'Gemma 4 E2B',
+          notes: [
+            'Demo images were pre-reviewed into source text so the phone demo does not run live OCR.',
+            ...demoResult.notes,
+            ...attachmentNotes,
+          ],
+          runtimeLabel: demoResult.usedFallback ? STRUCTURED_DEMO_LABEL : 'Browser on-device',
+          usedFallback: demoResult.usedFallback,
+        },
+        result: demoResult.result,
+      }
+    }
 
     if (!this.config.baseUrl) {
       return {

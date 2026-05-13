@@ -68,6 +68,7 @@ export interface UploadedAttachment {
   fileType: string
   id: string
   interpretationProgress?: AttachmentInterpretationProgress
+  isDemoSeed?: boolean
   kind: AttachmentKind
   name: string
   notes: string[]
@@ -79,6 +80,7 @@ export interface UploadedAttachment {
   pageCount?: number
   processedPageCount?: number
   previewUrl?: string
+  previewUrlIsStatic?: boolean
   reviewedText?: string
   sizeLabel: string
   sourceTrailText?: string

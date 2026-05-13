@@ -30,10 +30,13 @@ That separation is a best-effort engineering judgment based on the official brow
 - The app caches the downloaded browser model in Cache Storage and asks for persistent storage when the browser supports it. This should last until site storage is cleared or evicted, but it is still browser-managed storage rather than a permanent app install.
 - The production launch gate treats the cached model file as readiness and does not instantiate Gemma into WebGPU memory before users upload a photo. That avoids holding the multi-GB model in memory while Android opens the camera/photo picker.
 - A cached model can bypass a later remote asset-reachability failure, but it cannot bypass WebGPU, browser-family, secure-context, or memory checks.
+- The stable web demo avoids live phone image upload by using synthetic pre-reviewed sample images stored under `public/demo/`. Browser Gemma performs only the reviewed-text accommodation mapping step for that demo.
+- Demo mapping is constrained to a seeded list of allowed accommodation IDs. If the model returns an unsupported ID, the app ignores it instead of creating a new accommodation.
+- The intended production product direction is a native Android app using Google AI Edge so private image capture, model storage, and on-device inference can be handled by the phone app rather than by browser tab storage and WebGPU memory.
 - Detailed byte-level download progress is not shown because the current user-facing path saves and streams the large model through browser storage instead of maintaining a custom progress UI.
 - The default model path is same-origin (`/models/gemma-4-E2B-it-web.task`) instead of hot-linking the Hugging Face URL. This keeps deployment simpler and avoids relying on cross-origin behavior for a multi-GB asset.
 - The browser model UI is embedded as an optional testing surface inside the existing app rather than becoming the whole product shell. That is an engineering choice to preserve the main user journey while the on-device path is still being validated.
-- A local endpoint can be used as a backup for development testing, but it is intentionally labeled as non-primary so the competition path remains browser-first.
+- A local endpoint can be used as a backup for development testing, but it is intentionally outside the user-facing demo and intended product path.
 
 ## Why The Model File Stays Out Of Git
 

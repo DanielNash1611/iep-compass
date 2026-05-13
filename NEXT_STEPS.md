@@ -2,6 +2,12 @@
 
 ## Recently Completed
 
+- Added a stable web-demo path with preloaded synthetic images:
+  - added the `Jordan M. writing assignment` seeded case using static demo images under `public/demo/`
+  - preloaded the IEP image as reviewable extracted accommodation text and the assignment image as a structured task draft, without auto-including either source
+  - kept demo image previews static so the phone session does not depend on live camera/file state
+  - added a constrained browser-Gemma mapping path that selects from allowed accommodation IDs and rejects invented IDs
+  - updated README and TECH_NOTES to state that the web demo uses pre-reviewed images while the intended final product is a native Android app using Google AI Edge
 - Added a Wi-Fi-safe production model saving experience for Android/mobile launch:
   - production now stops before the main app opens, checks browser support, checks whether the connection is safe for a large model download, and blocks Gemma loading on mobile data or Data Saver
   - added explicit `Get Gemma`/saving/saved states so users can see when the browser model file is ready and get actionable error messaging when it is not

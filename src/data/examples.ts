@@ -1,4 +1,5 @@
 import type { TaskContext } from '../types/analysis'
+import { jordanDemoScenario } from './demoCase.ts'
 
 export interface ExampleScenario {
   contextTags: TaskContext[]
@@ -12,6 +13,7 @@ export interface ExampleScenario {
 }
 
 export const exampleScenarios: ExampleScenario[] = [
+  jordanDemoScenario,
   {
     id: 'timed-math-quiz',
     title: 'Timed math quiz',
