@@ -14,6 +14,10 @@ import {
   getModelDownloadNetworkStatus,
   type ModelDownloadNetworkStatus,
 } from '../../lib/on-device/modelDownloadNetwork'
+import {
+  hasReusableModelLoadSession,
+  rememberModelLoadSession,
+} from '../../lib/on-device/modelLoadSession'
 import { buildProductionLaunchGateDecision } from '../../lib/on-device/productionLaunchGate'
 import type { CapabilityReport } from '../../lib/on-device/types'
 
@@ -70,11 +74,13 @@ export function ProductionLaunchGate({
 
         setGateState(
           report.shouldAttempt
-            ? {
-                networkStatus: getModelDownloadNetworkStatus(),
-                report,
-                status: 'needs-load',
-              }
+            ? hasReusableModelLoadSession(report.modelAssetPath)
+              ? { status: 'ready' }
+              : {
+                  networkStatus: getModelDownloadNetworkStatus(),
+                  report,
+                  status: 'needs-load',
+                }
             : { report, status: 'blocked' },
         )
       } catch (error) {
@@ -271,6 +277,7 @@ export function ProductionLaunchGate({
 
       disposeRef.current?.()
       disposeRef.current = resources.dispose
+      rememberModelLoadSession(report.modelAssetPath)
       setGateState({ status: 'model-loaded' })
     } catch (error) {
       if (loadIdRef.current !== currentLoadId) {

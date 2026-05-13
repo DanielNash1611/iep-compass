@@ -5,9 +5,10 @@
 - Added a Wi-Fi-safe production model loading experience for Android/mobile launch:
   - production now stops before the main app opens, checks browser support, checks whether the connection is safe for a large model download, and blocks Gemma loading on mobile data or Data Saver
   - added explicit `Get Gemma`/loading/loaded states so users can see when the browser model is ready and get actionable error messaging when it is not
+  - fixed the Android camera/file-picker restore loop by remembering a completed model setup for the current tab and configured model path, so returning from upload selection does not force the full load step again
   - kept model-required file interpretation controls from appearing when Gemma document reading is not configured, with a visible note to use pasted text or return after the model path is ready
   - hid the secondary browser-model testing panel in production because the production gate already owns model readiness
-  - added focused coverage for Wi-Fi, mobile-data, unknown-mobile-network, and Data Saver model-download decisions
+  - added focused coverage for Wi-Fi, mobile-data, unknown-mobile-network, Data Saver, and reusable model-load session decisions
 - Added the production launch gate for browser-model-required deployment:
   - production builds now check browser/model capability before rendering the main IEP Compass flow
   - unsupported devices, including iPhone/iPad browsers, see a clear unsupported-device message instead of a degraded non-AI or local-backup version
