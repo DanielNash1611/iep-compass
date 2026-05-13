@@ -2,11 +2,12 @@
 
 ## Recently Completed
 
-- Added a Wi-Fi-safe production model loading experience for Android/mobile launch:
+- Added a Wi-Fi-safe production model saving experience for Android/mobile launch:
   - production now stops before the main app opens, checks browser support, checks whether the connection is safe for a large model download, and blocks Gemma loading on mobile data or Data Saver
-  - added explicit `Get Gemma`/loading/loaded states so users can see when the browser model is ready and get actionable error messaging when it is not
+  - added explicit `Get Gemma`/saving/saved states so users can see when the browser model file is ready and get actionable error messaging when it is not
   - added Cache Storage backed model persistence so the first Wi-Fi download can be reused until browser/site storage is cleared or evicted
-  - the launch gate now checks for a cached model immediately on page load and again on tab focus/pageshow/visibility restore, then auto-loads Gemma from device storage instead of showing the download step again
+  - the launch gate now checks for a cached model immediately on page load and again on tab focus/pageshow/visibility restore, then opens the app without re-instantiating Gemma in WebGPU memory before the photo upload flow
+  - a cached model now bypasses only the remote asset-reachability probe, while WebGPU, browser, and memory blockers still apply
   - kept model-required file interpretation controls from appearing when Gemma document reading is not configured, with a visible note to use pasted text or return after the model path is ready
   - hid the secondary browser-model testing panel in production because the production gate already owns model readiness
   - added focused coverage for Wi-Fi, mobile-data, unknown-mobile-network, and Data Saver model-download decisions

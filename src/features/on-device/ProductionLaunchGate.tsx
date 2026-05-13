@@ -5,7 +5,6 @@ import {
   inspectOnDeviceCapability,
   logCapabilityReport,
 } from '../../lib/on-device/capabilityCheck'
-import { bootstrapGemma4Model } from '../../lib/on-device/modelBootstrap'
 import {
   DEFAULT_MODEL_ASSET_PATH,
   GEMMA4_MODEL_LABEL,
@@ -14,7 +13,10 @@ import {
   getModelDownloadNetworkStatus,
   type ModelDownloadNetworkStatus,
 } from '../../lib/on-device/modelDownloadNetwork'
-import { hasCachedModelAsset } from '../../lib/on-device/modelAssetCache'
+import {
+  ensureCachedModelAsset,
+  hasCachedModelAsset,
+} from '../../lib/on-device/modelAssetCache'
 import { buildProductionLaunchGateDecision } from '../../lib/on-device/productionLaunchGate'
 import type { CapabilityReport } from '../../lib/on-device/types'
 
@@ -42,6 +44,17 @@ async function loadCapabilityReport() {
   return report
 }
 
+function canUseCachedModel(report: CapabilityReport, modelAlreadyCached: boolean) {
+  if (report.shouldAttempt) {
+    return true
+  }
+
+  return (
+    modelAlreadyCached &&
+    report.gateReasons.every((reason) => reason.code === 'model-asset-unavailable')
+  )
+}
+
 export function ProductionLaunchGate({
   children,
   enabled,
@@ -50,7 +63,6 @@ export function ProductionLaunchGate({
   const [checkCount, setCheckCount] = useState(0)
   const loadIdRef = useRef(0)
   const loadStartedAtRef = useRef<number | null>(null)
-  const disposeRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     if (!enabled) {
@@ -69,23 +81,19 @@ export function ProductionLaunchGate({
           return
         }
 
-        if (!report.shouldAttempt) {
-          setGateState({ report, status: 'blocked' })
-          return
-        }
-
         const modelAlreadyCached = await hasCachedModelAsset(report.modelAssetPath)
 
         if (!isMounted) {
           return
         }
 
+        if (!canUseCachedModel(report, modelAlreadyCached)) {
+          setGateState({ report, status: 'blocked' })
+          return
+        }
+
         if (modelAlreadyCached) {
-          loadIdRef.current += 1
-          void loadBrowserModel(loadIdRef.current, {
-            autoStartWhenLoaded: true,
-            precheckedReport: report,
-          })
+          setGateState({ status: 'ready' })
           return
         }
 
@@ -131,10 +139,7 @@ export function ProductionLaunchGate({
       }
 
       if (await hasCachedModelAsset(DEFAULT_MODEL_ASSET_PATH)) {
-        loadIdRef.current += 1
-        void loadBrowserModel(loadIdRef.current, {
-          autoStartWhenLoaded: true,
-        })
+        setGateState({ status: 'ready' })
       }
     }
 
@@ -152,17 +157,6 @@ export function ProductionLaunchGate({
       document.removeEventListener('visibilitychange', handleResume)
     }
   }, [enabled, gateState.status])
-
-  useEffect(() => {
-    if (!enabled) {
-      return
-    }
-
-    return () => {
-      disposeRef.current?.()
-      disposeRef.current = null
-    }
-  }, [enabled])
 
   useEffect(() => {
     if (gateState.status !== 'loading-model') {
@@ -235,7 +229,7 @@ export function ProductionLaunchGate({
         networkStatus={gateState.networkStatus}
         onLoad={() => {
           loadIdRef.current += 1
-          void loadBrowserModel(loadIdRef.current)
+          void cacheBrowserModel(loadIdRef.current)
         }}
         onRecheck={() => setCheckCount((current) => current + 1)}
       />
@@ -269,10 +263,9 @@ export function ProductionLaunchGate({
     />
   )
 
-  async function loadBrowserModel(
+  async function cacheBrowserModel(
     currentLoadId: number,
     options: {
-      autoStartWhenLoaded?: boolean
       precheckedReport?: CapabilityReport
     } = {},
   ) {
@@ -281,7 +274,7 @@ export function ProductionLaunchGate({
       const networkStatus = getModelDownloadNetworkStatus()
       const modelAlreadyCached = await hasCachedModelAsset(report.modelAssetPath)
 
-      if (!report.shouldAttempt) {
+      if (!canUseCachedModel(report, modelAlreadyCached)) {
         setGateState({ report, status: 'blocked' })
         return
       }
@@ -299,44 +292,32 @@ export function ProductionLaunchGate({
       setGateState({
         elapsedMs: 0,
         phaseDetail:
-          'Starting the browser-managed model fetch. Keep this tab open while Gemma loads.',
+          'Checking browser storage before saving Gemma. Keep this tab open during setup.',
         phaseLabel: 'Getting Gemma',
         status: 'loading-model',
       })
 
-      const resources = await bootstrapGemma4Model({
-        lightMode: true,
-        modelAssetPath: report.modelAssetPath,
-        onPhaseChange: (phase) => {
-          if (loadIdRef.current !== currentLoadId) {
-            return
-          }
+      await ensureCachedModelAsset(report.modelAssetPath, (progress) => {
+        if (loadIdRef.current !== currentLoadId) {
+          return
+        }
 
-          setGateState((current) => ({
-            elapsedMs:
-              current.status === 'loading-model' ? current.elapsedMs : 0,
-            phaseDetail: phase.detail,
-            phaseLabel:
-              phase.state === 'checking-cache'
-                ? 'Checking saved model'
-                : phase.state === 'downloading'
-                  ? 'Saving the model'
-                  : 'Loading Gemma',
-            status: 'loading-model',
-          }))
-        },
+        setGateState((current) => ({
+          elapsedMs: current.status === 'loading-model' ? current.elapsedMs : 0,
+          phaseDetail: progress.detail,
+          phaseLabel:
+            progress.source === 'cache-storage'
+              ? 'Checking saved model'
+              : 'Saving the model',
+          status: 'loading-model',
+        }))
       })
 
       if (loadIdRef.current !== currentLoadId) {
-        resources.dispose()
         return
       }
 
-      disposeRef.current?.()
-      disposeRef.current = resources.dispose
-      setGateState(
-        options.autoStartWhenLoaded ? { status: 'ready' } : { status: 'model-loaded' },
-      )
+      setGateState({ status: 'model-loaded' })
     } catch (error) {
       if (loadIdRef.current !== currentLoadId) {
         return
@@ -346,7 +327,7 @@ export function ProductionLaunchGate({
         message:
           error instanceof Error
             ? error.message
-            : 'Gemma could not finish loading in this browser.',
+            : 'Gemma could not finish saving in this browser.',
         status: 'error',
       })
     }
@@ -386,7 +367,7 @@ function ModelLoadScreen({
         </span>
         <h1>Get Gemma before you start</h1>
         <p className="production-gate__lede">
-          IEP Compass needs {GEMMA4_MODEL_LABEL} loaded in this browser before
+          IEP Compass needs {GEMMA4_MODEL_LABEL} saved in this browser before
           the model-powered parts of the app open.
         </p>
 
@@ -400,8 +381,9 @@ function ModelLoadScreen({
         <p className="production-gate__copy">
           This is a large browser model. The app will not start the download on
           mobile data or while Data Saver is on. Connect to Wi-Fi, keep this tab
-          open, then download and load the model. Future visits can reuse the
-          saved file until browser storage is cleared or evicted.
+          open, then download and save the model. Future visits can reuse the
+          saved file until browser storage is cleared or evicted, without keeping
+          Gemma loaded while you upload a photo.
         </p>
 
         <div className="screen-actions">
@@ -412,7 +394,7 @@ function ModelLoadScreen({
             onClick={onLoad}
           >
             <AppIcon name="spark" className="button-icon" />
-            Download and load Gemma
+            Download and save Gemma
           </button>
 
           <button className="ghost-button" type="button" onClick={onRecheck}>
@@ -444,11 +426,11 @@ function ModelLoadingScreen({
           <AppIcon name="spark" className="button-icon button-icon--sm" />
           {phaseLabel}
         </span>
-        <h1>Gemma is loading</h1>
+        <h1>Gemma is being saved</h1>
         <LoadingIndicator label={`${phaseDetail} ${formatElapsedTime(elapsedMs)} elapsed.`} />
         <p className="production-gate__copy">
           Leave this tab open. The first Wi-Fi download can take a while; later
-          visits should load from the model saved in this browser.
+          visits should open from the model file saved in this browser.
         </p>
       </main>
     </div>
@@ -464,12 +446,12 @@ function ModelLoadedScreen({ onStart }: { onStart: () => void }) {
       <main className="production-gate__panel" aria-live="polite">
         <span className="eyebrow eyebrow--hero">
           <AppIcon name="check" className="button-icon button-icon--sm" />
-          Model loaded
+          Model saved
         </span>
-        <h1>Gemma is ready</h1>
+        <h1>Gemma is saved</h1>
         <p className="production-gate__lede">
-          The browser model finished loading for this tab. You can start IEP
-          Compass now.
+          The browser model file is saved on this device. IEP Compass can start
+          now without keeping Gemma loaded during photo upload.
         </p>
         <button className="action-button" type="button" onClick={onStart}>
           <AppIcon name="results" className="button-icon" />

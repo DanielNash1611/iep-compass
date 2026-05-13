@@ -1438,8 +1438,8 @@ export function SourceEditor({
                     {interpretationNeedsModel ? (
                       <p className="attachment-card__model-note">
                         Gemma file interpretation is not ready in this session.
-                        Use pasted text for now, or come back after the model path
-                        is configured and loaded on Wi-Fi.
+                        Use pasted text for now, or come back after the document
+                        reading endpoint is configured.
                       </p>
                     ) : null}
 

@@ -91,6 +91,24 @@ export async function downloadAndCacheModelAsset(
   modelAssetPath: string,
   onProgress?: (progress: ModelAssetCacheProgress) => void,
 ): Promise<CachedModelAsset> {
+  await downloadModelAssetToCache(modelAssetPath, onProgress)
+
+  const cachedResponse = await getCachedModelResponse(modelAssetPath)
+
+  if (!cachedResponse) {
+    throw new Error('Gemma downloaded, but the browser did not keep it in Cache Storage.')
+  }
+
+  return {
+    reader: getReadableModelStream(cachedResponse),
+    source: 'network',
+  }
+}
+
+export async function downloadModelAssetToCache(
+  modelAssetPath: string,
+  onProgress?: (progress: ModelAssetCacheProgress) => void,
+): Promise<void> {
   const cache = await openModelCache()
   const request = buildModelRequest(modelAssetPath)
 
@@ -117,11 +135,26 @@ export async function downloadAndCacheModelAsset(
   if (!cachedResponse) {
     throw new Error('Gemma downloaded, but the browser did not keep it in Cache Storage.')
   }
+}
 
-  return {
-    reader: getReadableModelStream(cachedResponse),
-    source: 'network',
+export async function ensureCachedModelAsset(
+  modelAssetPath: string,
+  onProgress?: (progress: ModelAssetCacheProgress) => void,
+): Promise<CachedModelAssetSource> {
+  if (await hasCachedModelAsset(modelAssetPath)) {
+    onProgress?.({
+      detail:
+        'Found the Gemma model saved in this browser. IEP Compass can open without another download.',
+      source: 'cache-storage',
+    })
+
+    return 'cache-storage'
   }
+
+  await requestPersistentModelStorage()
+  await downloadModelAssetToCache(modelAssetPath, onProgress)
+
+  return 'network'
 }
 
 export async function getOrCacheModelAsset(
