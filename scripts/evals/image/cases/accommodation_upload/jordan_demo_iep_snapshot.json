@@ -1,0 +1,103 @@
+{
+  "suite": "accommodation_upload",
+  "id": "jordan_demo_iep_snapshot",
+  "label": "Jordan M. accommodation snapshot (demo seed)",
+  "image_path": "public/demo/jordan-accommodation-snapshot.jpg",
+  "notes": [
+    "Hackathon demo seed image used by the live web flow when the user taps the Jordan M. preview.",
+    "Expectations match the pre-reviewed text the app previously hard-coded for this image so the eval can measure how close live Gemma 4 extraction lands on the demo path.",
+    "Accommodations and modifications appear in separate sections; the eval should keep them distinguishable."
+  ],
+  "expected": {
+    "document_type": "iep_accommodation_page",
+    "expected_accommodations": [
+      {
+        "normalized_type": "extended_time",
+        "category": "timing",
+        "label_keywords": ["extended time"],
+        "source_evidence_keywords": ["process", "complete"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "chunked_instructions",
+        "category": "instruction",
+        "label_keywords": ["break", "smaller steps"],
+        "source_evidence_keywords": ["directions", "assignments"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "preferential_seating",
+        "category": "setting",
+        "label_keywords": ["near the teacher", "away from noise"],
+        "source_evidence_keywords": ["noise", "high-traffic"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "speech_to_text",
+        "category": "assistive_technology",
+        "label_keywords": ["assistive technology", "speech-to-text"],
+        "source_evidence_keywords": ["text-to-speech", "dictation"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "other",
+        "category": "instruction",
+        "label_keywords": ["written and verbal directions"],
+        "source_evidence_keywords": ["written", "verbal"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "other",
+        "category": "organization",
+        "label_keywords": ["visual supports", "graphic organizers"],
+        "source_evidence_keywords": ["charts", "timelines"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "other",
+        "category": "instruction",
+        "label_keywords": ["check for understanding"],
+        "source_evidence_keywords": ["written", "visual", "modeling"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "other",
+        "category": "reading",
+        "label_keywords": ["preview vocabulary"],
+        "source_evidence_keywords": ["key concepts"],
+        "conditions": []
+      },
+      {
+        "normalized_type": "other",
+        "category": "writing",
+        "label_keywords": ["alternative ways to show understanding"],
+        "source_evidence_keywords": ["written", "oral", "visual", "project"],
+        "conditions": []
+      }
+    ],
+    "must_include_keywords": [
+      "Jordan",
+      "Auditory Processing",
+      "written and verbal directions",
+      "smaller steps",
+      "extended time",
+      "key information",
+      "near the teacher",
+      "graphic organizers",
+      "assistive technology",
+      "speech-to-text",
+      "check for understanding",
+      "preview vocabulary",
+      "alternative ways to show understanding",
+      "minimize copying",
+      "guided notes"
+    ],
+    "conditions": [],
+    "must_not_include": [
+      "individualized aide",
+      "modified curriculum",
+      "1:1 paraprofessional"
+    ],
+    "requires_uncertainty": false
+  }
+}

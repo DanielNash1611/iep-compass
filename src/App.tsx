@@ -1304,7 +1304,7 @@ function IepCompassApp() {
     }
   }
 
-  function applyExample(exampleId: string) {
+  async function applyExample(exampleId: string) {
     const nextExample = exampleScenarios.find((example) => example.id === exampleId)
 
     if (!nextExample) {
@@ -1312,7 +1312,7 @@ function IepCompassApp() {
     }
 
     if (nextExample.id === JORDAN_DEMO_EXAMPLE_ID) {
-      const demoSources = createJordanDemoSources()
+      const demoSources = await createJordanDemoSources()
 
       replaceIepSource(demoSources.iepSource, { persist: false })
       replaceTaskSource(demoSources.taskSource)
@@ -1985,7 +1985,9 @@ function IepCompassApp() {
                               isActive ? ' example-card--active' : ''
                             }${isSeededDemo ? ' example-card--demo' : ''}`}
                             type="button"
-                            onClick={() => applyExample(example.id)}
+                            onClick={() => {
+                              void applyExample(example.id)
+                            }}
                           >
                             <div>
                               {isSeededDemo ? (

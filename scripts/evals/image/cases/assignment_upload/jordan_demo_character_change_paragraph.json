@@ -1,0 +1,57 @@
+{
+  "suite": "assignment_upload",
+  "id": "jordan_demo_character_change_paragraph",
+  "label": "Jordan M. character change paragraph (demo seed)",
+  "image_path": "public/demo/jordan-character-change-paragraph.jpg",
+  "notes": [
+    "Hackathon demo seed image used by the live web flow when the user taps the Jordan M. preview.",
+    "Expectations match the pre-reviewed task draft the app previously hard-coded so the eval can measure how close live Gemma 4 task interpretation lands on the demo path.",
+    "The page shows a 7th grade ELA assignment about character change in The Scholarship Jacket, with a paragraph checklist and an end-of-class deadline."
+  ],
+  "expected": {
+    "document_type": "assignment_page",
+    "assignment_type": "essay",
+    "must_detect_requirements": [
+      {
+        "type": "written_output",
+        "text_keywords": ["paragraph", "character"]
+      },
+      {
+        "type": "written_output",
+        "text_keywords": ["topic sentence"]
+      },
+      {
+        "type": "written_output",
+        "text_keywords": ["evidence"]
+      },
+      {
+        "type": "formatting_requirement",
+        "text_keywords": ["6", "sentences"]
+      },
+      {
+        "type": "deadline",
+        "text_keywords": ["end of class"]
+      }
+    ],
+    "must_detect_grading_factors": [],
+    "must_ask_follow_up_questions": [
+      {
+        "text_keywords": ["end of class"]
+      }
+    ],
+    "must_include_keywords": [
+      "Character Change",
+      "Scholarship Jacket",
+      "topic sentence",
+      "evidence",
+      "transition",
+      "end of class"
+    ],
+    "must_not_include": [
+      "multiple choice",
+      "math",
+      "calculator"
+    ],
+    "requires_uncertainty": false
+  }
+}

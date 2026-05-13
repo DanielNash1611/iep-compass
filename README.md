@@ -27,8 +27,8 @@ That is deliberate. The app is wired for the official asset, but it will not pre
 - The main `IEP Compass` flow remains the primary UX.
 - The Gemma 4 browser test surface now lives as an optional card inside the assignment step.
 - The browser path is the primary competition path.
-- The stable phone demo uses synthetic pre-reviewed sample images from `public/demo/` so Android Chrome does not need to keep a live camera upload and the browser model loaded at the same time.
-- Browser Gemma maps reviewed demo text to accommodation guidance; it does not perform live OCR in the demo path.
+- The stable phone demo uses synthetic pre-loaded sample images from `public/demo/` so the presenter does not need to take a fresh phone photo. The images go through the same Gemma 4 interpretation path as any other upload — they are not pre-extracted.
+- Browser Gemma both reads the demo images and maps the reviewed accommodations text to accommodation guidance.
 - A local endpoint can be configured as a backup for development testing only. It is not part of the user-facing demo or intended product path.
 - The intended final product direction is a native Android app using Google AI Edge for private on-device capture and inference.
 
@@ -153,9 +153,9 @@ The seeded demo case, `Jordan M. writing assignment`, uses two synthetic sample 
 - `public/demo/jordan-accommodation-snapshot.jpg`
 - `public/demo/jordan-character-change-paragraph.jpg`
 
-Those images load as pre-uploaded materials, but they are not automatically trusted. The user still reviews the accommodation text and task draft before either source joins the analysis trail. This keeps the demo honest about source review while avoiding the fragile Android browser combination of live image upload, tab focus changes, and a large in-browser model.
+Loading the demo fetches those two images and inserts them as upload attachments in the IEP and assignment steps. They are not pre-extracted. The user (or presenter) taps `Interpret with Gemma 4` on each upload to run the model live, reviews the extracted text and task draft, and then sees the constrained Jordan demo mapping in the results. This skips the fragile fresh-camera capture step while still exercising Gemma for the image-reading half of the flow.
 
-In the web demo, the image-reading step is represented by pre-reviewed sample drafts. Browser Gemma is used for the later mapping step: choosing from allowed accommodation IDs based on reviewed source text. The app rejects model-suggested IDs that are not in the seeded allowed list.
+The same pair of images is registered as image-eval fixtures so the live demo extraction can be measured against the previously hard-coded reference text. See [scripts/evals/image/cases/accommodation_upload/jordan_demo_iep_snapshot.json](scripts/evals/image/cases/accommodation_upload/jordan_demo_iep_snapshot.json) and [scripts/evals/image/cases/assignment_upload/jordan_demo_character_change_paragraph.json](scripts/evals/image/cases/assignment_upload/jordan_demo_character_change_paragraph.json).
 
 ### 4. Run locally
 

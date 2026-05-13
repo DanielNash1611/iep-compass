@@ -12,12 +12,13 @@ export const jordanDemoScenario: ExampleScenario = {
   id: JORDAN_DEMO_EXAMPLE_ID,
   iepExcerpt: '',
   summary:
-    'Pre-reviewed IEP snapshot and a writing assignment photo, ready to walk through the full flow without a live upload.',
+    'Pre-loaded IEP snapshot and writing assignment photos. Tap Interpret with Gemma 4 on each upload to run the model live.',
   taskText: '',
   taskTitle: 'Character Change Paragraph',
   title: 'Jordan M. writing assignment',
 }
 
+// Kept exported as the reviewed-output reference for image evals.
 export const jordanDemoReviewedIepText = [
   'Student Accommodation & Modification Snapshot',
   'Student: Jordan M.',
@@ -55,7 +56,8 @@ export const jordanDemoReviewedIepText = [
   '- Encouragement and specific feedback help build confidence.',
 ].join('\n')
 
-const jordanTaskDraft = normalizeDocumentDraft({
+// Kept exported as the reviewed-output reference for image evals.
+export const jordanDemoTaskDraft = normalizeDocumentDraft({
   accessRelevantDetails: [
     'The student needs to read the short story "The Scholarship Jacket" and write one paragraph explaining how the main character changes.',
     'The paragraph must include a topic sentence, one piece of evidence, an explanation of how the evidence shows the character changed, and a closing sentence.',
@@ -82,75 +84,67 @@ const jordanTaskDraft = normalizeDocumentDraft({
   workType: 'classwork',
 })
 
-function createDemoFile(name: string) {
-  return new File([], name, {
+async function loadDemoImageFile(url: string, name: string): Promise<File> {
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Could not load demo image at ${url} (${response.status})`)
+  }
+
+  const blob = await response.blob()
+
+  return new File([blob], name, {
     lastModified: 0,
-    type: 'image/jpeg',
+    type: blob.type || 'image/jpeg',
   })
 }
 
 function buildDemoAttachment(
+  file: File,
   attachment: Omit<UploadedAttachment, 'file' | 'fileType' | 'isDemoSeed' | 'kind' | 'previewUrlIsStatic'>,
 ): UploadedAttachment {
   return {
     ...attachment,
-    file: createDemoFile(attachment.name),
-    fileType: 'image/jpeg',
+    file,
+    fileType: file.type || 'image/jpeg',
     isDemoSeed: true,
     kind: 'image',
     previewUrlIsStatic: true,
   }
 }
 
-export function createJordanDemoSources(): {
+export async function createJordanDemoSources(): Promise<{
   contextTags: TaskContext[]
   iepSource: SourceMaterial
   learningProfile: string
   taskSource: SourceMaterial
   taskTitle: string
-} {
-  const iepAttachment = buildDemoAttachment({
-    extractedText: jordanDemoReviewedIepText,
+}> {
+  const [iepFile, taskFile] = await Promise.all([
+    loadDemoImageFile(DEMO_IEP_IMAGE_URL, 'Student Accommodation & Modification Snapshot.jpg'),
+    loadDemoImageFile(DEMO_TASK_IMAGE_URL, '7th Grade ELA Character Change Paragraph.jpg'),
+  ])
+
+  const iepAttachment = buildDemoAttachment(iepFile, {
     id: 'demo-jordan-iep-snapshot',
-    name: 'Student Accommodation & Modification Snapshot.jpg',
+    name: iepFile.name,
     notes: [
-      'Synthetic sample image for demo only.',
-      'Pre-reviewed from the visible sample so the phone demo does not depend on live image upload.',
-      'Review this extracted accommodations text before adding it to the source trail.',
+      'Pre-loaded demo image. Tap Interpret with Gemma 4 to run accommodation extraction live.',
     ],
     previewUrl: DEMO_IEP_IMAGE_URL,
-    readContainsUnclearText: false,
-    readNotes: [
-      'Pre-reviewed synthetic sample image. No third-party upload is used for this demo case.',
-    ],
     sizeLabel: 'Demo image',
-    status: 'review_ready',
+    status: 'interpret_ready',
   })
 
-  const taskAttachment = buildDemoAttachment({
-    confidenceFlags: {
-      containsUnclearText: false,
-      isPartialDocument: false,
-      lowConfidence: false,
-    },
-    documentDraft: jordanTaskDraft,
-    documentKind: 'assignment_or_quiz',
+  const taskAttachment = buildDemoAttachment(taskFile, {
     id: 'demo-jordan-task-photo',
-    name: '7th Grade ELA Character Change Paragraph.jpg',
+    name: taskFile.name,
     notes: [
-      'Synthetic sample image for demo only.',
-      'Pre-reviewed from the visible sample so the phone demo does not depend on live image upload.',
-      'Review these task details before using them in the source trail.',
+      'Pre-loaded demo image. Tap Interpret with Gemma 4 to run task interpretation live.',
     ],
     previewUrl: DEMO_TASK_IMAGE_URL,
-    rawTranscript:
-      '7th Grade English Language Arts. Assignment: Character Change Paragraph. Read the short story "The Scholarship Jacket." Then write one paragraph explaining how the main character changes from the beginning of the story to the end. Your paragraph must include a topic sentence, one piece of evidence from the story, an explanation, and a closing sentence. Before you submit: at least 6 complete sentences, underline your evidence, circle your transition words, turn it in by the end of class.',
-    readContainsUnclearText: false,
-    readNotes: [
-      'Pre-reviewed synthetic sample image. No third-party upload is used for this demo case.',
-    ],
     sizeLabel: 'Demo image',
-    status: 'review_ready',
+    status: 'interpret_ready',
   })
 
   return {

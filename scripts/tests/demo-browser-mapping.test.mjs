@@ -9,6 +9,36 @@ import {
   createJordanDemoSources,
 } from '../../src/data/demoCase.ts'
 
+const DEMO_IMAGE_URLS = new Set([
+  '/demo/jordan-accommodation-snapshot.jpg',
+  '/demo/jordan-character-change-paragraph.jpg',
+])
+
+const originalFetch = globalThis.fetch
+
+function installDemoFetchStub() {
+  globalThis.fetch = async (input) => {
+    const url = typeof input === 'string' ? input : input?.url
+    if (!url || !DEMO_IMAGE_URLS.has(url)) {
+      throw new Error(`Unexpected demo fetch URL: ${url}`)
+    }
+
+    return {
+      ok: true,
+      status: 200,
+      async blob() {
+        return new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], {
+          type: 'image/jpeg',
+        })
+      },
+    }
+  }
+}
+
+function restoreFetch() {
+  globalThis.fetch = originalFetch
+}
+
 test('demo browser mapping accepts only allowed accommodation IDs', () => {
   const parsed = parseSelectedDemoAccommodationIds(JSON.stringify({
     relevant: [
@@ -42,33 +72,38 @@ test('demo browser mapping can recover IDs from non-json text while rejecting in
   ])
 })
 
-test('Jordan demo request detection requires seeded demo attachments and the demo task title', () => {
-  const demo = createJordanDemoSources()
+test('Jordan demo request detection requires seeded demo attachments and the demo task title', async () => {
+  installDemoFetchStub()
+  try {
+    const demo = await createJordanDemoSources()
 
-  assert.equal(
-    isJordanDemoRequest({
-      contextTags: demo.contextTags,
-      iepSource: demo.iepSource,
-      learningProfile: demo.learningProfile,
-      taskSource: demo.taskSource,
-      taskTitle: demo.taskTitle,
-      taskTraits: null,
-    }),
-    true,
-  )
+    assert.equal(
+      isJordanDemoRequest({
+        contextTags: demo.contextTags,
+        iepSource: demo.iepSource,
+        learningProfile: demo.learningProfile,
+        taskSource: demo.taskSource,
+        taskTitle: demo.taskTitle,
+        taskTraits: null,
+      }),
+      true,
+    )
 
-  assert.equal(
-    isJordanDemoRequest({
-      contextTags: demo.contextTags,
-      iepSource: {
-        attachments: [],
-        text: 'Provide written and verbal directions.',
-      },
-      learningProfile: demo.learningProfile,
-      taskSource: demo.taskSource,
-      taskTitle: 'Different task',
-      taskTraits: null,
-    }),
-    false,
-  )
+    assert.equal(
+      isJordanDemoRequest({
+        contextTags: demo.contextTags,
+        iepSource: {
+          attachments: [],
+          text: 'Provide written and verbal directions.',
+        },
+        learningProfile: demo.learningProfile,
+        taskSource: demo.taskSource,
+        taskTitle: 'Different task',
+        taskTraits: null,
+      }),
+      false,
+    )
+  } finally {
+    restoreFetch()
+  }
 })
