@@ -2,6 +2,24 @@
 
 ## Recently Completed
 
+- Added a Wi-Fi-safe production model loading experience for Android/mobile launch:
+  - production now stops before the main app opens, checks browser support, checks whether the connection is safe for a large model download, and blocks Gemma loading on mobile data or Data Saver
+  - added explicit `Get Gemma`/loading/loaded states so users can see when the browser model is ready and get actionable error messaging when it is not
+  - kept model-required file interpretation controls from appearing when Gemma document reading is not configured, with a visible note to use pasted text or return after the model path is ready
+  - hid the secondary browser-model testing panel in production because the production gate already owns model readiness
+  - added focused coverage for Wi-Fi, mobile-data, unknown-mobile-network, and Data Saver model-download decisions
+- Added the production launch gate for browser-model-required deployment:
+  - production builds now check browser/model capability before rendering the main IEP Compass flow
+  - unsupported devices, including iPhone/iPad browsers, see a clear unsupported-device message instead of a degraded non-AI or local-backup version
+  - model asset probing now rejects SPA HTML fallback responses so a missing `.task` file cannot accidentally unlock production
+  - production builds default the browser model path to the official Hugging Face resolve URL while local development still defaults to `/models/gemma-4-E2B-it-web.task`
+  - added focused coverage for iOS blocking, missing WebGPU, low device memory, unreachable model assets, capable Chrome Android, and HTML fallback rejection
+  - local Browser/Playwright smoke checks verified the desktop-capable path opens the app and an iPhone-like user agent shows the unsupported-device screen
+  - `npm run test`, `npm run lint`, and `npm run build` all passed
+  - Vercel project setup was completed after CLI auth was restored: project `iep-compass` is linked under team `danash1611-3756s-projects`, and `vercel.json` pins the Vite build to `npm run build` plus `dist`
+  - production deployment `dpl_DtM6dUFhArPLM7A9CrbR9QVwTddZ` is ready at `https://iep-compass-steel.vercel.app`
+  - custom domain `iepcompass.danielnash.co` is attached as an alias, but DNS still needs the provider-side record Vercel requested: `A iepcompass.danielnash.co 76.76.21.21`
+  - deployed smoke checks verified the Hugging Face model URL is in the built bundle, desktop Chromium opens the app, and an iPhone-like user agent shows the unsupported-device screen
 - Addressed a second browser annotation pass on navigation, persistence, and no-match recovery:
   - saved the optional learning-disability/profile field in the same browser-local IEP details package as approved accommodation wording, with migration support for the previous saved-text format
   - made the progress rail clickable so users can return to reviewed accommodations, start on assignment details when saved accommodations already exist, and revisit results when a result is available

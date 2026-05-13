@@ -47,6 +47,21 @@ function detectBrowser(userAgent: string) {
   }
 }
 
+export function isPlausibleModelAssetResponse(response: Response) {
+  const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
+  const contentLength = Number(response.headers.get('content-length') ?? 0)
+
+  if (!response.ok && response.status !== 206) {
+    return false
+  }
+
+  if (contentType.includes('text/html')) {
+    return false
+  }
+
+  return !Number.isFinite(contentLength) || contentLength === 0 || contentLength > 1_000_000
+}
+
 async function probeModelAsset(modelAssetPath: string) {
   try {
     const response = await fetch(modelAssetPath, {
@@ -54,7 +69,7 @@ async function probeModelAsset(modelAssetPath: string) {
       method: 'HEAD',
     })
 
-    if (response.ok) {
+    if (isPlausibleModelAssetResponse(response)) {
       return true
     }
   } catch {
@@ -69,7 +84,7 @@ async function probeModelAsset(modelAssetPath: string) {
       },
     })
 
-    return response.ok || response.status === 206
+    return isPlausibleModelAssetResponse(response)
   } catch {
     return false
   }

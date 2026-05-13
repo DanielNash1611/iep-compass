@@ -122,7 +122,8 @@ Available variables:
 
 Default values:
 
-- `VITE_GEMMA4_WEB_MODEL_PATH=/models/gemma-4-E2B-it-web.task`
+- `VITE_GEMMA4_WEB_MODEL_PATH=/models/gemma-4-E2B-it-web.task` in local development
+- production default when no override is set: `https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it-web.task`
 - `VITE_MEDIAPIPE_WASM_ROOT=https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.27/wasm`
 - `VITE_GEMMA_BASE_URL=/api/ollama`
 - `VITE_GEMMA_APP_MODEL=gemma4:e2b`
@@ -136,6 +137,7 @@ Default values:
 Local backup notes:
 
 - `VITE_GEMMA_BASE_URL` is optional and exists only for development fallback testing.
+- Production builds do not rely on the local `/api/ollama` proxy by default.
 - `VITE_GEMMA_APP_MODEL` is the explicit user-facing app model knob and should stay on the lighter Gemma model unless you are intentionally testing something else.
 - `VITE_GEMMA_PRIMARY_MODEL` remains as a legacy fallback for older local setups, but the app prefers `VITE_GEMMA_APP_MODEL` when it is present.
 - With the default Vite proxy, `/api/ollama` forwards to `http://127.0.0.1:11434/v1`.
@@ -236,6 +238,11 @@ or change the default in:
 - `src/lib/on-device/modelConfig.ts`
 
 Same-origin hosting is recommended for production-minded deployments.
+
+Production launch note:
+
+- Production builds now require the configured browser model to be reachable before the main app opens.
+- Unsupported browsers and devices, including iPhone and iPad browsers for this launch, receive an unsupported-device message instead of a non-AI fallback.
 
 ## Architecture
 

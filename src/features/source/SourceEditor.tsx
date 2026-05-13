@@ -232,8 +232,12 @@ function formatFollowUpAnswer(question: string, answer: string) {
   return trimmedAnswer ? `${trimmedQuestion} Answer: ${trimmedAnswer}` : trimmedQuestion
 }
 
-function canRunInterpretation(attachment: UploadedAttachment) {
+function canRunInterpretation(
+  attachment: UploadedAttachment,
+  documentPlan: GemmaDocumentPlan,
+) {
   return (
+    documentPlan.configured &&
     (attachment.kind === 'image' || attachment.kind === 'pdf') &&
     (
       attachment.status === 'interpret_ready'
@@ -1381,8 +1385,16 @@ export function SourceEditor({
         {attachments.length > 0 ? (
           <div className="attachment-list">
             {attachments.map((attachment) => {
-              const canInterpret = canRunInterpretation(attachment)
+              const canInterpret = canRunInterpretation(attachment, documentPlan)
               const canOpenTextReview = canReviewExtractedText(attachment)
+              const interpretationNeedsModel =
+                !documentPlan.configured &&
+                (attachment.kind === 'image' || attachment.kind === 'pdf') &&
+                (
+                  attachment.status === 'interpret_ready'
+                  || attachment.status === 'review_ready'
+                  || attachment.status === 'failed'
+                )
 
               return (
                 <article key={attachment.id} className="attachment-card">
@@ -1421,6 +1433,14 @@ export function SourceEditor({
                       >
                         Interpret with Gemma 4
                       </button>
+                    ) : null}
+
+                    {interpretationNeedsModel ? (
+                      <p className="attachment-card__model-note">
+                        Gemma file interpretation is not ready in this session.
+                        Use pasted text for now, or come back after the model path
+                        is configured and loaded on Wi-Fi.
+                      </p>
                     ) : null}
 
                     {canOpenTextReview ? (

@@ -4,6 +4,7 @@ import { AppIcon, type AppIconName } from './components/AppIcon'
 import { LoadingIndicator } from './components/LoadingIndicator'
 import { SectionCard } from './components/SectionCard'
 import BrowserGemmaApp from './features/on-device/BrowserGemmaApp'
+import { ProductionLaunchGate } from './features/on-device/ProductionLaunchGate'
 import { exampleScenarios } from './data/examples'
 import { TaskSetupFields } from './features/input/TaskSetupFields'
 import { ResultsView } from './features/results/ResultsView'
@@ -296,7 +297,7 @@ function includeReviewReadyTaskAttachments(source: SourceMaterial): SourceMateri
   }
 }
 
-export default function App() {
+function IepCompassApp() {
   const [analysisAdapter] = useState(() => createAnalysisAdapter())
   const initialIepDetailsRef = useRef<ReturnType<typeof getRestoredIepDetails> | null>(
     null,
@@ -2148,7 +2149,14 @@ export default function App() {
                       This testing surface is separate from the main student-facing
                       flow so it does not add extra steps to the core journey.
                     </p>
-                    <BrowserGemmaApp localModelPlan={modelPlan} />
+                    {import.meta.env.PROD ? (
+                      <p className="field-message">
+                        Production already checks Wi-Fi, loads the browser model,
+                        and confirms Gemma is ready before the app opens.
+                      </p>
+                    ) : (
+                      <BrowserGemmaApp localModelPlan={modelPlan} />
+                    )}
                   </div>
                 </details>
               </SectionCard>
@@ -2637,5 +2645,13 @@ export default function App() {
         ) : null}
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <ProductionLaunchGate enabled={import.meta.env.PROD}>
+      <IepCompassApp />
+    </ProductionLaunchGate>
   )
 }
