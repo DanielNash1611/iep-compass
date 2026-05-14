@@ -175,13 +175,15 @@ function describeRuntime(baseUrl?: string) {
     return 'Unavailable'
   }
 
+  if (/^\/api\/ollama(?:\/|$)|localhost:11434|127\.0\.0\.1:11434/i.test(baseUrl)) {
+    return 'Local Ollama'
+  }
+
   if (/^\/(?!\/)/.test(baseUrl)) {
     return 'Configured route'
   }
 
-  return /localhost:11434|127\.0\.0\.1:11434/i.test(baseUrl)
-    ? 'Local Ollama'
-    : 'Configured endpoint'
+  return 'Configured endpoint'
 }
 
 function readConfig(): GemmaDocumentConfig {
@@ -320,6 +322,39 @@ function buildFocusedIepTextReadingInstruction(
 
 async function fileToDataUrl(file: File) {
   return blobToDataUrl(file)
+}
+
+async function fetchStaticAttachmentPreview(
+  attachment: Pick<
+    UploadedAttachment,
+    'file' | 'isDemoSeed' | 'name' | 'previewUrl' | 'previewUrlIsStatic'
+  >,
+) {
+  if (
+    !attachment.isDemoSeed ||
+    !attachment.previewUrlIsStatic ||
+    !attachment.previewUrl ||
+    attachment.file.size > 0
+  ) {
+    return attachment.file
+  }
+
+  const response = await fetch(attachment.previewUrl)
+
+  if (!response.ok) {
+    throw new Error('The demo image could not be loaded for fallback reading.')
+  }
+
+  const blob = await response.blob()
+
+  if (!blob.size) {
+    throw new Error('The demo image was empty and could not be read.')
+  }
+
+  return new File([blob], attachment.name, {
+    lastModified: attachment.file.lastModified,
+    type: blob.type || attachment.file.type || 'image/jpeg',
+  })
 }
 
 async function blobToDataUrl(blob: Blob) {
@@ -1486,7 +1521,15 @@ export function readGemmaDocumentPlan(): GemmaDocumentPlan {
 }
 
 export async function runGemmaDocumentReading(
-  attachment: Pick<UploadedAttachment, 'file' | 'kind' | 'name'>,
+  attachment: Pick<
+    UploadedAttachment,
+    | 'file'
+    | 'isDemoSeed'
+    | 'kind'
+    | 'name'
+    | 'previewUrl'
+    | 'previewUrlIsStatic'
+  >,
   sourceKey: SourceKey,
   onProgress?: GemmaReadingProgressReporter,
 ): Promise<GemmaDocumentReadingResult> {
@@ -1516,6 +1559,8 @@ export async function runGemmaDocumentReading(
   }
 
   if (attachment.kind === 'image') {
+    const imageFile = await fetchStaticAttachmentPreview(attachment)
+
     onProgress?.({
       detail: 'Preparing the image so Gemma can read the visible school document.',
       label: 'Preparing the picture',
@@ -1525,9 +1570,9 @@ export async function runGemmaDocumentReading(
     })
 
     const preparedImage = sourceKey === 'task'
-      ? await prepareTaskImageForReading(attachment.file)
+      ? await prepareTaskImageForReading(imageFile)
       : {
-          imageDataUrl: await fileToDataUrl(attachment.file),
+          imageDataUrl: await fileToDataUrl(imageFile),
           normalizedAsset: undefined,
           originalAsset: undefined,
         }
@@ -1698,7 +1743,15 @@ export async function runGemmaDocumentReading(
 }
 
 export async function runGemmaIepTextReading(
-  attachment: Pick<UploadedAttachment, 'file' | 'kind' | 'name'>,
+  attachment: Pick<
+    UploadedAttachment,
+    | 'file'
+    | 'isDemoSeed'
+    | 'kind'
+    | 'name'
+    | 'previewUrl'
+    | 'previewUrlIsStatic'
+  >,
   onProgress?: GemmaReadingProgressReporter,
 ): Promise<GemmaIepTextReadingResult> {
   const config = readConfig()
@@ -1727,6 +1780,8 @@ export async function runGemmaIepTextReading(
   }
 
   if (attachment.kind === 'image') {
+    const imageFile = await fetchStaticAttachmentPreview(attachment)
+
     onProgress?.({
       detail: 'Preparing the photo so the accommodations table is easier to read.',
       label: 'Preparing the picture',
@@ -1735,7 +1790,7 @@ export async function runGemmaIepTextReading(
       stepTotal: 4,
     })
 
-    const preparedImage = await prepareAccommodationImageForReading(attachment.file)
+    const preparedImage = await prepareAccommodationImageForReading(imageFile)
 
     logGemmaStage('image_payload_prepared', {
       finalAsset: describeAsset(preparedImage.finalAsset),

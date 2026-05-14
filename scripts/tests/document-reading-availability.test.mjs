@@ -51,7 +51,7 @@ test('configured endpoint remains a development fallback for document reading', 
   assert.equal(plan.imageInterpretationMode, 'endpoint')
 })
 
-test('seeded demo image fallback still lets the presentation flow proceed', () => {
+test('seeded demo image needs interpretation before the presentation flow can proceed without an endpoint', () => {
   const demo = createJordanDemoSources()
   const plan = buildPlan()
   const action = getAttachmentInterpretationAction(
@@ -61,7 +61,23 @@ test('seeded demo image fallback still lets the presentation flow proceed', () =
 
   assert.equal(action.canInterpret, false)
   assert.equal(action.needsModel, false)
-  assert.match(action.note, /pre-reviewed draft/i)
+  assert.match(action.note, /needs document reading/i)
+})
+
+test('configured Ollama endpoint restores demo image interpretation as a labeled fallback', () => {
+  const demo = createJordanDemoSources()
+  const plan = buildPlan({
+    endpointBaseUrl: '/api/ollama',
+    runtimeLabel: 'Local Ollama',
+  })
+  const action = getAttachmentInterpretationAction(
+    demo.taskSource.attachments[0],
+    plan,
+  )
+
+  assert.equal(action.canInterpret, true)
+  assert.equal(action.label, 'Interpret with Ollama fallback')
+  assert.match(action.note, /create a new review draft/i)
 })
 
 test('unavailable document-reading copy does not ask users to tap an impossible interpret action', () => {

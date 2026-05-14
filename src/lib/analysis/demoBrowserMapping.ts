@@ -3,7 +3,7 @@ import {
   type AccommodationConfidence,
   type AnalysisResult,
 } from '../schema/analysisSchema.ts'
-import type { AnalysisRequest } from '../../types/analysis.ts'
+import type { AnalysisRequest, SourceMaterial, UploadedAttachment } from '../../types/analysis.ts'
 
 type DemoAccommodationId =
   | 'written_directions'
@@ -279,11 +279,63 @@ export function parseSelectedDemoAccommodationIds(
   }
 }
 
-function buildDemoMappingPrompt() {
+function collectAttachmentText(attachment: UploadedAttachment) {
+  return [
+    attachment.sourceTrailText,
+    attachment.reviewedText,
+    attachment.documentDraft?.sourceSummaryText,
+    attachment.extractedText,
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join('\n')
+    .trim()
+}
+
+function collectReviewedSourceText(source: SourceMaterial) {
+  const chunks = [
+    source.text,
+    ...source.attachments
+      .filter((attachment) =>
+        ['applied_to_text', 'included', 'text_ready', 'review_ready'].includes(attachment.status),
+      )
+      .map(collectAttachmentText),
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  return Array.from(new Set(chunks)).join('\n\n').trim()
+}
+
+function truncateForPrompt(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value
+  }
+
+  return `${value.slice(0, maxLength - 20).trimEnd()}\n[truncated]`
+}
+
+function buildDemoMappingPrompt(request: AnalysisRequest) {
+  const reviewedIepText =
+    truncateForPrompt(collectReviewedSourceText(request.iepSource), 1800) ||
+    'No reviewed IEP accommodation text was provided.'
+  const reviewedTaskText =
+    truncateForPrompt(
+      [
+        request.taskTitle ? `Task title: ${request.taskTitle}` : '',
+        collectReviewedSourceText(request.taskSource),
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+      1400,
+    ) || 'No reviewed task text was provided.'
+
   return [
     'Return JSON only: {"relevant":["id"]}. Pick IDs that may help this student access the task. Do not invent IDs.',
-    'Task: 7th grade ELA paragraph about how the main character changes in "The Scholarship Jacket"; includes topic sentence, evidence, explanation, closing, 6+ sentences, underline evidence, circle transitions, due end of class.',
-    'Student need: auditory processing; visual supports, clear language, and extra processing time help.',
+    'Use only the reviewed source-trail text below. Do not rely on hidden demo knowledge.',
+    'Reviewed IEP accommodation text:',
+    reviewedIepText,
+    'Reviewed assignment text:',
+    reviewedTaskText,
     'IDs:',
     'written_directions=written/verbal directions',
     'chunked_steps=break directions/assignment into smaller steps',
@@ -300,7 +352,7 @@ function buildDemoMappingPrompt() {
   ].join('\n')
 }
 
-async function requestBrowserDemoSelection() {
+async function requestBrowserDemoSelection(request: AnalysisRequest) {
   const [{ bootstrapGemma4Model }, { DEFAULT_MODEL_ASSET_PATH }] = await Promise.all([
     import('../on-device/modelBootstrap.ts'),
     import('../on-device/modelConfig.ts'),
@@ -323,7 +375,7 @@ async function requestBrowserDemoSelection() {
         '<|turn>system',
         'You select only allowed accommodation IDs for IEP Compass. Return JSON only.<turn|>',
         '<|turn>user',
-        `${buildDemoMappingPrompt()}<turn|>`,
+        `${buildDemoMappingPrompt(request)}<turn|>`,
         '<|turn>model',
       ].join('\n'),
     )
@@ -387,9 +439,9 @@ function buildDemoAnalysisResult(selectedIds: DemoAccommodationId[]): AnalysisRe
   })
 }
 
-export async function analyzeJordanDemoWithBrowserGemma() {
+export async function analyzeJordanDemoWithBrowserGemma(request: AnalysisRequest) {
   try {
-    const selection = await requestBrowserDemoSelection()
+    const selection = await requestBrowserDemoSelection(request)
     const selectedIds =
       selection.selectedIds.length > 0
         ? selection.selectedIds
@@ -397,7 +449,7 @@ export async function analyzeJordanDemoWithBrowserGemma() {
 
     return {
       notes: [
-        `${DEMO_MODEL_LABEL} selected ${selectedIds.length} allowed accommodation IDs from reviewed demo text.`,
+        `${DEMO_MODEL_LABEL} selected ${selectedIds.length} allowed accommodation IDs from the reviewed source trail.`,
         selection.rejectedIds.length > 0
           ? `Ignored model-suggested IDs outside the allowed demo list: ${selection.rejectedIds.join(', ')}.`
           : 'No invented accommodation IDs were accepted.',

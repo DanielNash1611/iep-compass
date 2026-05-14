@@ -21,7 +21,11 @@ export function canRunAttachmentInterpretation(
     return false
   }
 
-  if (attachment.isDemoSeed && !documentPlan.browserImageInterpretation.supported) {
+  if (
+    attachment.isDemoSeed &&
+    !documentPlan.browserImageInterpretation.supported &&
+    !documentPlan.endpointFallback.configured
+  ) {
     return false
   }
 
@@ -44,17 +48,20 @@ export function getAttachmentInterpretationAction(
   const label =
     documentPlan.imageInterpretationMode === 'browser'
       ? 'Interpret privately in browser'
-      : 'Interpret with configured endpoint'
+      : documentPlan.endpointFallback.runtimeLabel === 'Local Ollama'
+        ? 'Interpret with Ollama fallback'
+        : 'Interpret with configured endpoint'
 
   let note: string | null = null
 
   if (attachment.isDemoSeed && isInterpretable && isRetryState) {
-    note =
-      'This sample image already has a pre-reviewed draft, so the demo can continue without live image interpretation.'
+    note = documentPlan.endpointFallback.configured
+      ? `Run this sample image through the ${documentPlan.endpointFallback.runtimeLabel} development fallback to create a new review draft for the demo.`
+      : 'This sample image needs document reading before it can join the source trail. Configure the development endpoint or paste the visible wording manually.'
   } else if (needsModel) {
     note = documentPlan.browserImageInterpretation.supported
       ? 'Browser image interpretation is not ready in this session. Check the browser model gate before trying again.'
-      : 'Browser Gemma can reason over reviewed text, but this web path does not read images directly. Use pasted text, the pre-reviewed demo draft, or a configured development endpoint.'
+      : 'Browser Gemma can reason over reviewed text, but this web path does not read images directly. Use pasted text or a configured development endpoint.'
   }
 
   return {

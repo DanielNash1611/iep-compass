@@ -126,7 +126,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
     const primaryLabel = formatModelLabel(this.config.primaryModel)
 
     if (isJordanDemoRequest(request)) {
-      const demoResult = await analyzeJordanDemoWithBrowserGemma()
+      const demoResult = await analyzeJordanDemoWithBrowserGemma(request)
 
       return {
         meta: {
@@ -134,7 +134,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
           mode: demoResult.usedFallback ? 'demo' : 'live',
           model: demoResult.usedFallback ? STRUCTURED_DEMO_LABEL : 'Gemma 4 E2B',
           notes: [
-            'Demo images were pre-reviewed into source text so the phone demo does not run live OCR.',
+            'Demo document reading may use the labeled Ollama fallback, but this reviewed-text mapping step is routed through Browser Gemma first.',
             ...demoResult.notes,
             ...attachmentNotes,
           ],
