@@ -62,8 +62,8 @@ export function buildGemmaDocumentPlan(input: {
     endpointFallback: {
       configured: endpointConfigured,
       detail: endpointConfigured
-        ? `Development fallback is configured through ${input.runtimeLabel}.`
-        : 'No development document-reading endpoint is configured.',
+        ? `Ollama backup is configured through ${input.runtimeLabel}.`
+        : 'No local document-reading endpoint is configured.',
       isRemote: input.endpointIsRemote,
       primaryModel: input.primaryModel,
       runtimeLabel: input.runtimeLabel,
@@ -82,13 +82,18 @@ export function buildGemmaDocumentPlan(input: {
 
 export function getDocumentReadingStatusMessages(plan: GemmaDocumentPlan) {
   const messages = [
+    `Browser Gemma handles text mapping in this demo. Image reading uses the local Ollama backup when configured.${
+      plan.endpointFallback.configured
+        ? ''
+        : ' Ollama backup is not configured, so uploaded images stay as references until you paste the visible wording manually.'
+    }`,
     `${plan.browserTextReasoning.label}: ${
       plan.browserTextReasoning.supported ? 'available for text mapping' : 'not available'
     }. ${plan.browserTextReasoning.detail}`,
     `${plan.browserImageInterpretation.label}: ${
       plan.browserImageInterpretation.supported ? 'available' : 'not available'
     }. ${plan.browserImageInterpretation.detail}`,
-    `Endpoint-based development fallback: ${
+    `Ollama backup endpoint: ${
       plan.endpointFallback.configured ? 'configured' : 'not configured'
     }. ${plan.endpointFallback.detail}`,
   ]

@@ -74,7 +74,7 @@ function formatStatusLabel(attachment: UploadedAttachment) {
     case 'text_ready':
       return 'Text ready'
     case 'interpret_ready':
-      return 'Ready to interpret'
+      return attachment.kind === 'image' ? 'Ready as reference' : 'Ready to interpret'
     case 'interpret_running':
       return attachment.kind === 'text' ? 'Reading locally' : 'Interpreting with Gemma'
     case 'review_ready':

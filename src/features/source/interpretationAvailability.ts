@@ -49,19 +49,19 @@ export function getAttachmentInterpretationAction(
     documentPlan.imageInterpretationMode === 'browser'
       ? 'Interpret privately in browser'
       : documentPlan.endpointFallback.runtimeLabel === 'Local Ollama'
-        ? 'Interpret with Ollama fallback'
+        ? 'Interpret with Ollama backup'
         : 'Interpret with configured endpoint'
 
   let note: string | null = null
 
   if (attachment.isDemoSeed && isInterpretable && isRetryState) {
     note = documentPlan.endpointFallback.configured
-      ? `Run this sample image through the ${documentPlan.endpointFallback.runtimeLabel} development fallback to create a new review draft for the demo.`
-      : 'This sample image needs document reading before it can join the source trail. Configure the development endpoint or paste the visible wording manually.'
+      ? `Run this sample image through the ${documentPlan.endpointFallback.runtimeLabel} backup to create a new review draft. The original image stays as a reference until you approve the extracted wording.`
+      : 'Ollama backup is not configured. Paste the visible wording manually or configure the local document-reading endpoint.'
   } else if (needsModel) {
     note = documentPlan.browserImageInterpretation.supported
       ? 'Browser image interpretation is not ready in this session. Check the browser model gate before trying again.'
-      : 'Browser Gemma can reason over reviewed text, but this web path does not read images directly. Use pasted text or a configured development endpoint.'
+      : 'Browser Gemma handles text mapping in this demo and does not read images directly. Use the Ollama backup when configured, or paste the visible wording manually.'
   }
 
   return {

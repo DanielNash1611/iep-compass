@@ -61,10 +61,10 @@ test('seeded demo image needs interpretation before the presentation flow can pr
 
   assert.equal(action.canInterpret, false)
   assert.equal(action.needsModel, false)
-  assert.match(action.note, /needs document reading/i)
+  assert.match(action.note, /Ollama backup is not configured/i)
 })
 
-test('configured Ollama endpoint restores demo image interpretation as a labeled fallback', () => {
+test('configured Ollama endpoint restores demo image interpretation as a labeled backup', () => {
   const demo = createJordanDemoSources()
   const plan = buildPlan({
     endpointBaseUrl: '/api/ollama',
@@ -76,8 +76,9 @@ test('configured Ollama endpoint restores demo image interpretation as a labeled
   )
 
   assert.equal(action.canInterpret, true)
-  assert.equal(action.label, 'Interpret with Ollama fallback')
+  assert.equal(action.label, 'Interpret with Ollama backup')
   assert.match(action.note, /create a new review draft/i)
+  assert.match(action.note, /stays as a reference/i)
 })
 
 test('unavailable document-reading copy does not ask users to tap an impossible interpret action', () => {
@@ -97,5 +98,6 @@ test('unavailable document-reading copy does not ask users to tap an impossible 
   assert.doesNotMatch(messages, /tap interpret/i)
   assert.doesNotMatch(action.note ?? '', /tap interpret/i)
   assert.match(messages, /Browser Gemma image interpretation: not available/i)
+  assert.match(messages, /Ollama backup/i)
   assert.match(action.note, /does not read images directly/i)
 })
