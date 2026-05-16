@@ -7,9 +7,9 @@ const CONTEXT_LABELS: Record<TaskContext, string> = {
   quiz: 'Quiz or test',
   homework: 'Homework',
   classwork: 'Classwork',
-  lab: 'Lab or multi-step task',
-  writing: 'Writing',
-  reading: 'Reading-heavy',
+  lab: 'Multi-step task',
+  writing: 'Lots of writing',
+  reading: 'Lots of reading',
 }
 
 interface TaskSetupFieldsProps {
@@ -24,10 +24,9 @@ export function TaskSetupFields({
   return (
     <div className="task-setup-fields">
       <div className="field-label">
-        <span className="field-label__title">Helpful task tags</span>
+        <span className="field-label__title">Tags (optional)</span>
         <p className="field-label__help">
-          Add a tag only if it makes this task easier to understand, like timing,
-          reading load, or multi-step directions.
+          Tap any tags that describe this school work. You can skip this.
         </p>
       </div>
 
@@ -35,6 +34,7 @@ export function TaskSetupFields({
         {taskContexts.map((contextTag) => (
           <button
             key={contextTag}
+            aria-pressed={contextTags.includes(contextTag)}
             className={`toggle-chip${
               contextTags.includes(contextTag) ? ' toggle-chip--active' : ''
             }`}

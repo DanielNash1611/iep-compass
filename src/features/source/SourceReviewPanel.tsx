@@ -38,7 +38,7 @@ export function SourceReviewPanel({
         <summary className="source-review-panel__summary">
           <span className="summary-label">
             <AppIcon name="notebook" className="button-icon button-icon--sm" />
-            Open the source trail
+            See what you added
           </span>
           <span className="meta-badge">
             {source.attachments.length}{' '}
@@ -48,35 +48,35 @@ export function SourceReviewPanel({
 
         <div className="source-review-panel__body">
           <div className="source-review-block">
-            <h3>Entered text</h3>
+            <h3>Text you typed</h3>
             {source.text.trim() ? (
               <pre className="source-review-text">{source.text.trim()}</pre>
             ) : (
-              <p>No text was entered directly for this source.</p>
+              <p>You did not type any text here.</p>
             )}
           </div>
 
           {reviewedTextAttachments.length > 0 ? (
             <div className="source-review-block">
-              <h3>Reviewed upload details used in analysis</h3>
+              <h3>File details used in your results</h3>
               <pre className="source-review-text">{reviewedText}</pre>
             </div>
           ) : null}
 
           {pendingReviewAttachments.length > 0 ? (
             <div className="source-review-block">
-              <h3>Upload drafts still under review</h3>
+              <h3>Files not used yet</h3>
               <p>
                 {pendingReviewAttachments.length}{' '}
                 {pendingReviewAttachments.length === 1
-                  ? 'upload still has reviewed details that are not included yet.'
-                  : 'uploads still have reviewed details that are not included yet.'}
+                  ? 'file still needs a quick check before it can be used.'
+                  : 'files still need a quick check before they can be used.'}
               </p>
             </div>
           ) : null}
 
           <div className="source-review-block">
-            <h3>Uploaded files kept as references</h3>
+            <h3>Files you chose not to use</h3>
             {referenceOnlyAttachments.length > 0 ? (
               <div className="source-review-attachments">
                 {referenceOnlyAttachments.map((attachment) => (
@@ -117,7 +117,7 @@ export function SourceReviewPanel({
                                 name="source"
                                 className="button-icon button-icon--sm"
                               />
-                              Show raw transcript
+                              Show the exact text we read
                             </span>
                           </summary>
 
@@ -129,7 +129,7 @@ export function SourceReviewPanel({
                 ))}
               </div>
             ) : (
-              <p>Every uploaded file with reviewed details is already part of the source trail.</p>
+              <p>Every file you added is being used in your results.</p>
             )}
           </div>
         </div>

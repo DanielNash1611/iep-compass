@@ -49,6 +49,7 @@ interface SourceEditorProps {
   textLabel: string
   textName: string
   textPlaceholder: string
+  textRequired?: boolean
   textValue: string
   uploadEmptyBadge?: string
   uploadGuidance: string
@@ -71,23 +72,23 @@ function countLines(text: string) {
 function formatStatusLabel(attachment: UploadedAttachment) {
   switch (attachment.status) {
     case 'applied_to_text':
-      return 'Added to approved wording'
+      return 'Added'
     case 'text_ready':
-      return 'Text ready'
+      return 'Ready to check'
     case 'interpret_ready':
-      return attachment.kind === 'image' ? 'Ready as reference' : 'Ready to interpret'
+      return 'Ready to read'
     case 'interpret_running':
-      return attachment.kind === 'text' ? 'Reading locally' : 'Interpreting with Gemma'
+      return 'Reading…'
     case 'review_ready':
-      return 'Review draft'
+      return 'Ready to check'
     case 'included':
-      return 'Included in source trail'
+      return 'Added'
     case 'reference_only':
-      return 'Reference only'
+      return 'Not added'
     case 'failed':
-      return 'Could not interpret'
+      return "Couldn't read it"
     default:
-      return 'Needs review'
+      return 'Needs a check'
   }
 }
 
@@ -247,7 +248,7 @@ function renderRawTranscript(rawTranscript?: string) {
       <summary className="source-snippet__summary">
         <span className="summary-label">
           <AppIcon name="source" className="button-icon button-icon--sm" />
-          Show raw transcript
+          Show the exact text we read
         </span>
       </summary>
 
@@ -370,8 +371,8 @@ function TextAttachmentReviewDialog({
       >
         <div className="review-dialog__header">
           <div>
-            <p className="eyebrow">Review upload text</p>
-            <h3 id="review-dialog-title">Check extracted accommodations</h3>
+            <p className="eyebrow">Check the file</p>
+            <h3 id="review-dialog-title">Check what we read from your file</h3>
           </div>
           <button
             aria-label="Close review"
@@ -384,10 +385,10 @@ function TextAttachmentReviewDialog({
         </div>
 
         <label className="textarea-label">
-          <span className="field-label__title">Extracted text</span>
+          <span className="field-label__title">What we read</span>
           <span className="field-label__help">
-            Edit only what you can confirm from the uploaded document. The approved
-            wording field behind this overlay is the source of truth after you apply.
+            Change only what you can clearly see in your file. Nothing is saved
+            until you tap a button below.
           </span>
           <textarea
             className="textarea-input textarea-input--compact review-dialog__textarea"
@@ -398,21 +399,21 @@ function TextAttachmentReviewDialog({
 
         {attachment.readContainsUnclearText ? (
           <p className="field-message field-message--warning">
-            This extraction includes at least one uncertain placeholder such as
-            `[unclear]`, `[blank]`, or `[redacted]`. Keep those spots cautious unless
-            you can confirm the exact wording.
+            We could not read part of this file clearly. You will see spots
+            marked like `[unclear]` or `[blank]`. Only fix them if you can read
+            the real words in your file.
           </p>
         ) : null}
 
         <details className="review-fix-panel">
-          <summary>Fix one detail</summary>
+          <summary>Fix one word or phrase</summary>
           <p className="field-label__help">
-            This only replaces exact text already in the draft with wording you type.
-            It will not create a new accommodation or guess missing text.
+            This swaps text that is already above for words you type. It will not
+            add anything new or guess.
           </p>
           <div className="review-fix-panel__grid">
             <label className="field-label">
-              <span className="field-label__title">Text to replace</span>
+              <span className="field-label__title">Text to change</span>
               <input
                 className="text-input"
                 value={findText}
@@ -420,7 +421,7 @@ function TextAttachmentReviewDialog({
               />
             </label>
             <label className="field-label">
-              <span className="field-label__title">Use this exact wording</span>
+              <span className="field-label__title">Change it to</span>
               <input
                 className="text-input"
                 value={replaceText}
@@ -434,7 +435,7 @@ function TextAttachmentReviewDialog({
             type="button"
             onClick={applyExactFix}
           >
-            Apply exact fix
+            Make this change
           </button>
         </details>
 
@@ -445,7 +446,7 @@ function TextAttachmentReviewDialog({
             disabled={!canCleanFormatting}
             onClick={() => setDraftText(cleanedReviewText)}
           >
-            Clean up formatting
+            Tidy up spacing
           </button>
 
           <button
@@ -457,7 +458,7 @@ function TextAttachmentReviewDialog({
               onClose()
             }}
           >
-            Add to existing
+            Add to what I have
           </button>
 
           <button
@@ -469,7 +470,7 @@ function TextAttachmentReviewDialog({
               onClose()
             }}
           >
-            Update approved wording
+            Use this
           </button>
 
           <button
@@ -480,7 +481,7 @@ function TextAttachmentReviewDialog({
               onClose()
             }}
           >
-            Do not use
+            Cancel
           </button>
         </div>
       </section>
@@ -507,74 +508,86 @@ function IepDocumentReview({
   return (
     <div className="attachment-review">
       <div className="results-detail-block">
-        <h3>Structured IEP draft</h3>
+        <h3>What we found in your IEP</h3>
         <p className="field-label__help">
-          Review the sectioned accommodation list before adding it to the source trail.
+          Check the supports below. Fix anything that does not match your file,
+          then tap Use this.
         </p>
       </div>
 
-      <div className="attachment-review-grid">
-        <label className="field-label">
-          <span className="field-label__title">Student name</span>
-          <input
-            className="text-input"
-            value={draft.studentName}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                studentName: event.target.value,
-              })
-            }
-          />
-        </label>
+      <details className="optional-panel">
+        <summary className="optional-panel__summary">
+          <span className="summary-label">
+            <AppIcon name="notebook" className="button-icon button-icon--sm" />
+            Name and dates on the form
+          </span>
+          <span className="meta-badge">You can skip this</span>
+        </summary>
+        <div className="optional-panel__body">
+          <div className="attachment-review-grid">
+            <label className="field-label">
+              <span className="field-label__title">Student name</span>
+              <input
+                className="text-input"
+                value={draft.studentName}
+                onChange={(event) =>
+                  onAttachmentDocumentDraftChange(attachment.id, {
+                    ...draft,
+                    studentName: event.target.value,
+                  })
+                }
+              />
+            </label>
 
-        <label className="field-label">
-          <span className="field-label__title">District</span>
-          <input
-            className="text-input"
-            value={draft.district}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                district: event.target.value,
-              })
-            }
-          />
-        </label>
+            <label className="field-label">
+              <span className="field-label__title">District</span>
+              <input
+                className="text-input"
+                value={draft.district}
+                onChange={(event) =>
+                  onAttachmentDocumentDraftChange(attachment.id, {
+                    ...draft,
+                    district: event.target.value,
+                  })
+                }
+              />
+            </label>
 
-        <label className="field-label">
-          <span className="field-label__title">DOB</span>
-          <input
-            className="text-input"
-            value={draft.dob}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                dob: event.target.value,
-              })
-            }
-          />
-        </label>
+            <label className="field-label">
+              <span className="field-label__title">Date of birth</span>
+              <input
+                className="text-input"
+                value={draft.dob}
+                onChange={(event) =>
+                  onAttachmentDocumentDraftChange(attachment.id, {
+                    ...draft,
+                    dob: event.target.value,
+                  })
+                }
+              />
+            </label>
 
-        <label className="field-label">
-          <span className="field-label__title">Meeting date</span>
-          <input
-            className="text-input"
-            value={draft.meetingDate}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                meetingDate: event.target.value,
-              })
-            }
-          />
-        </label>
-      </div>
+            <label className="field-label">
+              <span className="field-label__title">Meeting date</span>
+              <input
+                className="text-input"
+                value={draft.meetingDate}
+                onChange={(event) =>
+                  onAttachmentDocumentDraftChange(attachment.id, {
+                    ...draft,
+                    meetingDate: event.target.value,
+                  })
+                }
+              />
+            </label>
+          </div>
+        </div>
+      </details>
 
       <label className="textarea-label">
-        <span className="field-label__title">Learning disability or profile wording</span>
+        <span className="field-label__title">How you learn (if your IEP shows it)</span>
         <span className="field-label__help">
-          Keep this empty if the image does not clearly show any profile wording.
+          Leave this empty if your file does not clearly show it.
         </span>
         <textarea
           className="textarea-input textarea-input--compact"
@@ -637,7 +650,7 @@ function IepDocumentReview({
       <div className="screen-actions screen-actions--split">
         {attachment.status === 'included' ? (
           <p className="field-message">
-            These reviewed IEP details are already part of the source trail.
+            These IEP details are added and being used.
           </p>
         ) : (
           <button
@@ -645,7 +658,7 @@ function IepDocumentReview({
             type="button"
             onClick={() => onUseAttachmentSource(attachment.id)}
           >
-            Use these IEP details in the source trail
+            Use this
           </button>
         )}
 
@@ -654,7 +667,7 @@ function IepDocumentReview({
           type="button"
           onClick={() => onKeepAttachmentReference(attachment.id)}
         >
-          Keep as reference only
+          Don't use this file
         </button>
       </div>
     </div>
@@ -690,10 +703,17 @@ function TaskDocumentReview({
 
   return (
     <div className="attachment-review">
+      <div className="results-detail-block">
+        <h3>What we found in this file</h3>
+        <p className="field-label__help">
+          Check the details below. Fix anything that looks wrong, then tap Use this.
+        </p>
+      </div>
+
       <label className="field-label">
-        <span className="field-label__title">Visible document kind</span>
+        <span className="field-label__title">What is this?</span>
         <span className="field-label__help">
-          Choose what this upload appears to show, not what might be on another page.
+          Pick what this file shows.
         </span>
         <select
           className="text-input"
@@ -705,20 +725,20 @@ function TaskDocumentReview({
             })
           }
         >
-          <option value="assignment_details">Assignment details</option>
-          <option value="assignment_page">Assignment page</option>
-          <option value="rubric">Rubric</option>
-          <option value="worksheet">Worksheet</option>
-          <option value="quiz">Quiz</option>
-          <option value="test">Test</option>
-          <option value="unknown">Unknown</option>
+          <option value="assignment_details">An assignment</option>
+          <option value="assignment_page">An assignment page</option>
+          <option value="rubric">A grading rubric</option>
+          <option value="worksheet">A worksheet</option>
+          <option value="quiz">A quiz</option>
+          <option value="test">A test</option>
+          <option value="unknown">Not sure</option>
         </select>
       </label>
 
       <label className="textarea-label">
-        <span className="field-label__title">Task description</span>
+        <span className="field-label__title">What does this work ask you to do?</span>
         <span className="field-label__help">
-          Keep this focused on the kind of work shown. Do not include answers.
+          Say what the work asks. Do not add your answers.
         </span>
         <textarea
           className="textarea-input textarea-input--compact"
@@ -735,80 +755,7 @@ function TaskDocumentReview({
 
       <div className="attachment-review-grid">
         <label className="field-label">
-          <span className="field-label__title">Subject</span>
-          <input
-            className="text-input"
-            value={draft.subject}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                subject: event.target.value,
-              })
-            }
-          />
-        </label>
-
-        <label className="field-label">
-          <span className="field-label__title">Topic</span>
-          <input
-            className="text-input"
-            value={draft.topic}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                topic: event.target.value,
-              })
-            }
-          />
-        </label>
-
-        <label className="field-label">
-          <span className="field-label__title">Work type</span>
-          <select
-            className="text-input"
-            value={draft.workType}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                workType: event.target.value as TaskReviewDraft['workType'],
-              })
-            }
-          >
-            <option value="worksheet">Worksheet</option>
-            <option value="quiz">Quiz</option>
-            <option value="test">Test</option>
-            <option value="practice">Practice</option>
-            <option value="classwork">Classwork</option>
-            <option value="homework">Homework</option>
-            <option value="unknown">Unknown</option>
-          </select>
-        </label>
-
-        <label className="field-label">
-          <span className="field-label__title">Accommodation focus</span>
-          <span className="field-label__help">
-            Choose what the accommodation check should be about.
-          </span>
-          <select
-            className="text-input"
-            value={draft.accommodationFocus}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                accommodationFocus: event.target.value as TaskReviewDraft['accommodationFocus'],
-              })
-            }
-          >
-            <option value="practice">Practice</option>
-            <option value="quiz">Quiz</option>
-            <option value="test">Test</option>
-            <option value="assignment">Assignment</option>
-            <option value="unknown">Not sure yet</option>
-          </select>
-        </label>
-
-        <label className="field-label">
-          <span className="field-label__title">Timed status</span>
+          <span className="field-label__title">Is there a time limit?</span>
           <select
             className="text-input"
             value={draft.timedStatus}
@@ -819,96 +766,85 @@ function TaskDocumentReview({
               })
             }
           >
-            <option value="timed">Timed</option>
-            <option value="untimed">Untimed</option>
-            <option value="unknown">Unknown</option>
+            <option value="timed">Yes, it is timed</option>
+            <option value="untimed">No time limit</option>
+            <option value="unknown">Not sure</option>
           </select>
         </label>
 
-        <label className="field-label">
-          <span className="field-label__title">Minutes</span>
-          <span className="field-label__help">
-            Leave blank if the time limit is not confirmed.
-          </span>
-          <input
-            className="text-input"
-            min="1"
-            placeholder="30"
-            type="number"
-            value={draft.timeLimitMinutes ?? ''}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                timeLimitMinutes: event.target.value
-                  ? Number(event.target.value)
-                  : null,
-              })
-            }
-          />
-        </label>
-
-        <label className="field-label">
-          <span className="field-label__title">Calculation focus</span>
-          <select
-            className="text-input"
-            value={draft.calculationFocus}
-            onChange={(event) =>
-              onAttachmentDocumentDraftChange(attachment.id, {
-                ...draft,
-                calculationFocus: event.target.value as TaskReviewDraft['calculationFocus'],
-              })
-            }
-          >
-            <option value="calculation_focused">Calculation focused</option>
-            <option value="not_calculation_focused">Not calculation focused</option>
-            <option value="mixed_or_unknown">Mixed or unknown</option>
-          </select>
-        </label>
+        {draft.timedStatus === 'timed' ? (
+          <label className="field-label">
+            <span className="field-label__title">How many minutes?</span>
+            <span className="field-label__help">
+              Leave blank if you are not sure.
+            </span>
+            <input
+              className="text-input"
+              min="1"
+              placeholder="30"
+              type="number"
+              value={draft.timeLimitMinutes ?? ''}
+              onChange={(event) =>
+                onAttachmentDocumentDraftChange(attachment.id, {
+                  ...draft,
+                  timeLimitMinutes: event.target.value
+                    ? Number(event.target.value)
+                    : null,
+                })
+              }
+            />
+          </label>
+        ) : null}
       </div>
 
-      <label className="textarea-label">
-        <span className="field-label__title">Access-relevant visible details</span>
-        <span className="field-label__help">
-          Add details that may affect accommodations, such as timing, rubric categories,
-          writing load, reading load, steps, materials, or calculation focus.
-        </span>
-        <textarea
-          className="textarea-input textarea-input--compact"
-          rows={4}
-          value={formatBullets(draft.accessRelevantDetails)}
-          onChange={(event) =>
-            onAttachmentDocumentDraftChange(attachment.id, {
-              ...draft,
-              accessRelevantDetails: parseBullets(event.target.value),
-            })
-          }
-        />
-      </label>
-
-      <label className="textarea-label">
-        <span className="field-label__title">Visible evidence</span>
-        <span className="field-label__help">
-          Keep these as short observations grounded in what is visible on the page.
-        </span>
-        <textarea
-          className="textarea-input textarea-input--compact"
-          rows={4}
-          value={formatBullets(draft.evidenceBullets)}
-          onChange={(event) =>
-            onAttachmentDocumentDraftChange(attachment.id, {
-              ...draft,
-              evidenceBullets: parseBullets(event.target.value),
-            })
-          }
-        />
-      </label>
+      <details className="optional-panel">
+        <summary className="optional-panel__summary">
+          <span className="summary-label">
+            <AppIcon name="results" className="button-icon button-icon--sm" />
+            What else we picked up
+          </span>
+          <span className="meta-badge">Just so you can see</span>
+        </summary>
+        <div className="optional-panel__body">
+          <p className="field-label__help">
+            We use these notes to match your supports. You do not need to change
+            them.
+          </p>
+          <dl className="review-readout">
+            {draft.subject.trim() ? (
+              <div className="review-readout__row">
+                <dt>Subject</dt>
+                <dd>{draft.subject}</dd>
+              </div>
+            ) : null}
+            {draft.topic.trim() ? (
+              <div className="review-readout__row">
+                <dt>Topic</dt>
+                <dd>{draft.topic}</dd>
+              </div>
+            ) : null}
+            {draft.accessRelevantDetails.length > 0 ? (
+              <div className="review-readout__row">
+                <dt>Details that may matter</dt>
+                <dd>{formatBullets(draft.accessRelevantDetails)}</dd>
+              </div>
+            ) : null}
+            {draft.evidenceBullets.length > 0 ? (
+              <div className="review-readout__row">
+                <dt>What we saw on the page</dt>
+                <dd>{formatBullets(draft.evidenceBullets)}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </div>
+      </details>
 
       {draft.followUpQuestions.length > 0 ? (
         <div className="follow-up-answer-list">
           <div>
-            <h3>Check before you use this</h3>
+            <h3>A few quick questions</h3>
             <p className="field-label__help">
-              Answer what you can. Leave anything unclear blank for now.
+              Answer what you can. Skip anything you are not sure about.
             </p>
           </div>
 
@@ -983,21 +919,6 @@ function TaskDocumentReview({
               </div>
             )
           })}
-
-          <details className="review-fix-panel">
-            <summary>Edit prompts</summary>
-            <textarea
-              className="textarea-input textarea-input--compact"
-              rows={4}
-              value={formatBullets(draft.followUpQuestions.map(getFollowUpQuestionText))}
-              onChange={(event) =>
-                onAttachmentDocumentDraftChange(attachment.id, {
-                  ...draft,
-                  followUpQuestions: parseBullets(event.target.value),
-                })
-              }
-            />
-          </details>
         </div>
       ) : null}
 
@@ -1006,7 +927,7 @@ function TaskDocumentReview({
       <div className="screen-actions screen-actions--split">
         {attachment.status === 'included' ? (
           <p className="field-message">
-            These reviewed task details are already part of the source trail.
+            These school work details are added and being used.
           </p>
         ) : (
           <button
@@ -1014,7 +935,7 @@ function TaskDocumentReview({
             type="button"
             onClick={() => onUseAttachmentSource(attachment.id)}
           >
-            Use these task details in the source trail
+            Use this
           </button>
         )}
 
@@ -1023,7 +944,7 @@ function TaskDocumentReview({
           type="button"
           onClick={() => onKeepAttachmentReference(attachment.id)}
         >
-          Keep as reference only
+          Don't use this file
         </button>
       </div>
     </div>
@@ -1049,7 +970,7 @@ function UnknownDocumentReview({
   return (
     <div className="attachment-review">
       <label className="textarea-label">
-        <span className="field-label__title">Document summary</span>
+        <span className="field-label__title">What is in this file?</span>
         <textarea
           className="textarea-input textarea-input--compact"
           rows={4}
@@ -1064,7 +985,7 @@ function UnknownDocumentReview({
       </label>
 
       <label className="textarea-label">
-        <span className="field-label__title">Visible evidence</span>
+        <span className="field-label__title">What we saw on the page</span>
         <textarea
           className="textarea-input textarea-input--compact"
           rows={4}
@@ -1083,7 +1004,7 @@ function UnknownDocumentReview({
       <div className="screen-actions screen-actions--split">
         {attachment.status === 'included' ? (
           <p className="field-message">
-            These reviewed document notes are already part of the source trail.
+            These file notes are added and being used.
           </p>
         ) : (
           <button
@@ -1091,7 +1012,7 @@ function UnknownDocumentReview({
             type="button"
             onClick={() => onUseAttachmentSource(attachment.id)}
           >
-            Use these document notes in the source trail
+            Use this
           </button>
         )}
 
@@ -1100,7 +1021,7 @@ function UnknownDocumentReview({
           type="button"
           onClick={() => onKeepAttachmentReference(attachment.id)}
         >
-          Keep as reference only
+          Don't use this file
         </button>
       </div>
     </div>
@@ -1185,6 +1106,7 @@ export function SourceEditor({
   textLabel,
   textName,
   textPlaceholder,
+  textRequired = false,
   textValue,
   uploadEmptyBadge = 'Use this if that is easier',
   uploadGuidance,
@@ -1273,6 +1195,9 @@ export function SourceEditor({
             <AppIcon name="notebook" />
           </span>
           <span>{textLabel}</span>
+          {textRequired ? (
+            <span className="field-required-pill">Needed</span>
+          ) : null}
         </span>
         <span className="field-label__help">{textHelp}</span>
         <div
@@ -1320,15 +1245,13 @@ export function SourceEditor({
       {isListening ? (
         <p className="field-message field-message--live">
           <span className="live-dot" aria-hidden="true" />
-          Recording now. Tap the button again to stop, and the transcript will keep
-          appearing here.
+          Listening. Your words show up here as you speak. Tap the button again to stop.
         </p>
       ) : null}
 
       {textValue.trim() ? (
         <p className="field-message">
-          {countLines(textValue)} {countLines(textValue) === 1 ? 'line' : 'lines'} ready
-          for the guidance map.
+          {countLines(textValue)} {countLines(textValue) === 1 ? 'line' : 'lines'} added.
         </p>
       ) : null}
 
@@ -1365,18 +1288,18 @@ export function SourceEditor({
         {reviewedSourceCount > 0 ? (
           <p className="field-message">
             {reviewedSourceCount}{' '}
-            {reviewedSourceCount === 1 ? 'upload is' : 'uploads are'} already part
-            of this source trail.
+            {reviewedSourceCount === 1 ? 'file is' : 'files are'} added and being
+            used.
           </p>
         ) : null}
 
         {pendingReviewCount > 0 ? (
-          <p className="field-message">
+          <p className="field-message field-message--hint">
             {pendingReviewCount}{' '}
             {pendingReviewCount === 1
-              ? 'upload still needs review'
-              : 'uploads still need review'}{' '}
-            before it can join the source trail.
+              ? 'file still needs a quick check'
+              : 'files still need a quick check'}{' '}
+            before it can be used.
           </p>
         ) : null}
 
@@ -1512,7 +1435,7 @@ export function SourceEditor({
                         type="button"
                         onClick={() => setRequestedTextReviewId(attachment.id)}
                       >
-                        Review extracted text
+                        Check the text we found
                       </button>
                     ) : null}
 
@@ -1522,7 +1445,7 @@ export function SourceEditor({
                         type="button"
                         onClick={() => onKeepAttachmentReference(attachment.id)}
                       >
-                        Keep as reference
+                        Don't use this file
                       </button>
                     ) : null}
                   </div>

@@ -76,9 +76,9 @@ function warnUploadInterpretationStage(
 }
 
 const HERO_GUIDEPOINTS: Array<{ icon: AppIconName; text: string }> = [
-  { icon: 'notebook', text: 'Paste only the approved accommodation wording you want to rely on.' },
-  { icon: 'assignment', text: 'Add the task or worksheet details next, not the answer.' },
-  { icon: 'results', text: 'Get a quick map of what may apply, what to say, and what to confirm.' },
+  { icon: 'notebook', text: 'Add the part of your IEP that lists your supports, like extra time.' },
+  { icon: 'assignment', text: 'Add the school work next. Add the assignment, not your answers.' },
+  { icon: 'results', text: 'See which supports fit, what to say, and what to check with a teacher.' },
 ]
 
 const STEP_CONFIG: Array<{
@@ -89,20 +89,20 @@ const STEP_CONFIG: Array<{
 }> = [
   {
     id: 'iep',
-    label: 'Review accommodations',
-    helper: 'Approved IEP wording',
+    label: 'Add your IEP',
+    helper: 'What your IEP says you get',
     icon: 'compass',
   },
   {
     id: 'assignment',
-    label: 'Add task',
-    helper: 'Assignment or quiz details',
+    label: 'Add the school work',
+    helper: 'The assignment, quiz, or worksheet',
     icon: 'assignment',
   },
   {
     id: 'results',
-    label: 'Check next steps',
-    helper: 'What may apply here',
+    label: 'See what helps',
+    helper: 'Which supports fit this work',
     icon: 'results',
   },
 ]
@@ -114,18 +114,18 @@ const TRUST_BOUNDARIES: Array<{
 }> = [
   {
     icon: 'shield',
-    title: 'Approved accommodations only',
-    detail: 'We only point to accommodations that appear in the reviewed source materials you provide.',
+    title: 'Only your real supports',
+    detail: 'We only point to supports we can see in the IEP wording you add. We never make up new ones.',
   },
   {
     icon: 'waypoint',
-    title: 'Accommodations, not answer-giving',
-    detail: 'IEP Compass checks access accommodations. It does not do the classwork itself.',
+    title: 'We never do your work',
+    detail: 'IEP Compass helps you get your supports. It never answers the assignment for you.',
   },
   {
     icon: 'source',
-    title: 'Stays local in this session',
-    detail: 'Uploads stay local during the session so families can review materials before sharing anything else.',
+    title: 'Your files stay with you',
+    detail: 'What you add stays on your device while you use the app. Nothing is shared on its own.',
   },
 ]
 
@@ -133,9 +133,9 @@ const TEACHER_CONCERN_VERDICT_LABELS: Record<
   TeacherConcernExecution['result']['verdict'],
   string
 > = {
-  mixed_needs_context: 'Needs more context',
-  supports_accommodation: 'Leans toward the accommodation',
-  supports_teacher_concern: 'Leans toward the concern',
+  mixed_needs_context: 'Worth asking a teacher',
+  supports_accommodation: 'Your support likely fits',
+  supports_teacher_concern: 'The teacher may have a point',
 }
 
 function createBlankSource(): SourceMaterial {
@@ -1702,13 +1702,13 @@ function IepCompassApp() {
     hasUsableTaskSourceForGeneration(taskSource) &&
     Boolean(effectiveTaskTitle)
   const generateDisabledReason = !hasUsableSourceText(iepSource)
-    ? 'Add or review approved IEP accommodation wording first.'
+    ? 'Go back to step 1 and add your IEP supports first.'
     : !hasUsableTaskSourceForGeneration(taskSource)
-      ? 'Add task details, or review the interpreted assignment upload first.'
+      ? 'Add the directions for the school work above.'
       : !effectiveTaskTitle
-        ? 'Add a short task title, or use the interpreted title from the upload.'
+        ? 'Add a short title for the school work above.'
         : isAnalyzing
-          ? 'IEP Compass is already checking this task.'
+          ? 'We are already checking this. One moment.'
           : undefined
   const canAddressTeacherConcern =
     !isAnalyzing &&
@@ -1752,11 +1752,11 @@ function IepCompassApp() {
               <div className="app-header__eyebrow-row">
                 <span className="eyebrow eyebrow--hero">
                   <AppIcon name="compass" className="button-icon button-icon--sm" />
-                  Phone-first IEP accommodation guidance
+                  Made for your phone
                 </span>
                 <span className="hero-mini-badge">
                   <AppIcon name="star" className="button-icon button-icon--sm" />
-                  Supportive by design
+                  Here to help you
                 </span>
               </div>
 
@@ -1764,9 +1764,9 @@ function IepCompassApp() {
                 <div className="app-header__headline">
                   <h1>IEP Compass</h1>
                   <p className="app-header__lede">
-                    Start with the approved IEP wording. Then add the assignment
-                    so we can map out what may apply, what to ask for, and what
-                    still needs a quick check.
+                    First, add your IEP. Then add your school work. We will show
+                    you which of your supports fit, what you can say, and what to
+                    check with a teacher.
                   </p>
 
                   <ul className="hero-guide-list">
@@ -1798,16 +1798,16 @@ function IepCompassApp() {
                   </div>
                   <div className="hero-compass-card__note hero-compass-card__note--top">
                     <AppIcon name="notebook" className="button-icon button-icon--sm" />
-                    Start with approved accommodations
+                    Start with your IEP
                   </div>
                   <div className="hero-compass-card__note hero-compass-card__note--bottom">
                     <AppIcon name="results" className="button-icon button-icon--sm" />
-                    Follow the checkpoint trail
+                    Follow the three steps
                   </div>
                 </div>
               </div>
 
-              <div className="hero-trust-strip" aria-label="Grounded boundaries">
+              <div className="hero-trust-strip" aria-label="How we keep this safe">
                 {TRUST_BOUNDARIES.map((boundary) => (
                   <div key={boundary.title} className="hero-trust-item">
                     <span className="hero-trust-item__icon" aria-hidden="true">
@@ -1828,7 +1828,7 @@ function IepCompassApp() {
               <div className="app-header__compact-copy">
                 <span className="eyebrow eyebrow--hero">
                   <AppIcon name="waypoint" className="button-icon button-icon--sm" />
-                  Guided accommodation check
+                  Step-by-step support helper
                 </span>
                 <h1>IEP Compass</h1>
               </div>
@@ -1846,7 +1846,7 @@ function IepCompassApp() {
           </header>
         )}
 
-        <nav className="progress-strip" aria-label="Progress">
+        <nav className="progress-strip" aria-label="Your progress">
           {STEP_CONFIG.map((step, index) => {
             const isActive = screen === step.id
             const isComplete =
@@ -1855,20 +1855,28 @@ function IepCompassApp() {
             const stepStatus = isComplete
               ? 'Done'
               : isActive
-                ? 'Now'
-                : 'Up next'
+                ? 'You are here'
+                : 'Coming up'
             const canNavigate = canNavigateToStep(step.id)
+            const lockedHint =
+              step.id === 'assignment'
+                ? 'Finish step 1 first'
+                : step.id === 'results'
+                  ? 'Finish step 2 first'
+                  : ''
 
             return (
               <button
                 key={step.id}
                 aria-current={isActive ? 'step' : undefined}
+                aria-disabled={!canNavigate}
                 className={`progress-step progress-step--${step.id}${
                   isActive ? ' progress-step--active' : ''
                 }${isComplete ? ' progress-step--complete' : ''}${
                   canNavigate ? '' : ' progress-step--locked'
                 }`}
                 disabled={!canNavigate}
+                title={!canNavigate ? lockedHint : undefined}
                 type="button"
                 onClick={() => setScreen(step.id)}
               >
@@ -1883,7 +1891,7 @@ function IepCompassApp() {
                     <strong>{step.label}</strong>
                     <span className="progress-step__status">{stepStatus}</span>
                   </div>
-                  <p>{step.helper}</p>
+                  <p>{!canNavigate && lockedHint ? lockedHint : step.helper}</p>
                 </div>
               </button>
             )
@@ -1894,12 +1902,18 @@ function IepCompassApp() {
           {screen === 'iep' ? (
             <>
               <SectionCard
-                eyebrow="Waypoint 1"
-                title="Start with the approved accommodation wording"
-                description="Paste the IEP lines you want the app to rely on. Backup files are optional if they help confirm the source trail."
+                eyebrow="Step 1"
+                title="Add what your IEP gives you"
+                description="Your IEP lists supports your school agreed to, like extra time. Copy in that part of your IEP. You can add a photo or file instead if that is easier."
                 icon={<AppIcon name="notebook" />}
                 footer={
-                  <div className="screen-actions">
+                  <div className="screen-actions screen-actions--stacked">
+                    {!canContinueToAssignment ? (
+                      <p className="field-message field-message--hint">
+                        <AppIcon name="flag" className="button-icon button-icon--sm" />
+                        Add at least one IEP support above to keep going.
+                      </p>
+                    ) : null}
                     <button
                       className="action-button"
                       type="button"
@@ -1907,7 +1921,7 @@ function IepCompassApp() {
                       onClick={() => setScreen('assignment')}
                     >
                       <AppIcon name="assignment" className="button-icon" />
-                      Next: add the task
+                      Next: add the school work
                     </button>
                   </div>
                 }
@@ -1921,19 +1935,19 @@ function IepCompassApp() {
                         <span className="eyebrow">
                           <AppIcon name="shield" className="button-icon button-icon--sm" />
                           {isPreviewingExampleIep
-                            ? 'Sample details only'
+                            ? 'This is just an example'
                             : hasSavedIepOnDevice
                             ? 'Saved on this device'
-                            : 'Local-only IEP details'}
+                            : 'Saved only on this device'}
                         </span>
                         <p className="field-message">
                           {isPreviewingExampleIep
                             ? hasSavedIepOnDevice
-                              ? 'This preview does not replace the saved IEP on this device. Start over to bring the saved wording back. Assignment details and uploaded files are not saved here.'
-                              : 'This preview is just for practice and will not be saved on this device. Assignment details and uploaded files are not saved here.'
+                              ? 'This example will not change your saved IEP. Tap Start over to bring your own IEP back. School work and files are not saved.'
+                              : 'This example is just for practice and is not saved. School work and files are not saved.'
                             : hasSavedIepOnDevice
-                            ? 'The approved IEP wording on this screen comes back automatically in this browser. Paste new wording here any time to replace it. Uploaded IEP files and assignment details are not saved here.'
-                            : 'When you add approved IEP wording here, it stays only in this browser. Paste new wording here any time to replace it later. Uploaded IEP files and assignment details are not saved here.'}
+                            ? 'Your IEP supports come back the next time you open this app on this device. Type new wording any time to replace them. Files and school work are not saved.'
+                            : 'Your IEP supports stay on this device only. Type new wording any time to replace them. Files and school work are not saved.'}
                         </p>
                       </div>
 
@@ -1948,10 +1962,11 @@ function IepCompassApp() {
                       ) : null}
                     </div>
                   }
-                  textHelp="Keep this to the approved wording you want cited back in the results. If you have several accommodations, a short list is easier to scan than a long paragraph."
-                  textLabel="Approved IEP wording"
+                  textHelp="Copy in the supports listed in your IEP, word for word. One support per line is easiest to read."
+                  textLabel="Your IEP supports"
+                  textRequired
                   textName="iepExcerpt"
-                  textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
+                  textPlaceholder={`Example:\n- Extra time on quizzes and tests\n- A quiet space with fewer distractions for tests\n- Directions explained and broken into smaller steps`}
                   textValue={iepSource.text}
                   onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
                     applyMainAttachmentTextReview('iep', attachmentId, nextValue, mode)
@@ -1976,16 +1991,16 @@ function IepCompassApp() {
                   onRemoveAttachment={(attachmentId) =>
                     removeMainAttachment('iep', attachmentId)
                   }
-                  uploadEmptyBadge="Recommended first"
-                  uploadGuidance="Use photos, screenshots, PDFs, or text files if that is the easiest way to bring in the approved IEP wording. After review, included file details can count in the source trail."
-                  uploadSummaryTitle="Start with a photo or file"
+                  uploadEmptyBadge="Try this first"
+                  uploadGuidance="You can add a photo, screenshot, PDF, or text file of your IEP. After you check it, the details can be used in your results."
+                  uploadSummaryTitle="Add a photo or file"
                   uploadsFirst
-                  emptyState="No files yet. Skip this if typing the IEP wording is easier."
+                  emptyState="No files yet. You can skip this if typing is easier."
                   textFootnote={
                     !canContinueToAssignment ? (
-                      <p className="field-message">
-                        Add at least one reviewed accommodation before moving on.
-                        Reviewed upload details from files can also count.
+                      <p className="field-message field-message--hint">
+                        Add at least one IEP support to move on. A checked photo or
+                        file also counts.
                       </p>
                     ) : null
                   }
@@ -1993,39 +2008,37 @@ function IepCompassApp() {
 
                 <label className="textarea-label">
                   <span className="field-label__title">
-                    Learning disabilities (optional)
+                    How you learn best (optional)
                   </span>
                   <textarea
                     className="textarea-input textarea-input--compact"
                     name="learningProfile"
-                    placeholder="Example: Auditory dyslexia that affects sound-symbol encoding."
+                    placeholder="Example: I have dyslexia, so reading long passages takes me longer."
                     value={learningProfile}
                     onChange={(event) =>
                       updateMainLearningProfile(event.target.value)
                     }
                   />
                   <span className="field-label__help">
-                    Add only if helpful. This can guide explanations, but
-                    accommodations still must come from the approved IEP wording
-                    above.
+                    You can skip this. It only helps us explain things. Your
+                    supports still come from the IEP wording above.
                   </span>
                 </label>
                 <details className="optional-panel" open>
                   <summary className="optional-panel__summary">
                     <span className="summary-label">
                       <AppIcon name="spark" className="button-icon button-icon--sm" />
-                      Try the seeded demo or a preview scenario
+                      Want to try an example first?
                     </span>
-                    <span className="meta-badge">Load a sample</span>
+                    <span className="meta-badge">Optional</span>
                   </summary>
 
                   <div className="optional-panel__body">
                     <p className="field-message">
-                      The Jordan M. case loads two seeded sample images for the
-                      video demo. Interpret the IEP image, use the demo correction
-                      if the accommodation draft needs a quick fix, interpret the
-                      task image, then check what may apply. The other scenarios
-                      are typed-only previews.
+                      Tap an example to fill it in for you. The Jordan M. example
+                      uses sample photos: read the IEP photo, fix anything that
+                      looks off, read the school work photo, then see what helps.
+                      The other examples are typed in for you.
                     </p>
 
                     <div className="example-grid">
@@ -2048,7 +2061,7 @@ function IepCompassApp() {
                               {isSeededDemo ? (
                                 <span className="example-card__badge">
                                   <AppIcon name="star" className="button-icon button-icon--sm" />
-                                  Seeded demo
+                                  Example with photos
                                 </span>
                               ) : null}
                               <h3 className="example-card__title">{example.title}</h3>
@@ -2075,25 +2088,28 @@ function IepCompassApp() {
           {screen === 'assignment' ? (
             <>
               <SectionCard
-                eyebrow="Waypoint 2"
-                title="Add the assignment, quiz, or worksheet"
-                description="Start with the task title and directions. Add extra tags or one school question only if they make this task clearer."
+                eyebrow="Step 2"
+                title="Add the school work"
+                description="Add a short title and the directions for the assignment, quiz, or worksheet. The extras at the bottom are optional."
                 icon={<AppIcon name="assignment" />}
                 footer={
-                  <div className="screen-actions screen-actions--split">
-                    <button
-                      className="ghost-button"
-                      type="button"
-                      onClick={() => setScreen('iep')}
-                    >
-                      <AppIcon name="notebook" className="button-icon" />
-                      Back to IEP details
-                    </button>
+                  <div className="screen-actions screen-actions--stacked">
+                    {generateDisabledReason && !isAnalyzing ? (
+                      <p className="field-message field-message--hint">
+                        <AppIcon name="flag" className="button-icon button-icon--sm" />
+                        {generateDisabledReason}
+                      </p>
+                    ) : null}
+                    <div className="screen-actions screen-actions--split">
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => setScreen('iep')}
+                      >
+                        <AppIcon name="notebook" className="button-icon" />
+                        Back to my IEP
+                      </button>
 
-                    <span
-                      className="action-button-tooltip"
-                      title={generateDisabledReason}
-                    >
                       <button
                         className="action-button"
                         type="button"
@@ -2101,26 +2117,29 @@ function IepCompassApp() {
                         onClick={() => void handleGenerateOutput()}
                       >
                         {isAnalyzing ? (
-                          <LoadingIndicator label="Generating output" size="sm" />
+                          <LoadingIndicator label="Working on it" size="sm" />
                         ) : (
                           <>
                             <AppIcon name="results" className="button-icon" />
-                            Check what may apply
+                            See what helps
                           </>
                         )}
                       </button>
-                    </span>
+                    </div>
                   </div>
                 }
               >
                 <div className="field-label">
-                  <span className="field-label__title">Task title</span>
+                  <span className="field-label__title">
+                    Name of the school work
+                    <span className="field-required-pill">Needed</span>
+                  </span>
                   <p className="field-label__help">
-                    Keep this short so it is easy to spot later.
+                    A few words so you can spot it later.
                   </p>
                   {interpretedTaskTitle ? (
                     <div className="inline-suggestion">
-                      <span>Gemma found: {interpretedTaskTitle}</span>
+                      <span>We found a name: {interpretedTaskTitle}</span>
                       <button
                         className="text-link-button"
                         type="button"
@@ -2131,7 +2150,7 @@ function IepCompassApp() {
                           clearTeacherConcernState()
                         }}
                       >
-                        Use interpreted title
+                        Use this name
                       </button>
                     </div>
                   ) : null}
@@ -2152,10 +2171,11 @@ function IepCompassApp() {
                 <SourceEditor
                   attachments={taskSource.attachments}
                   documentPlan={documentPlan}
-                  textHelp="Paste directions or summarize what the student is being asked to do. Keep this to the task itself, not the answer."
-                  textLabel="Task directions or worksheet details"
+                  textHelp="Copy in the directions, or say what the work asks you to do. Add the directions, not your answers."
+                  textLabel="What the school work asks you to do"
+                  textRequired
                   textName="taskText"
-                  textPlaceholder="Paste directions, summarize a worksheet photo, or upload a text file with the assignment details."
+                  textPlaceholder="Copy in the directions, describe what the work asks, or add a photo or file of it."
                   textValue={taskSource.text}
                   onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
                     applyMainAttachmentTextReview('task', attachmentId, nextValue, mode)
@@ -2182,28 +2202,30 @@ function IepCompassApp() {
                   onRemoveAttachment={(attachmentId) =>
                     removeMainAttachment('task', attachmentId)
                   }
-                  uploadGuidance="Add screenshots, photos, PDFs, or text files only if they help show what the student is actually being asked to do. Image and PDF uploads can be interpreted into a structured task draft before analysis."
-                  emptyState="No task files yet. Skip this if the typed task summary already covers what matters."
+                  uploadGuidance="You can add a photo, screenshot, PDF, or text file of the school work. We will read it and let you check it before using it."
+                  emptyState="No files yet. You can skip this if you already typed the directions."
                 />
 
                 <details className="optional-panel" open={showOptionalTaskSetup}>
                   <summary className="optional-panel__summary">
                     <span className="summary-label">
                       <AppIcon name="waypoint" className="button-icon button-icon--sm" />
-                      Helpful extras
+                      Extra info (optional)
                     </span>
                     <span className="meta-badge">
-                      {showOptionalTaskSetup ? 'Added' : 'Use only if helpful'}
+                      {showOptionalTaskSetup ? 'Added' : 'You can skip this'}
                     </span>
                   </summary>
 
                   <div className="optional-panel__body">
                     <label className="textarea-label">
-                      <span className="field-label__title">School staff question</span>
+                      <span className="field-label__title">
+                        A question for a teacher (optional)
+                      </span>
                       <textarea
                         className="textarea-input textarea-input--compact"
                         name="teacherConcern"
-                        placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
+                        placeholder="Example: Will spelling mistakes lower my grade a lot on this essay?"
                         value={teacherConcern}
                         onChange={(event) => {
                           updateMainTeacherConcern(event.target.value)
@@ -2212,8 +2234,8 @@ function IepCompassApp() {
                         }}
                       />
                       <span className="field-label__help">
-                        Add this only if there is one school question you want to
-                        check after the main accommodation map.
+                        Have one question about this work? Add it and we will
+                        help you think it through after your results.
                       </span>
                     </label>
 
@@ -2273,9 +2295,9 @@ function IepCompassApp() {
               {correctionTarget === 'iep' ? (
                 <div ref={correctionIepRef}>
                   <SectionCard
-                    eyebrow="Correct details"
-                    title="Update the IEP source trail"
-                    description="Fix anything we missed in the IEP details, then regenerate from the updated version."
+                    eyebrow="Fix details"
+                    title="Fix your IEP"
+                    description="Change anything we got wrong in your IEP, then see your results again."
                     icon={<AppIcon name="notebook" />}
                     footer={
                     <div className="screen-actions screen-actions--split">
@@ -2300,7 +2322,7 @@ function IepCompassApp() {
                         ) : (
                           <>
                             <AppIcon name="results" className="button-icon" />
-                            Regenerate accommodation map
+                            Update my results
                           </>
                         )}
                         </button>
@@ -2310,10 +2332,10 @@ function IepCompassApp() {
                     <SourceEditor
                       attachments={correctionIepSource.attachments}
                       documentPlan={documentPlan}
-                      textHelp="Fix the approved wording here if the first pass missed something important or cited the wrong detail."
-                      textLabel="Approved IEP wording"
+                      textHelp="Change your IEP supports here if we missed one or got the wording wrong."
+                      textLabel="Your IEP supports"
                       textName="correctionIepExcerpt"
-                      textPlaceholder={`Example:\n- Extended time for quizzes and tests\n- Reduced-distraction setting for assessments\n- Directions clarified and chunked`}
+                      textPlaceholder={`Example:\n- Extra time on quizzes and tests\n- A quiet space with fewer distractions for tests\n- Directions explained and broken into smaller steps`}
                       textValue={correctionIepSource.text}
                       onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
                         applyCorrectionAttachmentTextReview(
@@ -2347,11 +2369,11 @@ function IepCompassApp() {
                       onRemoveAttachment={(attachmentId) =>
                         removeCorrectionAttachment('iep', attachmentId)
                       }
-                      uploadEmptyBadge="Recommended first"
-                      uploadGuidance="Use a photo, screenshot, PDF, or text file if that is the easiest way to correct the IEP wording."
-                      uploadSummaryTitle="Start with a photo or file"
+                      uploadEmptyBadge="Try this first"
+                      uploadGuidance="Add a photo, screenshot, PDF, or text file if that is an easier way to fix your IEP."
+                      uploadSummaryTitle="Add a photo or file"
                       uploadsFirst
-                      emptyState="No files in this correction draft yet."
+                      emptyState="No files added yet."
                     />
                   </SectionCard>
                 </div>
@@ -2360,9 +2382,9 @@ function IepCompassApp() {
               {correctionTarget === 'assignment' ? (
                 <div ref={correctionAssignmentRef}>
                   <SectionCard
-                  eyebrow="Correct details"
-                  title="Update the assignment source trail"
-                  description="Refine the assignment details, helpful tags, or school question, then regenerate from the corrected version."
+                  eyebrow="Fix details"
+                  title="Fix the school work"
+                  description="Change the directions, tags, or your question, then see your results again."
                   icon={<AppIcon name="assignment" />}
                   footer={
                     <div className="screen-actions screen-actions--split">
@@ -2387,7 +2409,7 @@ function IepCompassApp() {
                         ) : (
                           <>
                             <AppIcon name="results" className="button-icon" />
-                            Regenerate accommodation map
+                            Update my results
                           </>
                         )}
                       </button>
@@ -2395,9 +2417,9 @@ function IepCompassApp() {
                   }
                 >
                   <div className="field-label">
-                    <span className="field-label__title">Task title</span>
+                    <span className="field-label__title">Name of the school work</span>
                     <p className="field-label__help">
-                      Update the title too if the original label was vague or off.
+                      Change the name too if the first one was unclear.
                     </p>
                     <input
                       className="text-input"
@@ -2413,10 +2435,10 @@ function IepCompassApp() {
                   <SourceEditor
                     attachments={correctionTaskSource.attachments}
                     documentPlan={documentPlan}
-                    textHelp="Tighten the task wording here so the results match what the student is actually being asked to do."
-                    textLabel="Task directions or worksheet details"
+                    textHelp="Fix the directions here so your results match what the work really asks you to do."
+                    textLabel="What the school work asks you to do"
                     textName="correctionTaskText"
-                    textPlaceholder="Paste directions, summarize a worksheet photo, or upload a text file with the assignment details."
+                    textPlaceholder="Copy in the directions, describe what the work asks, or add a photo or file of it."
                     textValue={correctionTaskSource.text}
                     onApplyAttachmentTextReview={(attachmentId, nextValue, mode) =>
                       applyCorrectionAttachmentTextReview(
@@ -2454,8 +2476,8 @@ function IepCompassApp() {
                     onRemoveAttachment={(attachmentId) =>
                       removeCorrectionAttachment('task', attachmentId)
                     }
-                    uploadGuidance="Swap in a clearer worksheet photo or file only if it helps show the corrected task details."
-                    emptyState="No task files in this correction draft yet."
+                    uploadGuidance="Add a clearer photo or file if it helps show the school work better."
+                    emptyState="No files added yet."
                   />
 
                   <details
@@ -2465,7 +2487,7 @@ function IepCompassApp() {
                     <summary className="optional-panel__summary">
                       <span className="summary-label">
                         <AppIcon name="waypoint" className="button-icon button-icon--sm" />
-                        Helpful extras
+                        Extra info (optional)
                       </span>
                       <span className="meta-badge">
                         {showCorrectionOptionalTaskSetup ? 'Added' : 'Optional'}
@@ -2474,11 +2496,13 @@ function IepCompassApp() {
 
                     <div className="optional-panel__body">
                       <label className="textarea-label">
-                        <span className="field-label__title">School staff question</span>
+                        <span className="field-label__title">
+                          A question for a teacher (optional)
+                        </span>
                         <textarea
                           className="textarea-input textarea-input--compact"
                           name="correctionTeacherConcern"
-                          placeholder="Example: The teacher wants to count off heavily for spelling mistakes on this essay."
+                          placeholder="Example: Will spelling mistakes lower my grade a lot on this essay?"
                           value={correctionTeacherConcern}
                           onChange={(event) =>
                             setCorrectionTeacherConcern(event.target.value)
@@ -2506,16 +2530,15 @@ function IepCompassApp() {
 
               {isAnalyzing ? (
                 <SectionCard
-                  eyebrow="Working"
-                  title="Building the accommodation map"
-                  description="The results screen stays in place while IEP Compass checks the latest source materials."
+                  eyebrow="Working on it"
+                  title="Finding the supports that fit"
+                  description="This takes a moment. We are matching your IEP supports to your school work."
                   icon={<AppIcon name="compass" />}
                 >
                   <div className="loading-card">
-                    <LoadingIndicator label="Checking the task against the approved accommodations" />
+                    <LoadingIndicator label="Matching your supports to the school work" />
                     <p>
-                      We&apos;re only using the approved accommodations visible in the
-                      current source trail.
+                      We are only using the supports you added in step 1.
                     </p>
                   </div>
                 </SectionCard>
@@ -2523,15 +2546,15 @@ function IepCompassApp() {
 
               {analysisError ? (
                 <SectionCard
-                  title="This pass needs another try"
+                  title="That did not work — let's try again"
                   tone="accent"
                   description={analysisError}
                   icon={<AppIcon name="flag" />}
                 >
                   <div className="placeholder-stack">
                     <p>
-                      Review the source panels or open a correction flow, then
-                      try again when the materials look right.
+                      Check your IEP and school work above, fix anything that
+                      looks off, then try again.
                     </p>
                     <div className="screen-actions">
                       <button
@@ -2558,9 +2581,9 @@ function IepCompassApp() {
               {analysis ? (
                 <div ref={teacherConcernPanelRef}>
                   <SectionCard
-                    eyebrow="Optional follow-up"
-                    title="Ask about one accommodation or school question"
-                    description="Use this if you want help thinking through one approved accommodation or one question about how it may be used."
+                    eyebrow="Optional"
+                    title="Ask one more question"
+                    description="Have a question about one of your supports or this school work? We can help you think it through."
                     icon={<AppIcon name="teacher" />}
                   >
                   <details
@@ -2570,20 +2593,20 @@ function IepCompassApp() {
                     <summary className="optional-panel__summary">
                       <span className="summary-label">
                         <AppIcon name="quote" className="button-icon button-icon--sm" />
-                        Add one question to check
+                        Add a question
                       </span>
                       <span className="meta-badge">
-                        {teacherConcernAnalysis ? 'Reviewed' : 'Optional'}
+                        {teacherConcernAnalysis ? 'Answered' : 'Optional'}
                       </span>
                     </summary>
 
                     <div className="optional-panel__body teacher-concern-stack">
                       <label className="textarea-label">
-                        <span className="field-label__title">School staff question</span>
+                        <span className="field-label__title">Your question</span>
                         <textarea
                           className="textarea-input textarea-input--compact"
                           name="resultsTeacherConcern"
-                          placeholder="Example: Can we check whether the spelling accommodation fits this essay, or does the task measure spelling?"
+                          placeholder="Example: Does my spelling support fit this essay, or is spelling part of the grade?"
                           value={teacherConcern}
                           onChange={(event) => {
                             updateMainTeacherConcern(event.target.value)
@@ -2593,8 +2616,8 @@ function IepCompassApp() {
 
                       <div className="screen-actions screen-actions--split">
                         <p className="review-note">
-                          This runs separately from the main accommodation map so it can
-                          think through one school question at a time.
+                          This is separate from your main results, so we can
+                          focus on one question at a time.
                         </p>
 
                         <button
@@ -2604,11 +2627,11 @@ function IepCompassApp() {
                           onClick={() => void handleTeacherConcernReview()}
                         >
                           {isTeacherConcernAnalyzing ? (
-                            <LoadingIndicator label="Checking follow-up" size="sm" />
+                            <LoadingIndicator label="Thinking it through" size="sm" />
                           ) : (
                             <>
                               <AppIcon name="quote" className="button-icon" />
-                              Check this question
+                              Help me with this
                             </>
                           )}
                         </button>
@@ -2623,7 +2646,7 @@ function IepCompassApp() {
                       {teacherConcernAnalysis ? (
                         <div className="teacher-concern-response">
                           <div className="teacher-concern-response__header">
-                            <h3>Focused answer</h3>
+                            <h3>Here's some help</h3>
                             <span className="meta-badge">
                               {
                                 TEACHER_CONCERN_VERDICT_LABELS[
@@ -2634,17 +2657,17 @@ function IepCompassApp() {
                           </div>
 
                           <div className="results-detail-block">
-                            <h3>Question</h3>
+                            <h3>Your question</h3>
                             <p>{teacherConcernAnalysis.result.concern}</p>
                           </div>
 
                           <div className="results-detail-block">
-                            <h3>What it suggests</h3>
+                            <h3>What this means</h3>
                             <p>{teacherConcernAnalysis.result.guidance}</p>
                           </div>
 
                           <div className="results-detail-block">
-                            <h3>How to explain it</h3>
+                            <h3>What you can say</h3>
                             <p>{teacherConcernAnalysis.result.suggestedResponse}</p>
                           </div>
                         </div>
@@ -2657,31 +2680,31 @@ function IepCompassApp() {
 
               {analysis || analysisError ? (
                 <SectionCard
-                  eyebrow="Need to dig in?"
-                  title="Review sources or verify details"
-                  description="Open this only if a recommendation looks off or you want to inspect the exact source materials."
+                  eyebrow="Want more detail?"
+                  title="See exactly what you added"
+                  description="Open this if a result looks off and you want to check what you gave us."
                   icon={<AppIcon name="source" />}
                 >
                   <details className="results-details-panel">
                     <summary className="results-details-panel__summary">
                       <span className="summary-label">
                         <AppIcon name="source" className="button-icon button-icon--sm" />
-                        Open source review
+                        Show what I added
                       </span>
                     </summary>
 
                     <div className="results-details-panel__body">
                       <div className="results-sources">
                         <SourceReviewPanel
-                          eyebrow="Source materials"
-                          title="IEP source"
-                          description="These are the details the app is allowed to cite when it maps accommodations to the task."
+                          eyebrow="What you added"
+                          title="Your IEP"
+                          description="These are the supports we are allowed to point to in your results."
                           source={iepSource}
                         />
                         <SourceReviewPanel
-                          eyebrow="Source materials"
-                          title="Assignment source"
-                          description="These are the task details the app uses to explain why a listed accommodation may matter here."
+                          eyebrow="What you added"
+                          title="Your school work"
+                          description="These are the school work details we use to explain why a support may help."
                           source={taskSource}
                         />
                       </div>
@@ -2691,9 +2714,9 @@ function IepCompassApp() {
               ) : null}
 
               <SectionCard
-                eyebrow="Need to adjust the route?"
-                title="Update the source details"
-                description="If the result needs work, reopen either source trail here and regenerate from the corrected version."
+                eyebrow="Need to change something?"
+                title="Fix your details"
+                description="If a result looks wrong, fix your IEP or school work here, then see your results again."
                 icon={<AppIcon name="waypoint" />}
               >
                 <div className="results-header">
@@ -2705,7 +2728,7 @@ function IepCompassApp() {
                       onClick={() => syncCorrectionDrafts('iep')}
                     >
                       <AppIcon name="notebook" className="button-icon" />
-                      Correct IEP details
+                      Fix my IEP
                     </button>
                     <button
                       className="ghost-button"
@@ -2714,7 +2737,7 @@ function IepCompassApp() {
                       onClick={() => syncCorrectionDrafts('assignment')}
                     >
                       <AppIcon name="assignment" className="button-icon" />
-                      Correct assignment details
+                      Fix the school work
                     </button>
                   </div>
                 </div>
@@ -2728,9 +2751,9 @@ function IepCompassApp() {
             <div className="app-trust-note__header">
               <span className="eyebrow eyebrow--hero">
                 <AppIcon name="shield" className="button-icon button-icon--sm" />
-                Trust note
+                Good to know
               </span>
-              <h2 className="app-trust-note__title">Grounded boundaries</h2>
+              <h2 className="app-trust-note__title">How we keep this safe</h2>
             </div>
 
             <ul className="trust-list trust-list--compact">
