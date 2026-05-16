@@ -2,6 +2,17 @@
 
 ## Recently Completed
 
+- Ran a middle-school clarity and error-prevention pass across the live UI:
+  - rewrote step, hero, trust, results, and upload-review copy into plain student-facing language (removed jargon like "source trail", "accommodation map", "Waypoint N", "approved wording", "demo mode")
+  - relabeled the three steps to "Add your IEP", "Add the school work", "See what helps", with plainer locked-step hints ("Finish step 1 first")
+  - added visible "Needed" pills on required fields and `aria-disabled` on locked progress steps
+  - replaced silent disabled buttons with calm inline fix messages (e.g. "Add the directions for the school work above.") on Step 1/2 footers
+  - trimmed the upload task-review form to what a student can confirm (what kind of file, what it asks, time limit); moved subject/topic/evidence into a read-only "What else we picked up" panel and dropped the jargon selects (work type, accommodation focus, calculation focus) from the editable form — `assignmentReviewDraftSchema` and the image-eval harness are unchanged since trimming is UI-only
+  - moved IEP review name/district/DOB/meeting-date behind an optional collapsed panel and led with the supports
+  - simplified attachment status labels and review-dialog button verbs ("Use this", "Add to what I have", "Cancel")
+  - added a confidence legend (Strong fit / Might fit / Ask a teacher) and a "Copy these words" button on each result script; added an aria-label to the confidence badge
+  - `npm run lint`, `npm run build`, and `npm run test` (82 passing) all pass; verified the flow in a mobile-width browser
+  - the dead `src/features/input/IEPExcerptInput.tsx`, `TaskInput.tsx`, `ExampleScenarioPicker.tsx`, and `src/features/upload/PreviewReviewPanel.tsx`/`UploadPanel.tsx` components were found unused during this pass and left untouched — they are candidates for deletion
 - Tightened the Jordan video demo so model interpretation stays real:
   - kept both seeded images on the labeled Ollama/Gemma image-reading path instead of using preloaded task text
   - added a demo-only accommodation correction button that appears after the first IEP image interpretation attempt

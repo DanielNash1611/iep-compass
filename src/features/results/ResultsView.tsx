@@ -1,22 +1,60 @@
+import { useState } from 'react'
 import { AppIcon } from '../../components/AppIcon'
 import { ConfidenceBadge } from '../../components/ConfidenceBadge'
 import { SectionCard } from '../../components/SectionCard'
 import type { AnalysisExecution } from '../../types/analysis'
 
 const ACCOMMODATION_SUPPORT_COPY = {
-  likely_relevant: 'Worth checking early for this task.',
-  possibly_relevant: 'May fit, but the match is less settled.',
-  unclear_confirm: 'Pause here and confirm the boundary first.',
+  likely_relevant: 'Check this one first.',
+  possibly_relevant: 'This might help. Check with a teacher.',
+  unclear_confirm: 'Ask a teacher before you count on this one.',
 } as const
 
 const CONFIRMATION_COPY = {
   likely_relevant:
-    'This looks like a strong match, but it still helps to confirm the logistics before the task starts.',
+    'This is a strong fit. It still helps to ask your teacher how to use it before you start.',
   possibly_relevant:
-    'This may fit, but the task details do not fully settle it yet. A quick check with staff can clarify how it should be used here.',
+    'This might fit. A quick check with your teacher can tell you if it works here.',
   unclear_confirm:
-    'The source trail leaves an important boundary unresolved here, so this one needs confirmation before anyone relies on it.',
+    'We could not tell for sure from what you added. Ask a teacher before you count on this one.',
 } as const
+
+const CONFIDENCE_LEGEND: Array<{
+  icon: 'check' | 'compass' | 'flag'
+  label: string
+  detail: string
+}> = [
+  { icon: 'check', label: 'Strong fit', detail: 'Looks like a good match for this work.' },
+  { icon: 'compass', label: 'Might fit', detail: 'Could help. Worth a quick check.' },
+  { icon: 'flag', label: 'Ask a teacher', detail: 'Not clear yet. Check before using it.' },
+]
+
+function CopyScriptButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  return (
+    <button
+      className="ghost-button ghost-button--copy"
+      type="button"
+      onClick={() => {
+        const showCopied = () => {
+          setCopied(true)
+          window.setTimeout(() => setCopied(false), 2000)
+        }
+
+        navigator.clipboard
+          ?.writeText(text)
+          .then(showCopied)
+          .catch(() => {
+            // Clipboard can be blocked; the words stay visible above to copy by hand.
+          })
+      }}
+    >
+      <AppIcon name="quote" className="button-icon button-icon--sm" />
+      {copied ? 'Copied!' : 'Copy these words'}
+    </button>
+  )
+}
 
 interface ResultsViewProps {
   analysis: AnalysisExecution
@@ -50,17 +88,17 @@ function buildSupportGroups(
   return [
     {
       eyebrow: 'Check first',
-      title: 'Most likely to help on this task',
+      title: 'These likely help with this work',
       description:
-        'These look like the clearest connections between the task and the approved accommodations in the source trail.',
+        'These supports look like a good match for this school work.',
       items: checkFirst,
       tone: 'accent',
     },
     {
-      eyebrow: 'Worth confirming',
-      title: 'Could fit, but still needs a check',
+      eyebrow: 'Ask a teacher',
+      title: 'These might help — check first',
       description:
-        'These may still matter, but the task details or accommodation boundary need a little more context first.',
+        'These could fit, but a quick question to a teacher will make it clear.',
       items: worthConfirming,
       tone: 'soft',
     },
@@ -68,13 +106,13 @@ function buildSupportGroups(
 }
 
 function buildAccommodationScript(name: string) {
-  return `I think my approved accommodation for ${name} may fit this task. Can we check how I should use it before I start?`
+  return `My IEP says I get ${name}. Can we check how I should use it for this work before I start?`
 }
 
 function buildAlternativeAccommodationScripts(name: string) {
   return [
-    `Can I use my ${name} accommodation for this task?`,
-    `Could we look at my IEP wording for ${name} and decide how it applies here?`,
+    `Can I use my ${name} support for this work?`,
+    `My IEP gives me ${name}. Does that apply here?`,
   ]
 }
 
@@ -95,9 +133,9 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
   return (
     <div className="results-stack">
       <SectionCard
-        eyebrow="Start here"
-        title="Start with the student view"
-        description="This page starts with the student path first: the clearest matches, the items to confirm, and the words to use next."
+        eyebrow="Your results"
+        title="Here's what may help"
+        description="We matched your IEP supports to your school work. Start at the top."
         tone="accent"
         icon={<AppIcon name="compass" />}
       >
@@ -106,25 +144,34 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
             {studentGuidance.startHere}
           </p>
 
-          <div className="results-meta results-meta--summary" aria-label="Result summary">
+          <div className="results-meta results-meta--summary" aria-label="Quick summary">
             <span className="meta-badge">
-              {formatSupportCount(likelyCount, 'strong match', 'strong matches')}
+              {formatSupportCount(likelyCount, 'strong fit', 'strong fits')}
             </span>
             <span className="meta-badge">
-              {formatSupportCount(confirmCount, 'item to confirm', 'items to confirm')}
-            </span>
-            <span className="meta-badge">
-              {analysis.meta.mode === 'live' ? analysis.meta.runtimeLabel : 'Demo mode'}
+              {formatSupportCount(confirmCount, 'to ask about', 'to ask about')}
             </span>
           </div>
+
+          <dl className="confidence-legend" aria-label="What the labels mean">
+            {CONFIDENCE_LEGEND.map((entry) => (
+              <div key={entry.label} className="confidence-legend__item">
+                <dt>
+                  <AppIcon name={entry.icon} className="button-icon button-icon--sm" />
+                  {entry.label}
+                </dt>
+                <dd>{entry.detail}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </SectionCard>
 
       {analysis.result.relevantAccommodations.length === 0 ? (
         <SectionCard
-          eyebrow="No clear match yet"
-          title="Nothing stands out as a strong fit yet"
-          description="That usually means the task details need a little more context or the connection is still too uncertain to call."
+          eyebrow="Nothing clear yet"
+          title="We could not find a clear match yet"
+          description="This usually just means we need a little more about the school work. You did nothing wrong."
           icon={<AppIcon name="waypoint" />}
           tone="soft"
         >
@@ -133,10 +180,10 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
               <AppIcon name="waypoint" />
             </span>
             <div>
-              <h3>Try tightening the task details</h3>
+              <h3>Add a little more, then try again</h3>
               <p>
-                Add a little more about the directions, timing, or task format, then
-                run the accommodation map again.
+                Go back and add more about the directions, the timing, or what
+                kind of work it is. Then see what helps again.
               </p>
             </div>
           </div>
@@ -146,8 +193,8 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
               <div className="results-detail-block">
                 <h3>Want to ask about one anyway?</h3>
                 <p>
-                  These are approved accommodations from the source trail, but this
-                  pass did not have enough task evidence to connect them clearly.
+                  These supports are in your IEP, but we did not have enough
+                  about the school work to connect them.
                 </p>
               </div>
 
@@ -199,8 +246,8 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
                     <span className="accommodation-card__waypoint">
                       <AppIcon name="star" className="button-icon button-icon--sm" />
                       {group.eyebrow === 'Check first'
-                        ? `Start with ${index + 1}`
-                        : `Confirm ${index + 1}`}
+                        ? `Check ${index + 1}`
+                        : `Ask about ${index + 1}`}
                     </span>
                     <ConfidenceBadge confidence={item.confidence} />
                   </div>
@@ -216,7 +263,7 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
                     <section className="accommodation-pane accommodation-pane--why">
                       <h4>
                         <AppIcon name="results" className="button-icon button-icon--sm" />
-                        <span>Why it may apply</span>
+                        <span>Why this may help</span>
                       </h4>
                       <p>{item.applicationReason}</p>
                       <p>{item.whyItMayMatter}</p>
@@ -241,7 +288,7 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
                     <section className="accommodation-pane accommodation-pane--confirm">
                       <h4>
                         <AppIcon name="waypoint" className="button-icon button-icon--sm" />
-                        <span>What needs confirmation</span>
+                        <span>What to check</span>
                       </h4>
                       <p>{CONFIRMATION_COPY[item.confidence]}</p>
                     </section>
@@ -249,11 +296,12 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
                     <section className="accommodation-pane accommodation-pane--script">
                       <h4>
                         <AppIcon name="quote" className="button-icon button-icon--sm" />
-                        <span>What to say</span>
+                        <span>What you can say</span>
                       </h4>
                       <blockquote className="quote-card quote-card--inline">
                         <p>{buildAccommodationScript(item.name)}</p>
                       </blockquote>
+                      <CopyScriptButton text={buildAccommodationScript(item.name)} />
                       <details className="script-options">
                         <summary>Other ways to say it</summary>
                         <ul className="support-list">
@@ -269,7 +317,7 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
                     <summary className="source-snippet__summary">
                       <span className="summary-label">
                         <AppIcon name="source" className="button-icon button-icon--sm" />
-                        Show source text
+                        Show the IEP wording this comes from
                       </span>
                     </summary>
 
@@ -283,9 +331,9 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
 
       <div className="results-sidecar-grid">
         <SectionCard
-          eyebrow="If a grown-up is helping"
-          title="Coach notes for a parent or guardian"
-          description="These notes help an adult back the student up without taking over the student’s voice."
+          eyebrow="For a grown-up"
+          title="Notes for a parent or guardian"
+          description="These notes help an adult support the student without speaking for them."
           tone="soft"
           icon={<AppIcon name="shield" />}
           className="results-sidecar-card"
@@ -302,9 +350,9 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
         </SectionCard>
 
         <SectionCard
-          eyebrow="What school staff may want to check"
-          title="Staff notes for setup and access"
-          description="These reminders stay on access and setup, not on doing the task for the student."
+          eyebrow="For a teacher"
+          title="Notes for a teacher"
+          description="These notes are about setting up the support, not about doing the work for the student."
           tone="soft"
           icon={<AppIcon name="waypoint" />}
           className="results-sidecar-card"
@@ -322,9 +370,9 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
       </div>
 
       <SectionCard
-        eyebrow="Deeper review"
-        title="Reasoning trail and boundaries"
-        description="Open this only if you want the model notes, lower-priority items, or the boundaries that stayed in place."
+        eyebrow="More detail"
+        title="Why we said this"
+        description="Open this if you want to see our notes and the supports we did not connect."
         tone="soft"
         icon={<AppIcon name="results" />}
       >
@@ -332,21 +380,14 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
           <summary className="results-details-panel__summary">
             <span className="summary-label">
               <AppIcon name="compass" className="button-icon button-icon--sm" />
-              Open the deeper review
+              Show more detail
             </span>
           </summary>
 
           <div className="results-details-panel__body">
-            <div className="results-meta" aria-label="Analysis metadata">
-              <span className="meta-badge">{analysis.meta.model}</span>
-              {analysis.meta.usedFallback ? (
-                <span className="meta-badge">Fallback path used</span>
-              ) : null}
-            </div>
-
             {analysis.meta.notes.length > 0 ? (
               <div className="results-detail-block">
-                <h3>Model notes</h3>
+                <h3>Our notes</h3>
                 <ul className="support-list">
                   {analysis.meta.notes.map((note) => (
                     <li key={note}>{note}</li>
@@ -356,7 +397,7 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
             ) : null}
 
             <div className="results-detail-block">
-              <h3>Not obviously relevant here</h3>
+              <h3>Supports we did not connect to this work</h3>
               {analysis.result.notObviouslyRelevant.length > 0 ? (
                 <ul className="support-list">
                   {analysis.result.notObviouslyRelevant.map((item, index) => (
@@ -367,14 +408,13 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
                 </ul>
               ) : (
                 <p>
-                  Every accommodation in the excerpt either looked relevant here or needed a
-                  confirmation note.
+                  We connected every support in your IEP, or noted one to check.
                 </p>
               )}
             </div>
 
             <div className="results-detail-block">
-              <h3>Boundaries that stayed in place</h3>
+              <h3>Rules we followed</h3>
               <ul className="support-list support-list--checks">
                 {analysis.result.boundaries.map((boundary) => (
                   <li key={boundary}>{boundary}</li>
