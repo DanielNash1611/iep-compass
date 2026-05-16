@@ -3,12 +3,17 @@ import assert from 'node:assert/strict'
 
 import {
   createJordanDemoSources,
+  getJordanDemoAccommodationCorrection,
   JORDAN_DEMO_EXAMPLE_ID,
 } from '../../src/data/demoCase.ts'
 import {
   buildEffectiveSourceText,
   getPendingReviewAttachments,
+  getAttachmentSourceText,
 } from '../../src/features/source/sourceText.ts'
+import {
+  refreshAttachmentNotes,
+} from '../../src/features/upload/fileUtils.ts'
 import {
   serializePersistedIepSource,
 } from '../../src/features/source/localSourceStorage.ts'
@@ -49,4 +54,29 @@ test('seeded IEP demo source is not locally persisted before review', async () =
 
   assert.equal(JORDAN_DEMO_EXAMPLE_ID, 'jordan-character-change-demo')
   assert.equal(serializePersistedIepSource(demo.iepSource, demo.learningProfile), null)
+})
+
+test('Jordan accommodation correction updates the draft without auto-including source text', () => {
+  const demo = createJordanDemoSources()
+  const attachment = demo.iepSource.attachments[0]
+  const correction = getJordanDemoAccommodationCorrection(attachment.id)
+
+  assert.match(correction?.correctedText ?? '', /extended time/i)
+
+  const nextAttachment = refreshAttachmentNotes({
+    ...attachment,
+    demoCorrectionSource: 'jordan_accommodation_actual',
+    extractedText: correction.correctedText,
+    manualEditSummary: correction.manualEditSummary,
+    rawDemoOutput: 'Original model draft before correction.',
+    readMethod: 'gemma4_image',
+    readNotes: ['Demo correction inserted confirmed text from the synthetic Jordan accommodation snapshot.'],
+    status: 'review_ready',
+  })
+
+  assert.equal(nextAttachment.status, 'review_ready')
+  assert.match(nextAttachment.extractedText ?? '', /extended time/i)
+  assert.match(nextAttachment.rawDemoOutput ?? '', /Original model draft/i)
+  assert.deepEqual(getPendingReviewAttachments([nextAttachment]), [nextAttachment])
+  assert.equal(getAttachmentSourceText(nextAttachment), '')
 })

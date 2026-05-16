@@ -2,6 +2,12 @@
 
 ## Recently Completed
 
+- Tightened the Jordan video demo so model interpretation stays real:
+  - kept both seeded images on the labeled Ollama/Gemma image-reading path instead of using preloaded task text
+  - added a demo-only accommodation correction button that appears after the first IEP image interpretation attempt
+  - preserves the original model draft while inserting the confirmed synthetic accommodation wording for fast review
+  - keeps the final reviewed-text mapping on Browser Gemma after the source trail is reviewed
+  - next rehearsal check: run the Jordan path with Ollama configured, apply the accommodation correction if needed, and time the full 3-minute script
 - Clarified live image interpretation availability for the browser Gemma path:
   - confirmed the installed MediaPipe web package exposes a generic image prompt shape, but current package/docs scope multimodal web prompting to Gemma-3n rather than this app's Gemma 4 E2B `-web.task` path
   - kept browser Gemma available for reviewed-text mapping while marking browser image interpretation unavailable
