@@ -2,6 +2,10 @@
 
 ## Recently Completed
 
+- Cleaned PR #3 so the demo-correction branch diff stays mergeable:
+  - restored the accidental `.claude/worktrees/*` gitlink churn to match `main`, leaving only the Jordan demo correction work in the branch diff
+  - kept the `onApplyDemoAccommodationCorrection` wiring, seeded correction text, and demo-case coverage intact
+  - PR #4's separate Claude worktree remains out of scope for this branch
 - Tightened the Jordan video demo so model interpretation stays real:
   - kept both seeded images on the labeled Ollama/Gemma image-reading path instead of using preloaded task text
   - added a demo-only accommodation correction button that appears after the first IEP image interpretation attempt
