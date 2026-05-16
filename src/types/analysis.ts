@@ -61,6 +61,7 @@ export interface AttachmentInterpretationProgress {
 
 export interface UploadedAttachment {
   confidenceFlags?: DocumentConfidenceFlags
+  demoCorrectionSource?: 'jordan_accommodation_actual'
   documentDraft?: StructuredDocumentDraft
   documentKind?: DocumentKind
   extractedText?: string
@@ -70,9 +71,11 @@ export interface UploadedAttachment {
   interpretationProgress?: AttachmentInterpretationProgress
   isDemoSeed?: boolean
   kind: AttachmentKind
+  manualEditSummary?: string[]
   name: string
   notes: string[]
   rawTranscript?: string
+  rawDemoOutput?: string
   readContainsUnclearText?: boolean
   readError?: string
   readMethod?: AttachmentReadMethod

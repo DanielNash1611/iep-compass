@@ -11,10 +11,46 @@ export const jordanDemoScenario: ExampleScenario = {
   id: JORDAN_DEMO_EXAMPLE_ID,
   iepExcerpt: '',
   summary:
-    'Synthetic IEP and assignment photos ready for the Ollama backup reader.',
+    'Synthetic IEP and assignment photos with reviewable fallback text for the video demo.',
   taskText: '',
   taskTitle: 'Character Change Paragraph',
   title: 'Jordan M. writing assignment',
+}
+
+const JORDAN_DEMO_IEP_ACTUAL_TEXT = `Student name: Jordan M.
+Disability/profile wording:
+- Auditory Processing Disorder
+- Specific Learning Disability in reading and written expression
+
+Accommodations:
+- Provide written and verbal directions.
+- Break directions and assignments into smaller steps.
+- Allow extended time to process information and complete tasks.
+- Provide copies of key information, including instructions, vocabulary, schedules, and teacher notes.
+- Seat Jordan near the teacher and away from high-traffic or noisy areas when possible.
+- Use visual supports such as graphic organizers, charts, timelines, and anchor charts.
+- Permit assistive technology for reading and writing tasks, including text-to-speech, speech-to-text, audiobooks, and dictation.
+- Check for understanding using written, visual, or modeled examples.
+- Preview vocabulary and key concepts before reading or writing tasks.
+- Allow alternative ways to show understanding, such as written, oral, visual, or project-based responses.
+
+Modifications:
+- Minimize copying from the board when the same information can be provided in writing.
+- Provide guided notes or an outline when lectures are used.`
+
+export function getJordanDemoAccommodationCorrection(attachmentId: string) {
+  if (attachmentId === 'demo-jordan-iep-snapshot') {
+    return {
+      correctedText: JORDAN_DEMO_IEP_ACTUAL_TEXT,
+      manualEditSummary: [
+        'Inserted the confirmed accommodation text from the synthetic demo snapshot after the first model pass.',
+        'Separated accommodations from modifications so the source trail stays easier to review.',
+        'Kept the original model draft available for comparison.',
+      ],
+    }
+  }
+
+  return null
 }
 
 function createDemoFile(name: string) {

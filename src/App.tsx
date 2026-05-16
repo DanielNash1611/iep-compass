@@ -7,6 +7,7 @@ import BrowserGemmaApp from './features/on-device/BrowserGemmaApp'
 import { ProductionLaunchGate } from './features/on-device/ProductionLaunchGate'
 import {
   createJordanDemoSources,
+  getJordanDemoAccommodationCorrection,
   JORDAN_DEMO_EXAMPLE_ID,
 } from './data/demoCase.ts'
 import { exampleScenarios } from './data/examples'
@@ -544,6 +545,47 @@ function IepCompassApp() {
     }))
   }
 
+  function applyJordanDemoAccommodationCorrection(attachmentId: string) {
+    const correction = getJordanDemoAccommodationCorrection(attachmentId)
+
+    if (!correction) {
+      return
+    }
+
+    patchMainAttachment(
+      'iep',
+      attachmentId,
+      (current) =>
+        refreshAttachmentNotes({
+          ...current,
+          confidenceFlags: undefined,
+          demoCorrectionSource: 'jordan_accommodation_actual',
+          documentDraft: undefined,
+          documentKind: 'iep_accommodations',
+          extractedText: correction.correctedText,
+          manualEditSummary: correction.manualEditSummary,
+          pageCount: undefined,
+          processedPageCount: undefined,
+          rawDemoOutput:
+            current.rawDemoOutput
+            ?? current.extractedText
+            ?? current.rawTranscript
+            ?? current.readError,
+          rawTranscript: undefined,
+          readContainsUnclearText: false,
+          readError: undefined,
+          readNotes: [
+            ...(current.readNotes ?? []),
+            'Demo correction inserted confirmed text from the synthetic Jordan accommodation snapshot.',
+          ],
+          reviewedText: undefined,
+          sourceTrailText: undefined,
+          status: 'review_ready' as const,
+        }),
+      false,
+    )
+  }
+
   async function appendFilesToMainSource(sourceKey: SourceKey, files: File[]) {
     const nextAttachments = files.map((file) => createUploadedAttachment(file))
 
@@ -641,6 +683,9 @@ function IepCompassApp() {
           startedAt,
           current.interpretationProgress,
         ),
+        demoCorrectionSource: undefined,
+        manualEditSummary: undefined,
+        rawDemoOutput: undefined,
         readError: undefined,
         readNotes: [],
         status: 'interpret_running',
@@ -665,10 +710,13 @@ function IepCompassApp() {
             refreshAttachmentNotes({
               ...current,
               confidenceFlags: undefined,
+              demoCorrectionSource: undefined,
               documentDraft: undefined,
               documentKind: 'iep_accommodations',
               extractedText: readingResult.extractedText,
+              manualEditSummary: undefined,
               rawTranscript: undefined,
+              rawDemoOutput: undefined,
               readContainsUnclearText: hasUncertaintyMarkers(readingResult.extractedText),
               readError: undefined,
               readMethod: readingResult.readMethod,
@@ -719,11 +767,14 @@ function IepCompassApp() {
           refreshAttachmentNotes({
             ...current,
             confidenceFlags: readingResult.documentResult.confidenceFlags,
+            demoCorrectionSource: undefined,
             documentDraft: normalizeDocumentDraft(
               readingResult.documentResult.reviewDraft,
             ),
             documentKind: readingResult.documentResult.documentKind,
+            manualEditSummary: undefined,
             rawTranscript: readingResult.documentResult.rawTranscript,
+            rawDemoOutput: undefined,
             readContainsUnclearText:
               readingResult.documentResult.confidenceFlags.containsUnclearText,
             readError: undefined,
@@ -1911,6 +1962,9 @@ function IepCompassApp() {
                   onKeepAttachmentReference={(attachmentId) =>
                     keepMainAttachmentReference('iep', attachmentId)
                   }
+                  onApplyDemoAccommodationCorrection={
+                    applyJordanDemoAccommodationCorrection
+                  }
                   onRunAttachmentInterpretation={(attachmentId) =>
                     runMainAttachmentInterpretation('iep', attachmentId)
                   }
@@ -1967,10 +2021,11 @@ function IepCompassApp() {
 
                   <div className="optional-panel__body">
                     <p className="field-message">
-                      The Jordan M. case loads two pre-reviewed sample images so
-                      the phone demo can walk through accommodation review, task
-                      review, and results without a live upload. The other
-                      scenarios are typed-only previews.
+                      The Jordan M. case loads two seeded sample images for the
+                      video demo. Interpret the IEP image, use the demo correction
+                      if the accommodation draft needs a quick fix, interpret the
+                      task image, then check what may apply. The other scenarios
+                      are typed-only previews.
                     </p>
 
                     <div className="example-grid">

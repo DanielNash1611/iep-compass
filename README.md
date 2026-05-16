@@ -156,9 +156,11 @@ The seeded demo case, `Jordan M. writing assignment`, uses two synthetic sample 
 - `public/demo/jordan-accommodation-snapshot.jpg`
 - `public/demo/jordan-character-change-paragraph.jpg`
 
-Those images load as pre-uploaded materials, but they are not automatically trusted and do not include hidden prepared text. In the demo, choose the labeled Ollama fallback action to create a new review draft from each sample image, then review and include the generated text before analysis.
+Those images load as pre-uploaded materials, but they are not automatically trusted and do not include hidden source-trail text. In the demo, choose the labeled Ollama fallback action to create a new review draft from each sample image when the local endpoint is available. The assignment image should be interpreted by the model during the demo.
 
 In the web demo, the image-reading step is handled by the configured endpoint fallback when available. Browser Gemma is used for the later mapping step: choosing from allowed accommodation IDs based on reviewed source text. The app rejects model-suggested IDs that are not in the seeded allowed list.
+
+After the first accommodation-image interpretation attempt, the Jordan IEP card can show an `Apply demo correction` helper. That helper is only for the synthetic accommodation snapshot: it inserts the confirmed accommodation wording, keeps the original model draft visible for comparison, and still requires review before anything enters the source trail.
 
 The upload UI distinguishes three states:
 

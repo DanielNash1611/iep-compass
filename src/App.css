@@ -806,6 +806,15 @@
   font-size: 0.9rem;
 }
 
+.demo-draft-provenance {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.78rem 0.85rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--success) 34%, white);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--success) 28%, white), var(--surface));
+}
+
 .interpretation-progress {
   display: grid;
   gap: 0.35rem;

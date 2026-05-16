@@ -114,7 +114,9 @@ function buildStatusNotes(
         .filter(Boolean) as string[]
     case 'review_ready':
       return [
-        'Structured document draft is ready. Review it before using it in the source trail.',
+        attachment.documentDraft
+          ? 'Structured document draft is ready. Review it before using it in the source trail.'
+          : 'Extracted text is ready. Review it before using it in the source trail.',
         buildInterpretationTimingNote(attachment),
         buildPdfProgressNote(attachment),
         ...(attachment.readContainsUnclearText

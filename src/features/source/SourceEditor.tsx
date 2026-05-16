@@ -39,6 +39,7 @@ interface SourceEditorProps {
   ) => void
   onChooseFiles: (files: File[]) => Promise<void>
   onKeepAttachmentReference: (attachmentId: string) => void
+  onApplyDemoAccommodationCorrection?: (attachmentId: string) => void
   onRemoveAttachment: (attachmentId: string) => void
   onRunAttachmentInterpretation: (attachmentId: string) => Promise<void>
   onTextChange: (nextValue: string) => void
@@ -252,6 +253,62 @@ function renderRawTranscript(rawTranscript?: string) {
 
       <p className="source-snippet__body">{rawTranscript}</p>
     </details>
+  )
+}
+
+function DemoDraftProvenance({ attachment }: { attachment: UploadedAttachment }) {
+  if (!attachment.isDemoSeed) {
+    return null
+  }
+
+  const hasDemoCorrection = Boolean(attachment.demoCorrectionSource)
+  const hasLiveDraft = Boolean(attachment.readMethod)
+
+  if (!hasDemoCorrection && !hasLiveDraft) {
+    return null
+  }
+
+  const sourceLabel = hasDemoCorrection
+    ? 'Ollama backup, then demo correction'
+    : 'Ollama backup'
+
+  return (
+    <div className="demo-draft-provenance">
+      <div>
+        <p className="eyebrow">Demo draft source</p>
+        <p className="field-message">
+          {sourceLabel}. Review this draft before it becomes part of the source trail.
+        </p>
+      </div>
+
+      {attachment.manualEditSummary?.length ? (
+        <details className="source-snippet">
+          <summary className="source-snippet__summary">
+            <span className="summary-label">
+              <AppIcon name="check" className="button-icon button-icon--sm" />
+              What was cleaned up
+            </span>
+          </summary>
+          <ul className="attachment-card__notes">
+            {attachment.manualEditSummary.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
+      {attachment.rawDemoOutput?.trim() ? (
+        <details className="source-snippet">
+          <summary className="source-snippet__summary">
+            <span className="summary-label">
+              <AppIcon name="source" className="button-icon button-icon--sm" />
+              Show original model draft
+            </span>
+          </summary>
+          <p className="source-snippet__body">{attachment.rawDemoOutput}</p>
+        </details>
+      ) : null}
+    </div>
   )
 }
 
@@ -1118,6 +1175,7 @@ export function SourceEditor({
   onAttachmentDocumentDraftChange,
   onChooseFiles,
   onKeepAttachmentReference,
+  onApplyDemoAccommodationCorrection,
   onRemoveAttachment,
   onRunAttachmentInterpretation,
   onTextChange,
@@ -1375,6 +1433,14 @@ export function SourceEditor({
                 documentPlan,
               )
               const canOpenTextReview = canReviewExtractedText(attachment)
+              const canApplyDemoCorrection = Boolean(
+                onApplyDemoAccommodationCorrection
+                && attachment.isDemoSeed
+                && attachment.id === 'demo-jordan-iep-snapshot'
+                && !attachment.demoCorrectionSource
+                && (attachment.status === 'review_ready' || attachment.status === 'failed')
+                && (attachment.readMethod || attachment.readError),
+              )
 
               return (
                 <article key={attachment.id} className="attachment-card">
@@ -1427,6 +1493,19 @@ export function SourceEditor({
                       </p>
                     ) : null}
 
+                    {canApplyDemoCorrection ? (
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => {
+                          onApplyDemoAccommodationCorrection?.(attachment.id)
+                          setRequestedTextReviewId(attachment.id)
+                        }}
+                      >
+                        Apply demo correction
+                      </button>
+                    ) : null}
+
                     {canOpenTextReview ? (
                       <button
                         className="ghost-button"
@@ -1449,6 +1528,8 @@ export function SourceEditor({
                   </div>
 
                   <InterpretationProgressStatus attachment={attachment} now={now} />
+
+                  <DemoDraftProvenance attachment={attachment} />
 
                   {attachment.notes.length > 0 ? (
                     <ul className="attachment-card__notes">
