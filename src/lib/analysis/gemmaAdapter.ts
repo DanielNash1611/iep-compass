@@ -134,7 +134,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
           mode: demoResult.usedFallback ? 'demo' : 'live',
           model: demoResult.usedFallback ? STRUCTURED_DEMO_LABEL : 'Gemma 4 E2B',
           notes: [
-            'Demo document reading may use the labeled Ollama fallback, but this reviewed-text mapping step is routed through Browser Gemma first.',
+            'Presentation document reading may use the labeled local Gemma image reader, but this reviewed-text mapping step is routed through Browser Gemma first.',
             ...demoResult.notes,
             ...attachmentNotes,
           ],
@@ -227,7 +227,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
             model: STRUCTURED_DEMO_LABEL,
             notes: [
               `Primary model issue (${primaryLabel}): ${formatError(primaryError)}`,
-              `Fallback model issue (${formatModelLabel(this.config.fallbackModel)}): ${formatError(fallbackError)}`,
+              `Secondary model issue (${formatModelLabel(this.config.fallbackModel)}): ${formatError(fallbackError)}`,
               'The app dropped into deterministic demo mode so the MVP stays usable.',
               ...attachmentNotes,
             ],
@@ -332,7 +332,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
             model: STRUCTURED_DEMO_LABEL,
             notes: [
               `Primary model issue (${primaryLabel}): ${formatError(primaryError)}`,
-              `Fallback model issue (${formatModelLabel(this.config.fallbackModel)}): ${formatError(fallbackError)}`,
+              `Secondary model issue (${formatModelLabel(this.config.fallbackModel)}): ${formatError(fallbackError)}`,
               'The app dropped into deterministic demo mode so the MVP stays usable.',
               ...attachmentNotes,
             ],

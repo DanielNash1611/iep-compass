@@ -85,7 +85,7 @@ export function PreviewReviewPanel({
           <div>
             <strong>Model plan</strong>
             <p>
-              Primary model: {modelPlan.primaryLabel}. Fallback: {modelPlan.fallbackLabel}.
+              Primary model: {modelPlan.primaryLabel}. Secondary path: {modelPlan.fallbackLabel}.
               {modelPlan.liveConfigured
                 ? ` ${modelPlan.runtimeLabel} is configured for live analysis.`
                 : ' No endpoint is configured yet, so the app stays in demo mode with the same structured schema.'}

@@ -2,6 +2,14 @@
 
 ## Recently Completed
 
+- Prepared the repo and app surface for Gemma 4 Good submission-day review:
+  - removed tracked `.claude/worktrees/*` and generated `tmp/quiz-practice-*` reports from the public source surface
+  - added `.claude/` and `tmp/` to `.gitignore` while keeping real image-eval baselines under `scripts/evals/image/baselines/`
+  - added an MIT license and a submission-ready Kaggle writeup draft under `docs/submission/`
+  - updated the browser tab title and meta description to IEP Compass product language
+  - reframed user-facing Gemma copy around Browser Gemma 4 E2B reviewed-text mapping plus a labeled local Gemma image reader
+  - lazy-loaded the optional Browser Gemma testing panel and browser model bootstrap so the main app shell stays lighter
+  - ran the lighter `gemma4:e2b` accommodation comparison snapshot; it wrote fresh baseline reports with `pass_rate=0.5`, `condition_preservation=1.0`, and known failures on Jordan snapshot, mixed-section filtering, and the real phone-photo uncertainty/OCR case
 - Cleaned PR #3 so the demo-correction branch diff stays mergeable:
   - restored the accidental `.claude/worktrees/*` gitlink churn to match `main`, leaving only the Jordan demo correction work in the branch diff
   - kept the `onApplyDemoAccommodationCorrection` wiring, seeded correction text, and demo-case coverage intact
@@ -291,6 +299,7 @@
 
 ## Current Focus
 
+- Finish submission-day acceptance checks: production redeploy smoke and public GitHub visibility verification.
 - Validate the formatted upload-review text on real IEP photos and check whether section heading/bullet hierarchy makes correction faster on phone.
 - Try the new assignment review fields in the live app with the quiz-practice photo and confirm the overlay lets the user answer practice-vs-quiz and 30-minute timing without cluttering the main text box.
 - Re-run the full assignment image eval suite after the follow-up-question fallback and key-requirement normalization pass, then tune the remaining math/worksheet cases without weakening the no-answering guardrail.
