@@ -76,8 +76,8 @@ test('configured Ollama endpoint restores demo image interpretation as a labeled
   )
 
   assert.equal(action.canInterpret, true)
-  assert.equal(action.label, 'Interpret with local Gemma')
-  assert.match(action.note, /create a new review draft/i)
+  assert.equal(action.label, 'Read this image')
+  assert.match(action.note, /create a draft you can check/i)
   assert.match(action.note, /stays as a reference/i)
 })
 

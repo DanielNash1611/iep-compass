@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import './App.css'
+import { BrandLockup } from './components/BrandLockup'
 import { AppIcon, type AppIconName } from './components/AppIcon'
 import { LoadingIndicator } from './components/LoadingIndicator'
 import { SectionCard } from './components/SectionCard'
@@ -1835,6 +1836,8 @@ function IepCompassApp() {
         {screen === 'iep' ? (
           <header className="app-header">
             <div className="app-header__copy">
+              <BrandLockup as="h1" className="app-header__brand" />
+
               <div className="app-header__eyebrow-row">
                 <span className="eyebrow eyebrow--hero">
                   <AppIcon name="compass" className="button-icon button-icon--sm" />
@@ -1848,7 +1851,6 @@ function IepCompassApp() {
 
               <div className="app-header__main">
                 <div className="app-header__headline">
-                  <h1>IEP Compass</h1>
                   <p className="app-header__lede">
                     First, add your IEP. Then add your school work. We will show
                     you which of your supports fit, what you can say, and what to
@@ -1916,7 +1918,7 @@ function IepCompassApp() {
                   <AppIcon name="waypoint" className="button-icon button-icon--sm" />
                   Step-by-step support helper
                 </span>
-                <h1>IEP Compass</h1>
+                <BrandLockup as="h1" compact className="app-header__brand" />
               </div>
 
               <button

@@ -67,10 +67,9 @@ export function SourceReviewPanel({
             <div className="source-review-block">
               <h3>Files not used yet</h3>
               <p>
-                {pendingReviewAttachments.length}{' '}
                 {pendingReviewAttachments.length === 1
-                  ? 'file still needs a quick check before it can be used.'
-                  : 'files still need a quick check before they can be used.'}
+                  ? 'File text is ready, but it still needs to be reviewed and accepted before it can be used in results.'
+                  : 'File text is ready, but each draft still needs to be reviewed and accepted before it can be used in results.'}
               </p>
             </div>
           ) : null}

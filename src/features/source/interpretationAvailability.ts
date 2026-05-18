@@ -47,16 +47,16 @@ export function getAttachmentInterpretationAction(
 
   const label =
     documentPlan.imageInterpretationMode === 'browser'
-      ? 'Interpret privately in browser'
+      ? 'Read this image in the browser'
       : documentPlan.endpointFallback.runtimeLabel === 'Local Ollama'
-        ? 'Interpret with local Gemma'
-        : 'Interpret with configured endpoint'
+        ? 'Read this image'
+        : 'Read with the saved reader'
 
   let note: string | null = null
 
   if (attachment.isDemoSeed && isInterpretable && isRetryState) {
     note = documentPlan.endpointFallback.configured
-      ? `Run this sample image through the ${documentPlan.endpointFallback.runtimeLabel} image reader to create a new review draft. The original image stays as a reference until you approve the extracted wording.`
+      ? `Read this sample image with the ${documentPlan.endpointFallback.runtimeLabel} image reader to create a draft you can check. The original image stays as a reference until you approve the wording.`
       : 'No local image reader is configured. Paste the visible wording manually, enter an Ollama endpoint in this browser, or run locally with VITE_GEMMA_BASE_URL=/api/ollama in .env.local.'
   } else if (needsModel) {
     note = documentPlan.browserImageInterpretation.supported

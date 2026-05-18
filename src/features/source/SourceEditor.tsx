@@ -1,5 +1,6 @@
 import type { ChangeEvent, ReactNode } from 'react'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type {
   IepReviewDraft,
   StructuredDocumentDraft,
@@ -330,6 +331,15 @@ function canReviewExtractedText(attachment: UploadedAttachment) {
   )
 }
 
+function canReviewStructuredDocument(attachment: UploadedAttachment) {
+  return Boolean(
+    attachment.documentDraft
+      && (attachment.status === 'review_ready'
+        || attachment.status === 'included'
+        || attachment.status === 'reference_only'),
+  )
+}
+
 function TextAttachmentReviewDialog({
   attachment,
   onApply,
@@ -348,6 +358,7 @@ function TextAttachmentReviewDialog({
   )
   const [findText, setFindText] = useState('')
   const [replaceText, setReplaceText] = useState('')
+  const dialogRef = useRef<HTMLElement>(null)
   const cleanedReviewText = formatAccommodationReviewText(draftText)
   const canCleanFormatting = cleanedReviewText !== draftText.trim()
   const canApplyExactFix =
@@ -367,13 +378,43 @@ function TextAttachmentReviewDialog({
     setReplaceText('')
   }
 
-  return (
-    <div className="review-overlay" role="presentation">
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+
+    document.body.style.overflow = 'hidden'
+    dialogRef.current?.focus()
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  const overlay = (
+    <div
+      className="review-overlay"
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+    >
       <section
         aria-labelledby="review-dialog-title"
         aria-modal="true"
         className="review-dialog"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="review-dialog__header">
           <div>
@@ -493,6 +534,95 @@ function TextAttachmentReviewDialog({
       </section>
     </div>
   )
+
+  return createPortal(overlay, document.body)
+}
+
+function StructuredAttachmentReviewDialog({
+  attachment,
+  onAttachmentDocumentDraftChange,
+  onClose,
+  onKeepAttachmentReference,
+  onUseAttachmentSource,
+}: {
+  attachment: UploadedAttachment
+  onAttachmentDocumentDraftChange: (
+    attachmentId: string,
+    nextDraft: UploadedAttachment['documentDraft'],
+  ) => void
+  onClose: () => void
+  onKeepAttachmentReference: (attachmentId: string) => void
+  onUseAttachmentSource: (attachmentId: string) => void
+}) {
+  const dialogRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+
+    document.body.style.overflow = 'hidden'
+    dialogRef.current?.focus()
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  const overlay = (
+    <div
+      className="review-overlay review-overlay--structured"
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <section
+        aria-labelledby="structured-review-dialog-title"
+        aria-modal="true"
+        className="review-dialog review-dialog--structured"
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
+        <div className="review-dialog__header">
+          <div>
+            <p className="eyebrow">Check the file</p>
+            <h3 id="structured-review-dialog-title">
+              Check what we found in this file
+            </h3>
+          </div>
+          <button className="ghost-button" type="button" onClick={onClose}>
+            Close
+          </button>
+        </div>
+
+        <StructuredAttachmentReview
+          attachment={attachment}
+          onAttachmentDocumentDraftChange={onAttachmentDocumentDraftChange}
+          onKeepAttachmentReference={(attachmentId) => {
+            onKeepAttachmentReference(attachmentId)
+            onClose()
+          }}
+          onUseAttachmentSource={(attachmentId) => {
+            onUseAttachmentSource(attachmentId)
+            onClose()
+          }}
+        />
+      </section>
+    </div>
+  )
+
+  return createPortal(overlay, document.body)
 }
 
 function IepDocumentReview({
@@ -1139,9 +1269,15 @@ export function SourceEditor({
   )
   const [now, setNow] = useState(() => Date.now())
   const [requestedTextReviewId, setRequestedTextReviewId] = useState<string | null>(null)
+  const [requestedStructuredReviewId, setRequestedStructuredReviewId] = useState<
+    string | null
+  >(null)
   const [dismissedTextReviewIds, setDismissedTextReviewIds] = useState<Set<string>>(
     () => new Set(),
   )
+  const [dismissedStructuredReviewIds, setDismissedStructuredReviewIds] = useState<
+    Set<string>
+  >(() => new Set())
   const requestedTextReviewAttachment = attachments.find(
     (attachment) =>
       attachment.id === requestedTextReviewId && canReviewExtractedText(attachment),
@@ -1154,6 +1290,19 @@ export function SourceEditor({
   )
   const activeTextReviewAttachment =
     requestedTextReviewAttachment || automaticTextReviewAttachment
+  const requestedStructuredReviewAttachment = attachments.find(
+    (attachment) =>
+      attachment.id === requestedStructuredReviewId
+      && canReviewStructuredDocument(attachment),
+  )
+  const automaticStructuredReviewAttachment = attachments.find(
+    (attachment) =>
+      attachment.status === 'review_ready'
+      && canReviewStructuredDocument(attachment)
+      && !dismissedStructuredReviewIds.has(attachment.id),
+  )
+  const activeStructuredReviewAttachment =
+    requestedStructuredReviewAttachment || automaticStructuredReviewAttachment
 
   const {
     errorMessage,
@@ -1190,6 +1339,16 @@ export function SourceEditor({
     }
 
     setRequestedTextReviewId(null)
+  }
+
+  function closeStructuredReview() {
+    if (activeStructuredReviewAttachment) {
+      setDismissedStructuredReviewIds((currentIds) =>
+        new Set(currentIds).add(activeStructuredReviewAttachment.id),
+      )
+    }
+
+    setRequestedStructuredReviewId(null)
   }
 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
@@ -1279,11 +1438,12 @@ export function SourceEditor({
               onApplyDemoAccommodationCorrection(jordanDemoIepAttachment.id)
             }
           >
-            Apply reviewed Jordan demo supports
+            Use reviewed eval version
           </button>
           <p className="field-message">
-            For the live demo, replace the rough upload read with the reviewed
-            accommodations and modifications from the synthetic Jordan snapshot.
+            For the live demo, use the fully accurate Jordan supports that were
+            reviewed for the eval. This speeds up the step after the small local
+            model gives a rough read of the snapshot.
           </p>
         </div>
       ) : null}
@@ -1316,8 +1476,6 @@ export function SourceEditor({
       </summary>
 
       <div className="source-editor__uploads-body">
-        <p className="upload-guidance">{uploadGuidance}</p>
-
         {reviewedSourceCount > 0 ? (
           <p className="field-message">
             {reviewedSourceCount}{' '}
@@ -1327,29 +1485,42 @@ export function SourceEditor({
         ) : null}
 
         {pendingReviewCount > 0 ? (
-          <p className="field-message field-message--hint">
-            {pendingReviewCount}{' '}
+          <p className="field-message field-message--review-needed">
             {pendingReviewCount === 1
-              ? 'file still needs a quick check'
-              : 'files still need a quick check'}{' '}
-            before it can be used.
+              ? 'File text is ready. Review the draft below and tap Use this so it can be used in results.'
+              : 'File text is ready. Review each draft below and tap Use this so they can be used in results.'}
           </p>
         ) : null}
 
-        {attachments.some(
-          (attachment) => attachment.kind === 'image' || attachment.kind === 'pdf',
-        ) ? (
-          <div className="field-message field-message--status-list">
-            {getDocumentReadingStatusMessages(documentPlan).map((message) => (
-              <p key={message}>{message}</p>
-            ))}
-            {documentPlan.isRemote ? (
-              <p>
-                Choosing the endpoint action sends the file image to your configured
-                model endpoint so it can build reviewable text or a structured task
-                draft.
-              </p>
+        <details className="upload-learn-more">
+          <summary className="upload-learn-more__summary">
+            <span className="summary-label">
+              <AppIcon name="source" className="button-icon button-icon--sm" />
+              Learn about photos and local reading
+            </span>
+            <span className="meta-badge">Optional</span>
+          </summary>
+
+          <div className="upload-learn-more__body">
+            <p className="upload-guidance">{uploadGuidance}</p>
+
+            {attachments.some(
+              (attachment) => attachment.kind === 'image' || attachment.kind === 'pdf',
+            ) ? (
+              <div className="field-message field-message--status-list">
+                {getDocumentReadingStatusMessages(documentPlan).map((message) => (
+                  <p key={message}>{message}</p>
+                ))}
+                {documentPlan.isRemote ? (
+                  <p>
+                    Choosing the endpoint action sends the file image to your
+                    configured model endpoint so it can build reviewable text or a
+                    structured task draft.
+                  </p>
+                ) : null}
+              </div>
             ) : null}
+
             {!documentPlan.endpointFallback.configured ||
             ollamaEndpoint.savedBaseUrl ? (
               <OllamaEndpointControl
@@ -1358,7 +1529,7 @@ export function SourceEditor({
               />
             ) : null}
           </div>
-        ) : null}
+        </details>
 
         <div className="upload-actions">
           <label className="action-button" htmlFor={cameraInputId}>
@@ -1396,6 +1567,7 @@ export function SourceEditor({
                 documentPlan,
               )
               const canOpenTextReview = canReviewExtractedText(attachment)
+              const canOpenStructuredReview = canReviewStructuredDocument(attachment)
               const recordedRun =
                 onApplyDemoRecordedRun && attachment.isDemoSeed
                   ? getJordanDemoRecordedRun(attachment.id)
@@ -1478,6 +1650,18 @@ export function SourceEditor({
                       </button>
                     ) : null}
 
+                    {canOpenStructuredReview ? (
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => setRequestedStructuredReviewId(attachment.id)}
+                      >
+                        {attachment.status === 'review_ready'
+                          ? 'Check what we found'
+                          : 'Review file details'}
+                      </button>
+                    ) : null}
+
                     {attachment.status !== 'reference_only' ? (
                       <button
                         className="ghost-button"
@@ -1500,13 +1684,6 @@ export function SourceEditor({
                       ))}
                     </ul>
                   ) : null}
-
-                  <StructuredAttachmentReview
-                    attachment={attachment}
-                    onAttachmentDocumentDraftChange={onAttachmentDocumentDraftChange}
-                    onKeepAttachmentReference={onKeepAttachmentReference}
-                    onUseAttachmentSource={onUseAttachmentSource}
-                  />
                 </article>
               )
             })}
@@ -1530,6 +1707,16 @@ export function SourceEditor({
           attachment={activeTextReviewAttachment}
           onApply={onApplyAttachmentTextReview}
           onClose={closeTextReview}
+        />
+      ) : null}
+      {activeStructuredReviewAttachment ? (
+        <StructuredAttachmentReviewDialog
+          key={activeStructuredReviewAttachment.id}
+          attachment={activeStructuredReviewAttachment}
+          onAttachmentDocumentDraftChange={onAttachmentDocumentDraftChange}
+          onClose={closeStructuredReview}
+          onKeepAttachmentReference={onKeepAttachmentReference}
+          onUseAttachmentSource={onUseAttachmentSource}
         />
       ) : null}
     </div>
