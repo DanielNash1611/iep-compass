@@ -61,6 +61,7 @@ interface ResultsViewProps {
   onAskAboutAccommodation?: (
     item: AnalysisExecution['result']['notObviouslyRelevant'][number],
   ) => void
+  onRerun?: () => void
 }
 
 interface SupportGroup {
@@ -116,8 +117,13 @@ function buildAlternativeAccommodationScripts(name: string) {
   ]
 }
 
-export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewProps) {
+export function ResultsView({
+  analysis,
+  onAskAboutAccommodation,
+  onRerun,
+}: ResultsViewProps) {
   const supportGroups = buildSupportGroups(analysis)
+  const isCachedResult = analysis.meta.mode === 'demo'
   const likelyCount = supportGroups[0].items.length
   const confirmCount = supportGroups[1].items.length
   const studentGuidance = analysis.result.studentGuidance
@@ -166,6 +172,28 @@ export function ResultsView({ analysis, onAskAboutAccommodation }: ResultsViewPr
           </dl>
         </div>
       </SectionCard>
+
+      <div
+        className={`results-source-note${
+          isCachedResult ? ' results-source-note--cached' : ''
+        }`}
+      >
+        <p className="results-source-note__text">
+          <AppIcon
+            name={isCachedResult ? 'flag' : 'check'}
+            className="button-icon button-icon--sm"
+          />
+          {isCachedResult
+            ? 'This mapping used a saved demo response, not a fresh model run.'
+            : 'This mapping was generated fresh, not from a saved demo response.'}
+        </p>
+        {isCachedResult && onRerun ? (
+          <button className="ghost-button" type="button" onClick={onRerun}>
+            <AppIcon name="results" className="button-icon button-icon--sm" />
+            Re-run the mapping
+          </button>
+        ) : null}
+      </div>
 
       {analysis.result.relevantAccommodations.length === 0 ? (
         <SectionCard

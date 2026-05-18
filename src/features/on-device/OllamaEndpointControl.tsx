@@ -87,18 +87,33 @@ export function OllamaEndpointControl({
     onEndpointChange(resolveOllamaEndpoint())
   }
 
-  return (
-    <div className="ollama-endpoint-control">
-      <label className="field-label" htmlFor={endpointInputId}>
-        <span className="field-label__title">Configure Ollama endpoint</span>
-        <span className="field-label__help">
-          Enter the OpenAI-compatible Ollama URL for this browser, or run the app
-          locally with <code>VITE_GEMMA_BASE_URL=/api/ollama</code> in{' '}
-          <code>.env.local</code>.
-        </span>
-      </label>
+  const statusBadge =
+    visibleEndpoint.source === 'saved'
+      ? 'Saved'
+      : visibleEndpoint.source === 'env'
+        ? 'From .env.local'
+        : 'Optional'
 
-      <div className="ollama-endpoint-control__row">
+  return (
+    <details className="ollama-endpoint-control">
+      <summary className="ollama-endpoint-control__summary">
+        <span className="summary-label">
+          <AppIcon name="spark" className="button-icon button-icon--sm" />
+          Set up a local image reader
+        </span>
+        <span className="meta-badge">{statusBadge}</span>
+      </summary>
+
+      <div className="ollama-endpoint-control__body">
+        <label className="field-label" htmlFor={endpointInputId}>
+          <span className="field-label__help">
+            Optional. Enter the OpenAI-compatible Ollama URL for this browser, or
+            run the app locally with <code>VITE_GEMMA_BASE_URL=/api/ollama</code> in{' '}
+            <code>.env.local</code>.
+          </span>
+        </label>
+
+        <div className="ollama-endpoint-control__row">
         <input
           id={endpointInputId}
           className="text-input"
@@ -136,15 +151,16 @@ export function OllamaEndpointControl({
         </button>
       ) : null}
 
-      {statusMessage ? (
-        <p
-          className={`ollama-endpoint-control__status${
-            statusTone ? ` ollama-endpoint-control__status--${statusTone}` : ''
-          }`}
-        >
-          {statusMessage}
-        </p>
-      ) : null}
-    </div>
+        {statusMessage ? (
+          <p
+            className={`ollama-endpoint-control__status${
+              statusTone ? ` ollama-endpoint-control__status--${statusTone}` : ''
+            }`}
+          >
+            {statusMessage}
+          </p>
+        ) : null}
+      </div>
+    </details>
   )
 }
