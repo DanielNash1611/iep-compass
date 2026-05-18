@@ -532,6 +532,14 @@
   color: var(--text-subtle);
 }
 
+.demo-supports-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
 .local-save-note {
   display: flex;
   flex-wrap: wrap;

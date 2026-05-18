@@ -2,6 +2,11 @@
 
 ## Recently Completed
 
+- Moved the Jordan demo correction control out of the upload attachment card so the live demo is reliable:
+  - added an "Apply reviewed Jordan demo supports" button directly under the "Your IEP supports" text box, shown only when the seeded `demo-jordan-iep-snapshot` attachment is present and not yet corrected
+  - the control no longer depends on interpretation status (`status`, `readMethod`, `readError`, `extractedText`, etc.) — it appears before and after running Gemma/Ollama or the recorded run
+  - clicking it now also writes the reviewed Jordan accommodation/modification text into the main IEP source text so it is immediately visible; the button hides once applied
+  - removed the old status-gated "Apply demo correction" button from the attachment card so there is one obvious live-demo control
 - Added a user-configurable Ollama endpoint for the local backup/image-reading path:
   - introduced a shared browser endpoint resolver with localStorage key `iep-compass:ollama-base-url`, saved-over-env precedence, `/api/ollama` preservation, and bare `http://127.0.0.1:11434` normalization to `/v1`
   - wired document reading, local backup testing, and live analysis/model-plan config through the shared resolver while keeping existing `VITE_GEMMA_BASE_URL=/api/ollama` local-dev behavior
