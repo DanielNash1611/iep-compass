@@ -53,6 +53,78 @@ export function getJordanDemoAccommodationCorrection(attachmentId: string) {
   return null
 }
 
+export interface JordanDemoRecordedRun {
+  attachmentId: string
+  containsUnclearText: boolean
+  documentKind?: 'iep_accommodations'
+  elapsedMs: number
+  modelLabel: string
+  rawOutput: string
+  readMethod: 'gemma4_image'
+  runtimeLabel: string
+}
+
+// Representative recorded local Gemma image-reader output for the demo video.
+// These are stand-in transcripts so the demo flows without a live endpoint;
+// replace rawOutput and elapsedMs with a real captured run when one is available.
+const JORDAN_DEMO_RECORDED_RUNS: JordanDemoRecordedRun[] = [
+  {
+    attachmentId: 'demo-jordan-iep-snapshot',
+    containsUnclearText: true,
+    documentKind: 'iep_accommodations',
+    elapsedMs: 72000,
+    modelLabel: 'Gemma 4 E2B',
+    rawOutput: `Student name: Jordan M.
+Profile / disability wording: Auditory Processing Disorder; Specific Learning Disability in reading and written expression.
+
+Supports and accommodations:
+- Provide written and verbal directions.
+- Break directions and assignments into smaller steps.
+- Allow extended time to process information and complete tasks.
+- Provide copies of key information (instructions, vocabulary, schedules, teacher notes).
+- Seat Jordan near the teacher and away from high-traffic or noisy areas when possible.
+- Use visual supports such as graphic organizers, charts, timelines, and anchor charts.
+- Permit assistive technology for reading and writing, including text-to-speech, speech-to-text, audiobooks, and dictation.
+- Check for understanding using written, visual, or modeled examples.
+- Preview vocabulary and key concepts before reading or writing tasks.
+- Allow alternative ways to show understanding (written, oral, visual, or project-based).
+- Minimize copying from the board when the same information can be provided in writing.
+- Provide guided notes or an outline when lectures are used.
+- [unclear] the last line near the bottom of the page is partly cut off.`,
+    readMethod: 'gemma4_image',
+    runtimeLabel: 'Local Ollama',
+  },
+  {
+    attachmentId: 'demo-jordan-task-photo',
+    containsUnclearText: false,
+    elapsedMs: 58000,
+    modelLabel: 'Gemma 4 E2B',
+    rawOutput: `7th Grade ELA - Writing Assignment
+Character Change Paragraph
+
+Story: "The Scholarship Jacket"
+
+Directions:
+Write one paragraph that explains how the main character changes from the beginning of the story to the end. Your paragraph should:
+- Start with a clear topic sentence that names the character and the change.
+- Give at least two pieces of text evidence that show the change.
+- Explain how each piece of evidence supports your point.
+- End with a concluding sentence.
+
+Length: about 6-8 sentences. Due at the end of class.`,
+    readMethod: 'gemma4_image',
+    runtimeLabel: 'Local Ollama',
+  },
+]
+
+export function getJordanDemoRecordedRun(
+  attachmentId: string,
+): JordanDemoRecordedRun | null {
+  return (
+    JORDAN_DEMO_RECORDED_RUNS.find((run) => run.attachmentId === attachmentId) ?? null
+  )
+}
+
 function createDemoFile(name: string) {
   return new File([], name, {
     lastModified: 0,

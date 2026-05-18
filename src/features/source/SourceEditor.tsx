@@ -21,6 +21,7 @@ import { formatElapsedTime } from '../upload/fileUtils'
 import { formatAccommodationReviewText } from '../../lib/text/accommodationReviewFormatting'
 import { toStudentFacingFollowUp } from '../../lib/text/assignmentFollowUps'
 import { getAttachmentInterpretationAction } from './interpretationAvailability'
+import { getJordanDemoRecordedRun } from '../../data/demoCase'
 
 interface SourceEditorProps {
   attachments: UploadedAttachment[]
@@ -40,6 +41,7 @@ interface SourceEditorProps {
   onChooseFiles: (files: File[]) => Promise<void>
   onKeepAttachmentReference: (attachmentId: string) => void
   onApplyDemoAccommodationCorrection?: (attachmentId: string) => void
+  onApplyDemoRecordedRun?: (attachmentId: string) => void
   onRemoveAttachment: (attachmentId: string) => void
   onRunAttachmentInterpretation: (attachmentId: string) => Promise<void>
   onTextChange: (nextValue: string) => void
@@ -1097,6 +1099,7 @@ export function SourceEditor({
   onChooseFiles,
   onKeepAttachmentReference,
   onApplyDemoAccommodationCorrection,
+  onApplyDemoRecordedRun,
   onRemoveAttachment,
   onRunAttachmentInterpretation,
   onTextChange,
@@ -1356,6 +1359,15 @@ export function SourceEditor({
                 documentPlan,
               )
               const canOpenTextReview = canReviewExtractedText(attachment)
+              const recordedRun =
+                onApplyDemoRecordedRun && attachment.isDemoSeed
+                  ? getJordanDemoRecordedRun(attachment.id)
+                  : null
+              const canApplyRecordedRun = Boolean(
+                recordedRun
+                && attachment.status === 'interpret_ready'
+                && !interpretationAction.canInterpret,
+              )
               const canApplyDemoCorrection = Boolean(
                 onApplyDemoAccommodationCorrection
                 && attachment.isDemoSeed
@@ -1414,6 +1426,17 @@ export function SourceEditor({
                       <p className="attachment-card__model-note">
                         {interpretationAction.note}
                       </p>
+                    ) : null}
+
+                    {canApplyRecordedRun && recordedRun ? (
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => onApplyDemoRecordedRun?.(attachment.id)}
+                      >
+                        Use a previous local Gemma run (took{' '}
+                        {formatElapsedTime(recordedRun.elapsedMs)})
+                      </button>
                     ) : null}
 
                     {canApplyDemoCorrection ? (

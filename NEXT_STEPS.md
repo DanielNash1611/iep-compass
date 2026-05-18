@@ -2,6 +2,13 @@
 
 ## Recently Completed
 
+- Added a one-click "previous local Gemma run" option to the Jordan demo so the video demo flows without a configured image reader:
+  - when no local image reader is configured, each Jordan demo image card now shows a `Use a previous local Gemma run (took ...)` button
+  - clicking it inserts a representative pre-recorded raw image-reader transcript and the recorded interpretation time, landing the card in `review_ready` exactly like a live run
+  - the IEP snapshot run is a deliberately imperfect draft (mixed accommodations/modifications, one `[unclear]` marker) so the existing "Apply demo correction" cleanup step still has a visible job
+  - recorded-run data lives in `src/data/demoCase.ts` (`JORDAN_DEMO_RECORDED_RUNS` / `getJordanDemoRecordedRun`) and is marked as representative placeholders to swap for a real captured run
+  - verified the click flow for both demo images in a mobile-width browser; `npm run lint` and `npm run build` pass
+  - next: replace the seeded transcripts/timings with a real captured local Gemma image-reader run
 - Ran a middle-school clarity and error-prevention pass across the live UI:
   - rewrote step, hero, trust, results, and upload-review copy into plain student-facing language (removed jargon like "source trail", "accommodation map", "Waypoint N", "approved wording", "demo mode")
   - relabeled the three steps to "Add your IEP", "Add the school work", "See what helps", with plainer locked-step hints ("Finish step 1 first")
