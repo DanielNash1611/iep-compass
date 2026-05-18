@@ -2,6 +2,10 @@
 
 ## Recently Completed
 
+- Made the local image reader (Ollama) setup more subtle and added cached-result transparency on the results step:
+  - `OllamaEndpointControl` is now a collapsed `<details>` disclosure ("Set up a local image reader" + a Saved/From .env.local/Optional badge); the endpoint form only shows once the user opens it, instead of the whole form being visible inline
+  - the results step now shows a transparency note stating whether the mapping used a saved demo response (`meta.mode === 'demo'`) or was generated fresh
+  - when the mapping is a saved demo response, a "Re-run the mapping" button re-runs the analysis (useful after configuring a local endpoint to get a live result)
 - Moved the Jordan demo correction control out of the upload attachment card so the live demo is reliable:
   - added an "Apply reviewed Jordan demo supports" button directly under the "Your IEP supports" text box, shown only when the seeded `demo-jordan-iep-snapshot` attachment is present and not yet corrected
   - the control no longer depends on interpretation status (`status`, `readMethod`, `readError`, `extractedText`, etc.) — it appears before and after running Gemma/Ollama or the recorded run

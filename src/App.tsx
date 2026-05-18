@@ -2660,6 +2660,7 @@ function IepCompassApp() {
                 <ResultsView
                   analysis={analysis}
                   onAskAboutAccommodation={askAboutSkippedAccommodation}
+                  onRerun={() => void handleGenerateOutput()}
                 />
               ) : null}
 
