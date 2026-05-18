@@ -1131,6 +1131,12 @@ export function SourceEditor({
     (attachment) => attachment.status === 'interpret_running',
   )
   const showUploadPanel = attachments.length > 0
+  const jordanDemoIepAttachment = attachments.find(
+    (attachment) =>
+      attachment.isDemoSeed &&
+      attachment.id === 'demo-jordan-iep-snapshot' &&
+      !attachment.demoCorrectionSource,
+  )
   const [now, setNow] = useState(() => Date.now())
   const [requestedTextReviewId, setRequestedTextReviewId] = useState<string | null>(null)
   const [dismissedTextReviewIds, setDismissedTextReviewIds] = useState<Set<string>>(
@@ -1264,6 +1270,24 @@ export function SourceEditor({
         </p>
       ) : null}
 
+      {jordanDemoIepAttachment && onApplyDemoAccommodationCorrection ? (
+        <div className="demo-supports-action">
+          <button
+            className="action-button"
+            type="button"
+            onClick={() =>
+              onApplyDemoAccommodationCorrection(jordanDemoIepAttachment.id)
+            }
+          >
+            Apply reviewed Jordan demo supports
+          </button>
+          <p className="field-message">
+            For the live demo, replace the rough upload read with the reviewed
+            accommodations and modifications from the synthetic Jordan snapshot.
+          </p>
+        </div>
+      ) : null}
+
       {errorMessage ? (
         <p className="field-message field-message--warning">
           {errorMessage}{' '}
@@ -1381,14 +1405,6 @@ export function SourceEditor({
                 && attachment.status === 'interpret_ready'
                 && !interpretationAction.canInterpret,
               )
-              const canApplyDemoCorrection = Boolean(
-                onApplyDemoAccommodationCorrection
-                && attachment.isDemoSeed
-                && attachment.id === 'demo-jordan-iep-snapshot'
-                && !attachment.demoCorrectionSource
-                && (attachment.status === 'review_ready' || attachment.status === 'failed')
-                && (attachment.readMethod || attachment.readError),
-              )
 
               return (
                 <article key={attachment.id} className="attachment-card">
@@ -1449,19 +1465,6 @@ export function SourceEditor({
                       >
                         Use a previous local Gemma run (took{' '}
                         {formatElapsedTime(recordedRun.elapsedMs)})
-                      </button>
-                    ) : null}
-
-                    {canApplyDemoCorrection ? (
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() => {
-                          onApplyDemoAccommodationCorrection?.(attachment.id)
-                          setRequestedTextReviewId(attachment.id)
-                        }}
-                      >
-                        Apply demo correction
                       </button>
                     ) : null}
 

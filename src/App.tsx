@@ -593,6 +593,11 @@ function IepCompassApp() {
         }),
       false,
     )
+
+    // Demo affordance: surface the reviewed supports directly in the main
+    // "Your IEP supports" text area so the live demo shows them immediately.
+    setShouldPersistIepSource(true)
+    setIepSource((current) => ({ ...current, text: correction.correctedText }))
   }
 
   function applyJordanDemoRecordedRun(sourceKey: SourceKey, attachmentId: string) {
