@@ -11,7 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.claude/
 .vercel
+tmp/
 public/models/*.task
 public/models/*.litertlm
 !public/models/.gitkeep

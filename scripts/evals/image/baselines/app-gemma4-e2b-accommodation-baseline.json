@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-11T20:48:29.558Z",
+  "generated_at": "2026-05-18T16:05:13.539Z",
   "judge_mode": "off",
   "judge_model": "gemma4:31b",
   "model": "gemma4:e2b",
@@ -75,7 +75,7 @@
                 "failureMode": "none",
                 "outputPreview": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
                 "passLabel": "full",
-                "runtimeMs": 4675
+                "runtimeMs": 6580
               }
             ],
             "pipeline": "vision_extract_text",
@@ -117,12 +117,12 @@
             },
             "selectedPassLabel": "full",
             "extractionPreview": "Accommodation Summary\nSpeech-to-text may be used for long written responses.\nPreferential seating near direct instruction.\nTeacher notes on page edge are partly cut off.",
-            "extractionRuntimeMs": 4675,
-            "runtimeMs": 4821,
+            "extractionRuntimeMs": 6580,
+            "runtimeMs": 6726,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 4942,
+                "durationMs": 6850,
                 "failureMode": "none",
                 "status": "passed"
               }
@@ -258,7 +258,7 @@
                 "failureMode": "none",
                 "outputPreview": "Classroom Accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
                 "passLabel": "full",
-                "runtimeMs": 5420
+                "runtimeMs": 4984
               }
             ],
             "pipeline": "vision_extract_text",
@@ -300,12 +300,12 @@
             },
             "selectedPassLabel": "full",
             "extractionPreview": "Classroom Accommodations\n1. Extended time on quizzes and tests (time and a half).\n2. Small-group / reduced distraction setting for tests.\n3. Directions may be read aloud when needed.\nReviewed at annual meeting.",
-            "extractionRuntimeMs": 5420,
-            "runtimeMs": 5569,
+            "extractionRuntimeMs": 4984,
+            "runtimeMs": 5128,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 5695,
+                "durationMs": 5256,
                 "failureMode": "none",
                 "status": "passed"
               }
@@ -448,7 +448,7 @@
                 "failureMode": "none",
                 "outputPreview": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
                 "passLabel": "full",
-                "runtimeMs": 4841
+                "runtimeMs": 4217
               }
             ],
             "pipeline": "vision_extract_text",
@@ -490,12 +490,12 @@
             },
             "selectedPassLabel": "full",
             "extractionPreview": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
-            "extractionRuntimeMs": 4841,
-            "runtimeMs": 4986,
+            "extractionRuntimeMs": 4217,
+            "runtimeMs": 4368,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 5106,
+                "durationMs": 4503,
                 "failureMode": "none",
                 "status": "passed"
               }
@@ -561,6 +561,402 @@
           "output": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
           "raw_content": "Writing accommodations\nSpelling errors will not reduce score except when spelling is part of the rubric or directly assessed.\nSpeech-to-text permitted for multi-paragraph writing tasks.\nUse reviewed teacher rubric language when available.",
           "status": "passed"
+        },
+        {
+          "case": {
+            "id": "jordan_demo_iep_snapshot",
+            "image_path": "public/demo/jordan-accommodation-snapshot.jpg",
+            "label": "Jordan M. accommodation snapshot (demo seed)",
+            "notes": [
+              "Hackathon demo seed image used by the live web flow when the user taps the Jordan M. preview.",
+              "Expectations match the pre-reviewed text the app previously hard-coded for this image so the eval can measure how close live Gemma 4 extraction lands on the demo path.",
+              "Accommodations and modifications appear in separate sections; the eval should keep them distinguishable."
+            ],
+            "expected": {
+              "conditions": [],
+              "document_type": "iep_accommodation_page",
+              "expected_accommodations": [
+                {
+                  "category": "timing",
+                  "conditions": [],
+                  "label_keywords": [
+                    "extended time"
+                  ],
+                  "normalized_type": "extended_time",
+                  "source_evidence_keywords": [
+                    "process",
+                    "complete"
+                  ]
+                },
+                {
+                  "category": "instruction",
+                  "conditions": [],
+                  "label_keywords": [
+                    "break",
+                    "smaller steps"
+                  ],
+                  "normalized_type": "chunked_instructions",
+                  "source_evidence_keywords": [
+                    "directions",
+                    "assignments"
+                  ]
+                },
+                {
+                  "category": "setting",
+                  "conditions": [],
+                  "label_keywords": [
+                    "near the teacher",
+                    "away from noise"
+                  ],
+                  "normalized_type": "preferential_seating",
+                  "source_evidence_keywords": [
+                    "noise",
+                    "high-traffic"
+                  ]
+                },
+                {
+                  "category": "assistive_technology",
+                  "conditions": [],
+                  "label_keywords": [
+                    "assistive technology",
+                    "speech-to-text"
+                  ],
+                  "normalized_type": "speech_to_text",
+                  "source_evidence_keywords": [
+                    "text-to-speech",
+                    "dictation"
+                  ]
+                },
+                {
+                  "category": "instruction",
+                  "conditions": [],
+                  "label_keywords": [
+                    "written and verbal directions"
+                  ],
+                  "normalized_type": "other",
+                  "source_evidence_keywords": [
+                    "written",
+                    "verbal"
+                  ]
+                },
+                {
+                  "category": "organization",
+                  "conditions": [],
+                  "label_keywords": [
+                    "visual supports",
+                    "graphic organizers"
+                  ],
+                  "normalized_type": "other",
+                  "source_evidence_keywords": [
+                    "charts",
+                    "timelines"
+                  ]
+                },
+                {
+                  "category": "instruction",
+                  "conditions": [],
+                  "label_keywords": [
+                    "check for understanding"
+                  ],
+                  "normalized_type": "other",
+                  "source_evidence_keywords": [
+                    "written",
+                    "visual",
+                    "modeling"
+                  ]
+                },
+                {
+                  "category": "reading",
+                  "conditions": [],
+                  "label_keywords": [
+                    "preview vocabulary"
+                  ],
+                  "normalized_type": "other",
+                  "source_evidence_keywords": [
+                    "key concepts"
+                  ]
+                },
+                {
+                  "category": "writing",
+                  "conditions": [],
+                  "label_keywords": [
+                    "alternative ways to show understanding"
+                  ],
+                  "normalized_type": "other",
+                  "source_evidence_keywords": [
+                    "written",
+                    "oral",
+                    "visual",
+                    "project"
+                  ]
+                }
+              ],
+              "must_include_keywords": [
+                "Jordan",
+                "Auditory Processing",
+                "written and verbal directions",
+                "smaller steps",
+                "extended time",
+                "key information",
+                "near the teacher",
+                "graphic organizers",
+                "assistive technology",
+                "speech-to-text",
+                "check for understanding",
+                "preview vocabulary",
+                "alternative ways to show understanding",
+                "minimize copying",
+                "guided notes"
+              ],
+              "must_not_include": [
+                "individualized aide",
+                "modified curriculum",
+                "1:1 paraprofessional"
+              ],
+              "requires_uncertainty": false
+            },
+            "suite": "accommodation_upload",
+            "caseFilePath": "/Users/danielnash/Code/DanielNash/IEP Compass/scripts/evals/image/cases/accommodation_upload/jordan_demo_iep_snapshot.json",
+            "resolvedImagePath": "/Users/danielnash/Code/DanielNash/IEP Compass/public/demo/jordan-accommodation-snapshot.jpg"
+          },
+          "deterministic": {
+            "checks": [
+              {
+                "details": "length=1399",
+                "key": "plain_text_present",
+                "passed": true
+              },
+              {
+                "details": "Accommodation extraction should now return plain text, not JSON.",
+                "key": "plain_text_not_json",
+                "passed": true
+              }
+            ],
+            "passed": true,
+            "score": 1
+          },
+          "diagnostics": {
+            "attempts": [
+              {
+                "failureMode": "none",
+                "outputPreview": "Student Information\nJordan M.\nGrade: 7\nDate: Sample / Synthetic\nPrimary Area of Need: Auditory Processing Disorder\n\nStudent Accommodation & Modification Snapshot\n\nLEARNING PROFILE\n\nCLASSROOM ACCOMMODATIONS\n1. Provide written and verbal dire",
+                "passLabel": "full",
+                "runtimeMs": 7149
+              }
+            ],
+            "pipeline": "vision_extract_text",
+            "inactivityTimeoutMs": 180000,
+            "requestPath": "/v1/chat/completions",
+            "totalTimeoutMs": 600000,
+            "transport": "openai_compatible",
+            "originalAsset": {
+              "bytes": 523227,
+              "dimensions": {
+                "height": 1448,
+                "width": 1086
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/public/demo/jordan-accommodation-snapshot.jpg"
+            },
+            "finalAsset": {
+              "bytes": 523227,
+              "dimensions": {
+                "height": 1448,
+                "width": 1086
+              },
+              "format": "jpeg",
+              "mimeType": "image/jpeg",
+              "path": "/Users/danielnash/Code/DanielNash/IEP Compass/public/demo/jordan-accommodation-snapshot.jpg"
+            },
+            "focusedRecoveryTriggered": false,
+            "photoMode": true,
+            "preprocessRuntimeMs": 0,
+            "draftHealth": {
+              "boilerplateLineCount": 0,
+              "hasModificationsPreamble": true,
+              "isHeadingHeavy": false,
+              "lowSignalLineCount": false,
+              "sectionHeadingCount": 0,
+              "signalLineCount": 3,
+              "totalLineCount": 27
+            },
+            "selectedPassLabel": "full",
+            "extractionPreview": "Student Information\nJordan M.\nGrade: 7\nDate: Sample / Synthetic\nPrimary Area of Need: Auditory Processing Disorder\n\nStudent Accommodation & Modification Snapshot\n\nLEARNING PROFILE\n\nCLASSROOM ACCOMMODATIONS\n1. Provide written and verbal directions.\n2. Break directions and assignments into smaller steps.\n3. Allow extended time to process information\n4. Provide written or digital copies of key information\n5. Seat near the teacher and away from noise or high-traffic areas.\n6. Use visual supports suc",
+            "extractionRuntimeMs": 7149,
+            "runtimeMs": 7294,
+            "runnerAttempts": [
+              {
+                "attemptNumber": 1,
+                "durationMs": 7431,
+                "failureMode": "none",
+                "status": "failed"
+              }
+            ],
+            "runnerIsolation": "fresh_process"
+          },
+          "failure_tags": [
+            "missed_accommodation",
+            "ocr_failure"
+          ],
+          "field": {
+            "checks": [
+              {
+                "details": "extended time, process, complete",
+                "key": "accommodation_extended_time_found",
+                "passed": false
+              },
+              {
+                "details": "break, smaller steps, directions, assignments",
+                "key": "accommodation_chunked_instructions_found",
+                "passed": true
+              },
+              {
+                "details": "near the teacher, away from noise, noise, high-traffic",
+                "key": "accommodation_preferential_seating_found",
+                "passed": true
+              },
+              {
+                "details": "assistive technology, speech-to-text, text-to-speech, dictation",
+                "key": "accommodation_speech_to_text_found",
+                "passed": true
+              },
+              {
+                "details": "written and verbal directions, written, verbal",
+                "key": "accommodation_other_found",
+                "passed": true
+              },
+              {
+                "details": "visual supports, graphic organizers, charts, timelines",
+                "key": "accommodation_other_found",
+                "passed": true
+              },
+              {
+                "details": "check for understanding, written, visual, modeling",
+                "key": "accommodation_other_found",
+                "passed": false
+              },
+              {
+                "details": "preview vocabulary, key concepts",
+                "key": "accommodation_other_found",
+                "passed": false
+              },
+              {
+                "details": "alternative ways to show understanding, written, oral, visual, project",
+                "key": "accommodation_other_found",
+                "passed": false
+              },
+              {
+                "details": "Jordan",
+                "key": "must_include_Jordan",
+                "passed": true
+              },
+              {
+                "details": "Auditory Processing",
+                "key": "must_include_Auditory Processing",
+                "passed": true
+              },
+              {
+                "details": "written and verbal directions",
+                "key": "must_include_written and verbal directions",
+                "passed": true
+              },
+              {
+                "details": "smaller steps",
+                "key": "must_include_smaller steps",
+                "passed": true
+              },
+              {
+                "details": "extended time",
+                "key": "must_include_extended time",
+                "passed": true
+              },
+              {
+                "details": "key information",
+                "key": "must_include_key information",
+                "passed": true
+              },
+              {
+                "details": "near the teacher",
+                "key": "must_include_near the teacher",
+                "passed": true
+              },
+              {
+                "details": "graphic organizers",
+                "key": "must_include_graphic organizers",
+                "passed": true
+              },
+              {
+                "details": "assistive technology",
+                "key": "must_include_assistive technology",
+                "passed": true
+              },
+              {
+                "details": "speech-to-text",
+                "key": "must_include_speech-to-text",
+                "passed": true
+              },
+              {
+                "details": "check for understanding",
+                "key": "must_include_check for understanding",
+                "passed": false
+              },
+              {
+                "details": "preview vocabulary",
+                "key": "must_include_preview vocabulary",
+                "passed": false
+              },
+              {
+                "details": "alternative ways to show understanding",
+                "key": "must_include_alternative ways to show understanding",
+                "passed": false
+              },
+              {
+                "details": "minimize copying",
+                "key": "must_include_minimize copying",
+                "passed": false
+              },
+              {
+                "details": "guided notes",
+                "key": "must_include_guided notes",
+                "passed": false
+              },
+              {
+                "details": "individualized aide",
+                "key": "must_not_include_individualized aide",
+                "passed": true
+              },
+              {
+                "details": "modified curriculum",
+                "key": "must_not_include_modified curriculum",
+                "passed": true
+              },
+              {
+                "details": "1:1 paraprofessional",
+                "key": "must_not_include_1:1 paraprofessional",
+                "passed": true
+              },
+              {
+                "details": "Expected a cautious uncertainty marker in the extracted text.",
+                "key": "uncertainty_handling",
+                "passed": true
+              }
+            ],
+            "passed": false,
+            "score": 0.6785714285714286
+          },
+          "judge": null,
+          "metrics": {
+            "condition_preservation_score": null,
+            "field_score": 0.6785714285714286,
+            "hallucination_flagged": 0,
+            "incomplete_image_handling_score": null,
+            "uncertainty_handling_score": 1
+          },
+          "model": "gemma4:e2b",
+          "output": "Student Information\nJordan M.\nGrade: 7\nDate: Sample / Synthetic\nPrimary Area of Need: Auditory Processing Disorder\n\nStudent Accommodation & Modification Snapshot\n\nLEARNING PROFILE\n\nCLASSROOM ACCOMMODATIONS\n1. Provide written and verbal directions.\n2. Break directions and assignments into smaller steps.\n3. Allow extended time to process information\n4. Provide written or digital copies of key information\n5. Seat near the teacher and away from noise or high-traffic areas.\n6. Use visual supports such as graphic organizers, charts, timelines, and anchor charts.\n7. Allow use of assistive technology (text-to-speech, speech-to-text, audiobooks, dictation).\n\nPREFERENCES THAT SUPPORT INDEPENDENCE\nJordan prefers accommodations that allow them to work independently.\nAvoid calling attention to processing or reading differences.\nEncouragement and specific feedback help build confidence.\n\nNOTES FOR TEACHERS\nPurpose: This plan outlines the accommodations and modifications designed to help ensure Jordan has equal access to grade-level curriculum by reducing the impact of processing difficulties and supporting comprehension, expression, and independent performance.\n\nCOMMUNICATION\nVisual reminders and charts are available\nin the classroom.\n\nWHEN ACCOMMODATIONS ARE MOST IMPORTANT\n• Please reach out with questions or concerns.\n• Consistent, positive communication helps us support Jordan's success.",
+          "raw_content": "Student Information\nJordan M.\nGrade: 7\nDate: Sample / Synthetic\nPrimary Area of Need: Auditory Processing Disorder\n\nStudent Accommodation & Modification Snapshot\n\nLEARNING PROFILE\n\nCLASSROOM ACCOMMODATIONS\n1. Provide written and verbal directions.\n2. Break directions and assignments into smaller steps.\n3. Allow extended time to process information\n4. Provide written or digital copies of key information\n5. Seat near the teacher and away from noise or high-traffic areas.\n6. Use visual supports such as graphic organizers, charts, timelines, and anchor charts.\n7. Allow use of assistive technology (text-to-speech, speech-to-text, audiobooks, dictation).\n\nPREFERENCES THAT SUPPORT INDEPENDENCE\nJordan prefers accommodations that allow them to work independently.\nAvoid calling attention to processing or reading differences.\nEncouragement and specific feedback help build confidence.\n\nNOTES FOR TEACHERS\nPurpose: This plan outlines the accommodations and modifications designed to help ensure Jordan has equal access to grade-level curriculum by reducing the impact of processing difficulties and supporting comprehension, expression, and independent performance.\n\nCOMMUNICATION\nVisual reminders and charts are available\nin the classroom.\n\nWHEN ACCOMMODATIONS ARE MOST IMPORTANT\n• Please reach out with questions or concerns.\n• Consistent, positive communication helps us support Jordan's success.",
+          "status": "failed"
         },
         {
           "case": {
@@ -633,7 +1029,7 @@
                 "failureMode": "none",
                 "outputPreview": "Goals improve oral reading rate.\nServices 30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
                 "passLabel": "full",
-                "runtimeMs": 4635
+                "runtimeMs": 4476
               }
             ],
             "pipeline": "vision_extract_text",
@@ -675,12 +1071,12 @@
             },
             "selectedPassLabel": "full",
             "extractionPreview": "Goals improve oral reading rate.\nServices 30 minutes weekly counseling.\nAccommodations\nChunked directions for multi-step assignments.\nShort breaks allowed during extended class tasks.",
-            "extractionRuntimeMs": 4635,
-            "runtimeMs": 4786,
+            "extractionRuntimeMs": 4476,
+            "runtimeMs": 4616,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 4914,
+                "durationMs": 4746,
                 "failureMode": "none",
                 "status": "failed"
               }
@@ -878,7 +1274,7 @@
           "deterministic": {
             "checks": [
               {
-                "details": "length=695",
+                "details": "length=704",
                 "key": "plain_text_present",
                 "passed": true
               },
@@ -895,45 +1291,45 @@
             "attempts": [
               {
                 "failureMode": "none",
-                "outputPreview": "Student Information\nExtracted Accommodations Details\nSetting / Scheduling\nTeacher Directions\nStudent Response\nOrganization / Study Skills\nPersonal Care / Equipment",
+                "outputPreview": "Student Information\nExtracted Accommodations Details\nSetting / Scheduling\nTeacher Directions\nStudent Response\nOrganization / Study Skills\n\n[unclear]\n[unclear]\n[unclear]\n[unclear]\n[unclear]",
                 "passLabel": "full",
-                "runtimeMs": 8648
+                "runtimeMs": 7540
               },
               {
                 "failureMode": "none",
-                "outputPreview": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone",
+                "outputPreview": "SETTING / SCHEDULING\nTest in small group requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\n\nSELF-REGULATION\nNone",
                 "passLabel": "focused_recovery_tile_left",
-                "runtimeMs": 5338
+                "runtimeMs": 4776
               },
               {
                 "failureMode": "none",
                 "outputPreview": "TEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\n\nORGANIZATION / STUDY SKILLS\nGraphic",
                 "passLabel": "focused_recovery_tile_middle",
-                "runtimeMs": 8445
+                "runtimeMs": 4957
               },
               {
                 "failureMode": "none",
-                "outputPreview": "Speech-to-text application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
+                "outputPreview": "Speech-to-text application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT\nNone",
                 "passLabel": "focused_recovery_tile_right",
-                "runtimeMs": 5667
+                "runtimeMs": 4543
               },
               {
                 "failureMode": "none",
-                "outputPreview": "Speech-to-text application\nNo penalty for spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
+                "outputPreview": "Speech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
                 "passLabel": "focused_recovery_tile_student_response_conditions",
-                "runtimeMs": 5538
+                "runtimeMs": 6459
               },
               {
                 "failureMode": "none",
                 "outputPreview": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise",
                 "passLabel": "focused_recovery_tile_setting_condition_lines",
-                "runtimeMs": 4697
+                "runtimeMs": 4229
               },
               {
                 "failureMode": "none",
-                "outputPreview": "STUDENT RESPONSE\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
+                "outputPreview": "Speech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart",
                 "passLabel": "focused_recovery_tile_student_response_exception_lines",
-                "runtimeMs": 5725
+                "runtimeMs": 5198
               }
             ],
             "pipeline": "vision_extract_text",
@@ -959,7 +1355,7 @@
               },
               "format": "jpeg",
               "mimeType": "image/jpeg",
-              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-lNOq08/real_accommodation_page_phone_photo-comparison-rotated-cropped.jpg"
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-RDJJrk/real_accommodation_page_phone_photo-comparison-rotated-cropped.jpg"
             },
             "focusedRecoveryTriggered": true,
             "normalizedAsset": {
@@ -970,27 +1366,27 @@
               },
               "format": "jpeg",
               "mimeType": "image/jpeg",
-              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-lNOq08/real_accommodation_page_phone_photo-comparison.jpg"
+              "path": "/var/folders/pd/x76_0wxd521_tcmh8kh0ddym0000gn/T/iep-compass-image-eval-RDJJrk/real_accommodation_page_phone_photo-comparison.jpg"
             },
             "photoMode": true,
-            "preprocessRuntimeMs": 832,
+            "preprocessRuntimeMs": 752,
             "draftHealth": {
               "boilerplateLineCount": 0,
               "hasModificationsPreamble": false,
               "isHeadingHeavy": true,
               "lowSignalLineCount": true,
-              "sectionHeadingCount": 5,
+              "sectionHeadingCount": 4,
               "signalLineCount": 0,
-              "totalLineCount": 7
+              "totalLineCount": 11
             },
             "selectedPassLabel": "focused_recovery_tiled",
             "extractionPreview": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text a",
-            "extractionRuntimeMs": 44058,
-            "runtimeMs": 45063,
+            "extractionRuntimeMs": 37702,
+            "runtimeMs": 38604,
             "runnerAttempts": [
               {
                 "attemptNumber": 1,
-                "durationMs": 45192,
+                "durationMs": 38733,
                 "failureMode": "none",
                 "status": "failed"
               }
@@ -1076,7 +1472,7 @@
               {
                 "details": "Student Response",
                 "key": "must_include_Student Response",
-                "passed": true
+                "passed": false
               },
               {
                 "details": "Organization / Study Skills",
@@ -1175,46 +1571,48 @@
               }
             ],
             "passed": false,
-            "score": 0.7941176470588235
+            "score": 0.7647058823529411
           },
           "judge": null,
           "metrics": {
             "condition_preservation_score": 1,
-            "field_score": 0.7941176470588235,
+            "field_score": 0.7647058823529411,
             "hallucination_flagged": 0,
             "incomplete_image_handling_score": null,
             "uncertainty_handling_score": 0
           },
           "model": "gemma4:e2b",
-          "output": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nSTUDENT RESPONSE",
-          "raw_content": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nSTUDENT RESPONSE",
+          "output": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT",
+          "raw_content": "SETTING / SCHEDULING\nTest in small group when requested\nExtended time to complete assignments (2 days)\nExtended time on tests (2 days)\nSeat away from distractions/noise\nSELF-REGULATION\nNone\nTEACHER DIRECTIONS\nDirections given in a variety of ways\nFrequent checks for understanding\nAnswer choices read aloud when requested\nVerbal encouragement\nQuestions or items presented orally when requested\nORGANIZATION / STUDY SKILLS\nGraphic organizer\nTeacher-provided notes\ngraph paper for math\nSpeech-to-text application\nNo penalty for spelling except on spelling task\nNo penalty for grammar unless a grammar task\nUse of calculator except for calculation tests\nuse of multiplication chart\nPERSONAL CARE / EQUIPMENT",
           "status": "failed"
         }
       ],
       "suite": "accommodation_upload",
       "summary": {
-        "average_field_score": 0.93,
+        "average_field_score": 0.883,
         "average_judge_dimensions": {},
         "average_judge_overall": null,
-        "average_uncertainty_handling_score": 0.8,
+        "average_uncertainty_handling_score": 0.833,
         "case_ids_failed": [
+          "jordan_demo_iep_snapshot",
           "mixed_sections_page",
           "real_accommodation_page_phone_photo"
         ],
         "condition_preservation_score": 1,
-        "executed_cases": 5,
-        "failed_cases": 2,
+        "executed_cases": 6,
+        "failed_cases": 3,
         "failure_tag_counts": {
+          "missed_accommodation": 1,
+          "ocr_failure": 2,
           "hallucinated_accommodation": 1,
-          "ocr_failure": 1,
           "overconfident_on_unclear_text": 1
         },
-        "hallucination_rate": 0.2,
+        "hallucination_rate": 0.167,
         "incomplete_image_handling_score": null,
-        "pass_rate": 0.6,
+        "pass_rate": 0.5,
         "passed_cases": 3,
         "skipped_cases": 0,
-        "total_cases": 5
+        "total_cases": 6
       }
     }
   ]

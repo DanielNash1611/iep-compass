@@ -39,7 +39,7 @@ test('document reading is unavailable when browser image input is unsupported an
   assert.match(plan.browserImageInterpretation.detail, /Gemma-3n/i)
 })
 
-test('configured endpoint remains a development fallback for document reading', () => {
+test('configured endpoint remains a development image reader for document reading', () => {
   const plan = buildPlan({
     endpointBaseUrl: '/api/ollama',
     runtimeLabel: 'Configured route',
@@ -61,10 +61,10 @@ test('seeded demo image needs interpretation before the presentation flow can pr
 
   assert.equal(action.canInterpret, false)
   assert.equal(action.needsModel, false)
-  assert.match(action.note, /Ollama backup is not configured/i)
+  assert.match(action.note, /No local image reader is configured/i)
 })
 
-test('configured Ollama endpoint restores demo image interpretation as a labeled backup', () => {
+test('configured Ollama endpoint restores demo image interpretation as a labeled local reader', () => {
   const demo = createJordanDemoSources()
   const plan = buildPlan({
     endpointBaseUrl: '/api/ollama',
@@ -76,7 +76,7 @@ test('configured Ollama endpoint restores demo image interpretation as a labeled
   )
 
   assert.equal(action.canInterpret, true)
-  assert.equal(action.label, 'Interpret with Ollama backup')
+  assert.equal(action.label, 'Interpret with local Gemma')
   assert.match(action.note, /create a new review draft/i)
   assert.match(action.note, /stays as a reference/i)
 })
@@ -98,6 +98,6 @@ test('unavailable document-reading copy does not ask users to tap an impossible 
   assert.doesNotMatch(messages, /tap interpret/i)
   assert.doesNotMatch(action.note ?? '', /tap interpret/i)
   assert.match(messages, /Browser Gemma image interpretation: not available/i)
-  assert.match(messages, /Ollama backup/i)
-  assert.match(action.note, /does not read images directly/i)
+  assert.match(messages, /local Gemma image reader/i)
+  assert.match(action.note, /reviewed-text mapping/i)
 })

@@ -1,4 +1,15 @@
-# IEP Compass with Browser-First Gemma 4 Testing
+# IEP Compass
+
+IEP Compass helps students, families, and teachers map approved IEP accommodations to real classroom assignments without inventing new supports or answering the schoolwork. It is a phone-first React app built for the Gemma 4 Good Hackathon under a Future of Education + Safety & Trust story.
+
+## Hackathon Submission Snapshot
+
+- **Problem:** students often have approved accommodations but still struggle to know when and how to use them on a specific worksheet, quiz, or assignment.
+- **Solution:** IEP Compass reviews approved accommodation wording, reviews assignment details, and produces a grounded accommodation map with student-friendly advocacy language and clear uncertainty.
+- **Gemma 4 use:** Browser Gemma 4 E2B handles reviewed-text accommodation mapping on supported devices through the official MediaPipe / Google AI Edge web stack. A labeled local Gemma endpoint can read the synthetic presentation images during development, while the app stays candid that Gemma 4 E2B browser image input is not currently documented for this web task.
+- **Trust model:** only reviewed source text can enter the analysis trail, model-selected accommodation IDs are constrained in the seeded walkthrough, and the app does not answer academic tasks or make legal determinations.
+- **Live demo:** [iepcompass.danielnash.co](https://iepcompass.danielnash.co)
+- **Writeup draft:** [`docs/submission/kaggle-writeup-draft.md`](docs/submission/kaggle-writeup-draft.md)
 
 This repo keeps the main IEP Compass experience intact while adding an embedded browser-first testing panel for **Gemma 4 E2B** on supported devices, using the official **MediaPipe / Google AI Edge** web inference stack.
 
@@ -31,8 +42,8 @@ That is deliberate. The app is wired for the official asset, but it will not pre
 - The stable phone demo uses synthetic sample images from `public/demo/` so Android Chrome does not need to keep a live camera upload and the browser model loaded at the same time.
 - Browser Gemma maps reviewed source-trail text to accommodation guidance after the document images have been interpreted and reviewed.
 - Browser Gemma image interpretation is shown as unavailable for the current web stack, even when browser text reasoning can work.
-- A local endpoint can be configured as a backup for development testing only. In the Jordan demo, the seeded sample images can be read through this labeled Ollama fallback so viewers can see the small model interpret the documents. It is the only live image/PDF interpretation path in the web app right now and may send image data to the configured endpoint.
-- The reviewed-text mapping step remains browser Gemma first for the Jordan demo, so the fallback image reader does not turn the final text reasoning flow back into an Ollama flow.
+- A local endpoint can be configured as a development image-reading path. In the Jordan walkthrough, the seeded sample images can be read through this labeled local Gemma/Ollama endpoint so viewers can see the small model interpret the documents. It is the only live image/PDF interpretation path in the web app right now and may send image data to the configured endpoint.
+- The reviewed-text mapping step remains browser Gemma first for the Jordan walkthrough, so the local image reader does not turn the final text reasoning flow back into an endpoint-only flow.
 - The intended final product direction is a native Android app using Google AI Edge for private on-device capture and image inference, unless Google documents a Gemma 4 E2B browser image path.
 
 ## Image Eval Loop
@@ -142,12 +153,12 @@ Default values:
 
 Local backup notes:
 
-- `VITE_GEMMA_BASE_URL` is optional and exists only for development fallback testing.
+- `VITE_GEMMA_BASE_URL` is optional and exists only for development endpoint testing.
 - Production demo builds do not rely on the local `/api/ollama` proxy.
 - `VITE_GEMMA_APP_MODEL` is the explicit user-facing app model knob and should stay on the lighter Gemma model unless you are intentionally testing something else.
 - `VITE_GEMMA_PRIMARY_MODEL` remains as a legacy fallback for older local setups, but the app prefers `VITE_GEMMA_APP_MODEL` when it is present.
 - With the default Vite proxy, `/api/ollama` forwards to `http://127.0.0.1:11434/v1`.
-- This backup path is helpful for developer experiments, but it is not the competition delivery path and should not be expected from users.
+- This local endpoint path is helpful for developer experiments, but it is not the competition delivery path and should not be expected from users.
 
 ## Stable Phone Demo
 
@@ -156,9 +167,9 @@ The seeded demo case, `Jordan M. writing assignment`, uses two synthetic sample 
 - `public/demo/jordan-accommodation-snapshot.jpg`
 - `public/demo/jordan-character-change-paragraph.jpg`
 
-Those images load as pre-uploaded materials, but they are not automatically trusted and do not include hidden source-trail text. In the demo, choose the labeled Ollama fallback action to create a new review draft from each sample image when the local endpoint is available. The assignment image should be interpreted by the model during the demo.
+Those images load as pre-uploaded materials, but they are not automatically trusted and do not include hidden source-trail text. In the walkthrough, choose the labeled local Gemma action to create a new review draft from each sample image when the local endpoint is available. The assignment image should be interpreted by the model during the walkthrough.
 
-In the web demo, the image-reading step is handled by the configured endpoint fallback when available. Browser Gemma is used for the later mapping step: choosing from allowed accommodation IDs based on reviewed source text. The app rejects model-suggested IDs that are not in the seeded allowed list.
+In the web walkthrough, the image-reading step is handled by the configured local endpoint when available. Browser Gemma is used for the later mapping step: choosing from allowed accommodation IDs based on reviewed source text. The app rejects model-suggested IDs that are not in the seeded allowed list.
 
 After the first accommodation-image interpretation attempt, the Jordan IEP card can show an `Apply demo correction` helper. That helper is only for the synthetic accommodation snapshot: it inserts the confirmed accommodation wording, keeps the original model draft visible for comparison, and still requires review before anything enters the source trail.
 
@@ -166,7 +177,7 @@ The upload UI distinguishes three states:
 
 - browser Gemma text reasoning: available after the model gate passes
 - browser Gemma image interpretation: unavailable for the current Gemma 4 E2B web path
-- endpoint-based document reading: optional development fallback, configured only when `VITE_GEMMA_BASE_URL` is set
+- endpoint-based document reading: optional development image-reading path, configured only when `VITE_GEMMA_BASE_URL` is set
 
 ### 4. Run locally
 
@@ -287,7 +298,7 @@ The code is intentionally split into inspectable layers:
 - `src/lib/on-device/inferenceSession.ts`
   - memory-conscious prompt handling and generation wrapper
 - `src/lib/on-device/localBackupSession.ts`
-  - optional local endpoint fallback for development testing
+  - optional local endpoint path for development testing
 - `src/features/on-device/BrowserGemmaApp.tsx`
   - embedded testing panel UI state inside the existing app
 

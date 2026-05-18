@@ -11,7 +11,7 @@ export const jordanDemoScenario: ExampleScenario = {
   id: JORDAN_DEMO_EXAMPLE_ID,
   iepExcerpt: '',
   summary:
-    'Synthetic IEP and assignment photos with reviewable fallback text for the video demo.',
+    'Synthetic IEP and assignment photos for the presentation walkthrough.',
   taskText: '',
   taskTitle: 'Character Change Paragraph',
   title: 'Jordan M. writing assignment',
@@ -84,8 +84,8 @@ export function createJordanDemoSources(): {
     id: 'demo-jordan-iep-snapshot',
     name: 'Student Accommodation & Modification Snapshot.jpg',
     notes: [
-      'Synthetic sample image for demo only.',
-      'Use the Ollama backup action to read this image and create a new review draft.',
+      'Synthetic sample image for the presentation walkthrough.',
+      'Use the local Gemma image reader to create a new review draft.',
       'No hidden accommodation text is included when the sample loads.',
     ],
     previewUrl: DEMO_IEP_IMAGE_URL,
@@ -97,8 +97,8 @@ export function createJordanDemoSources(): {
     id: 'demo-jordan-task-photo',
     name: '7th Grade ELA Character Change Paragraph.jpg',
     notes: [
-      'Synthetic sample image for demo only.',
-      'Use the Ollama backup action to read this image and create a new review draft.',
+      'Synthetic sample image for the presentation walkthrough.',
+      'Use the local Gemma image reader to create a new review draft.',
       'No hidden task draft is included when the sample loads.',
     ],
     previewUrl: DEMO_TASK_IMAGE_URL,

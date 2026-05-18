@@ -6,7 +6,6 @@ import {
   generateLocalBackupResponse,
   readLocalBackupConfig,
 } from '../../lib/on-device/localBackupSession'
-import { bootstrapGemma4Model } from '../../lib/on-device/modelBootstrap'
 import {
   DEFAULT_MODEL_ASSET_PATH,
   GEMMA4_MODEL_LABEL,
@@ -96,10 +95,10 @@ function describeLocalBackup(
   fallbackLabel: string | null,
 ) {
   if (!modelPlan.liveConfigured) {
-    return 'No local endpoint is configured yet. Add a local URL if you want a backup path while the browser flow is still being tuned.'
+    return 'No local endpoint is configured yet. Add a local URL if you want a development image-reading path while the browser flow is still being tuned.'
   }
 
-  return `Testing backup: ${modelPlan.runtimeLabel} using ${modelPlan.primaryLabel}${
+  return `Local Gemma endpoint: ${modelPlan.runtimeLabel} using ${modelPlan.primaryLabel}${
     fallbackLabel ? `, then ${fallbackLabel}` : ''
   }.`
 }
@@ -224,6 +223,9 @@ export default function BrowserGemmaApp({
     setResponseLabel(null)
 
     try {
+      const { bootstrapGemma4Model } = await import(
+        '../../lib/on-device/modelBootstrap'
+      )
       const resources = await bootstrapGemma4Model({
         lightMode,
         modelAssetPath: capabilityReport.modelAssetPath,
@@ -322,13 +324,13 @@ export default function BrowserGemmaApp({
 
       setResponse(result.response)
       setResponseLabel(
-        `Local backup: ${result.runtimeLabel} / ${result.modelLabel}${
+        `Local endpoint: ${result.runtimeLabel} / ${result.modelLabel}${
           result.usedFallback ? ' (fallback)' : ''
         }`,
       )
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Local backup generation failed.'
+        error instanceof Error ? error.message : 'Local endpoint generation failed.'
 
       console.error('[local backup generation failure]', message)
       setErrorMessage(message)
@@ -387,8 +389,8 @@ export default function BrowserGemmaApp({
       <div className="browser-gemma-panel__intro">
         <p className="field-message">
           This runs on your device in the browser when supported. Browser mode is
-          the primary competition path; the local model stays available only as a
-          backup for testing.
+          the primary competition path; the local model endpoint is only for
+          development image reading and quick sanity checks.
         </p>
       </div>
 
@@ -451,8 +453,8 @@ export default function BrowserGemmaApp({
         <article className="browser-gemma-panel__status-card browser-gemma-panel__status-card--soft">
           <div className="browser-gemma-panel__status-header">
             <div>
-              <span className="eyebrow">Local backup</span>
-              <h3>Testing fallback only</h3>
+              <span className="eyebrow">Local Gemma endpoint</span>
+              <h3>Development image reader</h3>
             </div>
             <span
               className={`browser-gemma-panel__pill browser-gemma-panel__pill--${getLocalBackupTone(
@@ -477,7 +479,7 @@ export default function BrowserGemmaApp({
           <p className="browser-gemma-panel__microcopy">
             {localBackupConfig.configured
               ? 'Use this when the browser model is blocked or you want a quick local sanity check during development.'
-              : 'Configure VITE_GEMMA_BASE_URL to expose a local backup path while keeping the browser model as the main product path.'}
+              : 'Configure VITE_GEMMA_BASE_URL to expose a local endpoint while keeping the browser model as the main product path.'}
           </p>
         </article>
       </div>
@@ -534,7 +536,7 @@ export default function BrowserGemmaApp({
               disabled={!canSendLocal}
               onClick={() => void handleSendViaLocalBackup()}
             >
-              Send via local backup
+              Send via local endpoint
             </button>
           </div>
         </div>
@@ -559,8 +561,8 @@ export default function BrowserGemmaApp({
           ) : (
             <p className="browser-gemma-panel__placeholder">
               {status.state === 'unsupported'
-                ? 'Browser mode is blocked here. You can still use a configured local backup for testing.'
-                : 'Load the model, then send a short prompt through the browser or local backup path.'}
+                ? 'Browser mode is blocked here. You can still use a configured local endpoint for testing.'
+                : 'Load the model, then send a short prompt through the browser or local endpoint path.'}
             </p>
           )}
         </div>
@@ -616,7 +618,7 @@ export default function BrowserGemmaApp({
             <dd>{capabilityReport.browserLabel}</dd>
           </div>
           <div>
-            <dt>Local backup</dt>
+            <dt>Local endpoint</dt>
             <dd>{localBackupConfig.configured ? 'configured' : 'not configured'}</dd>
           </div>
           <div>

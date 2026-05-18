@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { AppIcon, type AppIconName } from './components/AppIcon'
 import { LoadingIndicator } from './components/LoadingIndicator'
 import { SectionCard } from './components/SectionCard'
-import BrowserGemmaApp from './features/on-device/BrowserGemmaApp'
 import { ProductionLaunchGate } from './features/on-device/ProductionLaunchGate'
 import {
   createJordanDemoSources,
@@ -56,6 +55,8 @@ import type {
   TeacherConcernRequest,
   UploadedAttachment,
 } from './types/analysis'
+
+const BrowserGemmaApp = lazy(() => import('./features/on-device/BrowserGemmaApp'))
 
 type Screen = 'iep' | 'assignment' | 'results'
 type CorrectionTarget = 'iep' | 'assignment' | null
@@ -2036,9 +2037,10 @@ function IepCompassApp() {
                   <div className="optional-panel__body">
                     <p className="field-message">
                       Tap an example to fill it in for you. The Jordan M. example
-                      uses sample photos: read the IEP photo, fix anything that
-                      looks off, read the school work photo, then see what helps.
-                      The other examples are typed in for you.
+                      uses sample photos for the presentation walkthrough: read
+                      the IEP photo, fix anything that looks off, read the school
+                      work photo, then see what helps. The other examples are
+                      typed in for you.
                     </p>
 
                     <div className="example-grid">
@@ -2266,11 +2268,11 @@ function IepCompassApp() {
 
                   <div className="optional-panel__body stacked-copy">
                     <p className="field-message">
-                      Model plan: {modelPlan.primaryLabel} first, then{' '}
+                      Model plan: {modelPlan.primaryLabel} first, secondary path{' '}
                       {modelPlan.fallbackLabel}.
                       {modelPlan.liveConfigured
                         ? ` ${modelPlan.runtimeLabel} is configured for live analysis.`
-                        : ' No endpoint is configured, so the app will use structured demo analysis.'}
+                        : ' No live endpoint is configured, so the app will use the same structured demo schema.'}
                     </p>
                     <p className="field-message">
                       This testing surface is separate from the main student-facing
@@ -2282,7 +2284,13 @@ function IepCompassApp() {
                         and confirms Gemma is ready before the app opens.
                       </p>
                     ) : (
-                      <BrowserGemmaApp localModelPlan={modelPlan} />
+                      <Suspense
+                        fallback={
+                          <LoadingIndicator label="Loading the browser Gemma testing panel." />
+                        }
+                      >
+                        <BrowserGemmaApp localModelPlan={modelPlan} />
+                      </Suspense>
                     )}
                   </div>
                 </details>

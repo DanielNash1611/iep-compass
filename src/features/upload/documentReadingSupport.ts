@@ -25,13 +25,13 @@ export interface GemmaDocumentPlan {
 }
 
 export const BROWSER_GEMMA_TEXT_REASONING_DETAIL =
-  'Browser Gemma 4 E2B can still run short text reasoning after the saved model passes the on-device gate. The Jordan demo uses that path for reviewed-text mapping.'
+  'Browser Gemma 4 E2B can run short reviewed-text mapping after the saved model passes the on-device gate.'
 
 export const BROWSER_GEMMA_IMAGE_UNSUPPORTED_DETAIL =
   'The current MediaPipe web multimodal API documents image and audio prompting for Gemma-3n models. IEP Compass keeps the Gemma 4 E2B browser path text-only until Google documents the Gemma 4 E2B web task as an image-input path.'
 
 export const NATIVE_IMAGE_INTERPRETATION_NOTE =
-  'Live private image interpretation still needs a native Android app or a documented Gemma browser vision path.'
+  'Fully private browser image interpretation still needs a documented Gemma 4 browser vision path; the intended production direction is native Android with Google AI Edge.'
 
 export function buildGemmaDocumentPlan(input: {
   endpointBaseUrl?: string
@@ -62,7 +62,7 @@ export function buildGemmaDocumentPlan(input: {
     endpointFallback: {
       configured: endpointConfigured,
       detail: endpointConfigured
-        ? `Ollama backup is configured through ${input.runtimeLabel}.`
+        ? `The local Gemma image reader is configured through ${input.runtimeLabel}.`
         : 'No local document-reading endpoint is configured.',
       isRemote: input.endpointIsRemote,
       primaryModel: input.primaryModel,
@@ -82,10 +82,10 @@ export function buildGemmaDocumentPlan(input: {
 
 export function getDocumentReadingStatusMessages(plan: GemmaDocumentPlan) {
   const messages = [
-    `Browser Gemma handles text mapping in this demo. Image reading uses the local Ollama backup when configured.${
+    `Browser Gemma 4 E2B handles reviewed-text mapping. Image reading uses the local Gemma image reader when configured.${
       plan.endpointFallback.configured
         ? ''
-        : ' Ollama backup is not configured, so uploaded images stay as references until you paste the visible wording manually.'
+        : ' No local image reader is configured, so uploaded images stay as references until you paste the visible wording manually.'
     }`,
     `${plan.browserTextReasoning.label}: ${
       plan.browserTextReasoning.supported ? 'available for text mapping' : 'not available'
@@ -93,7 +93,7 @@ export function getDocumentReadingStatusMessages(plan: GemmaDocumentPlan) {
     `${plan.browserImageInterpretation.label}: ${
       plan.browserImageInterpretation.supported ? 'available' : 'not available'
     }. ${plan.browserImageInterpretation.detail}`,
-    `Ollama backup endpoint: ${
+    `Local Gemma image reader: ${
       plan.endpointFallback.configured ? 'configured' : 'not configured'
     }. ${plan.endpointFallback.detail}`,
   ]

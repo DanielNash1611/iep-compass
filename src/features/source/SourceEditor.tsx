@@ -270,8 +270,8 @@ function DemoDraftProvenance({ attachment }: { attachment: UploadedAttachment })
   }
 
   const sourceLabel = hasDemoCorrection
-    ? 'Ollama backup, then demo correction'
-    : 'Ollama backup'
+    ? 'Local Gemma image reader, then reviewed correction'
+    : 'Local Gemma image reader'
 
   return (
     <div className="demo-draft-provenance">

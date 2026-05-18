@@ -460,7 +460,7 @@ export async function analyzeJordanDemoWithBrowserGemma(request: AnalysisRequest
   } catch (error) {
     return {
       notes: [
-        `${DEMO_MODEL_LABEL} browser mapping was unavailable, so the demo used the same constrained allowed-ID fallback.`,
+        `${DEMO_MODEL_LABEL} browser mapping was unavailable, so the presentation used the same constrained allowed-ID deterministic path.`,
         error instanceof Error ? error.message : 'Unknown browser mapping issue.',
       ],
       result: buildDemoAnalysisResult(DEFAULT_DEMO_SELECTION),
