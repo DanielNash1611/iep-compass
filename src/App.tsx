@@ -45,6 +45,10 @@ import {
   revokeAttachmentPreview,
 } from './features/upload/fileUtils'
 import { createAnalysisAdapter } from './lib/analysis'
+import {
+  resolveOllamaEndpoint,
+  type ResolvedOllamaEndpoint,
+} from './lib/on-device/ollamaEndpointConfig'
 import { hasUncertaintyMarkers } from './lib/text/uncertaintyMarkers'
 import type {
   AnalysisExecution,
@@ -306,6 +310,9 @@ function includeReviewReadyTaskAttachments(source: SourceMaterial): SourceMateri
 
 function IepCompassApp() {
   const [analysisAdapter] = useState(() => createAnalysisAdapter())
+  const [ollamaEndpoint, setOllamaEndpoint] = useState<ResolvedOllamaEndpoint>(
+    () => resolveOllamaEndpoint(),
+  )
   const initialIepDetailsRef = useRef<ReturnType<typeof getRestoredIepDetails> | null>(
     null,
   )
@@ -1977,6 +1984,7 @@ function IepCompassApp() {
                 <SourceEditor
                   attachments={iepSource.attachments}
                   documentPlan={documentPlan}
+                  ollamaEndpoint={ollamaEndpoint}
                   children={
                     <div className="local-save-note">
                       <div className="local-save-note__copy">
@@ -2025,6 +2033,7 @@ function IepCompassApp() {
                   onKeepAttachmentReference={(attachmentId) =>
                     keepMainAttachmentReference('iep', attachmentId)
                   }
+                  onOllamaEndpointChange={setOllamaEndpoint}
                   onApplyDemoAccommodationCorrection={
                     applyJordanDemoAccommodationCorrection
                   }
@@ -2223,6 +2232,7 @@ function IepCompassApp() {
                 <SourceEditor
                   attachments={taskSource.attachments}
                   documentPlan={documentPlan}
+                  ollamaEndpoint={ollamaEndpoint}
                   textHelp="Copy in the directions, or say what the work asks you to do. Add the directions, not your answers."
                   textLabel="What the school work asks you to do"
                   textRequired
@@ -2241,6 +2251,7 @@ function IepCompassApp() {
                   onApplyDemoRecordedRun={(attachmentId) =>
                     applyJordanDemoRecordedRun('task', attachmentId)
                   }
+                  onOllamaEndpointChange={setOllamaEndpoint}
                   onRunAttachmentInterpretation={(attachmentId) =>
                     runMainAttachmentInterpretation('task', attachmentId)
                   }
@@ -2342,7 +2353,11 @@ function IepCompassApp() {
                           <LoadingIndicator label="Loading the browser Gemma testing panel." />
                         }
                       >
-                        <BrowserGemmaApp localModelPlan={modelPlan} />
+                        <BrowserGemmaApp
+                          localModelPlan={modelPlan}
+                          ollamaEndpoint={ollamaEndpoint}
+                          onOllamaEndpointChange={setOllamaEndpoint}
+                        />
                       </Suspense>
                     )}
                   </div>
@@ -2393,6 +2408,7 @@ function IepCompassApp() {
                     <SourceEditor
                       attachments={correctionIepSource.attachments}
                       documentPlan={documentPlan}
+                      ollamaEndpoint={ollamaEndpoint}
                       textHelp="Change your IEP supports here if we missed one or got the wording wrong."
                       textLabel="Your IEP supports"
                       textName="correctionIepExcerpt"
@@ -2412,6 +2428,7 @@ function IepCompassApp() {
                       onKeepAttachmentReference={(attachmentId) =>
                         keepCorrectionAttachmentReference('iep', attachmentId)
                       }
+                      onOllamaEndpointChange={setOllamaEndpoint}
                       onRunAttachmentInterpretation={(attachmentId) =>
                         runCorrectionAttachmentInterpretation('iep', attachmentId)
                       }
@@ -2496,6 +2513,7 @@ function IepCompassApp() {
                   <SourceEditor
                     attachments={correctionTaskSource.attachments}
                     documentPlan={documentPlan}
+                    ollamaEndpoint={ollamaEndpoint}
                     textHelp="Fix the directions here so your results match what the work really asks you to do."
                     textLabel="What the school work asks you to do"
                     textName="correctionTaskText"
@@ -2519,6 +2537,7 @@ function IepCompassApp() {
                     onKeepAttachmentReference={(attachmentId) =>
                       keepCorrectionAttachmentReference('task', attachmentId)
                     }
+                    onOllamaEndpointChange={setOllamaEndpoint}
                     onRunAttachmentInterpretation={(attachmentId) =>
                       runCorrectionAttachmentInterpretation('task', attachmentId)
                     }

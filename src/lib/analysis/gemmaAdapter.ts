@@ -30,6 +30,7 @@ import {
   isJordanDemoRequest,
 } from './demoBrowserMapping.ts'
 import { getSourceReadyAttachments } from '../../features/source/sourceText'
+import { resolveOllamaEndpoint } from '../on-device/ollamaEndpointConfig'
 import type {
   AnalysisExecution,
   AnalysisRequest,
@@ -60,6 +61,7 @@ const MODEL_LABELS: Record<string, string> = {
 const STRUCTURED_DEMO_LABEL = 'Structured demo'
 
 function readConfig(): GemmaConfig {
+  const endpoint = resolveOllamaEndpoint()
   const primaryModel =
     import.meta.env.VITE_GEMMA_APP_MODEL?.trim()
     || import.meta.env.VITE_GEMMA_PRIMARY_MODEL?.trim()
@@ -67,7 +69,7 @@ function readConfig(): GemmaConfig {
 
   return {
     apiKey: import.meta.env.VITE_GEMMA_API_KEY?.trim(),
-    baseUrl: import.meta.env.VITE_GEMMA_BASE_URL?.trim(),
+    baseUrl: endpoint.baseUrl,
     fallbackModel: import.meta.env.VITE_GEMMA_FALLBACK_MODEL?.trim() || undefined,
     multimodalReady: import.meta.env.VITE_GEMMA_MULTIMODAL === 'true',
     primaryModel,
@@ -105,9 +107,15 @@ function describeRuntime(baseUrl?: string) {
 }
 
 class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
-  private readonly config = readConfig()
-  private readonly runtimeLabel = describeRuntime(this.config.baseUrl)
   private readonly analysisTimeoutMs = readAnalysisTimeoutMs()
+
+  private get config() {
+    return readConfig()
+  }
+
+  private get runtimeLabel() {
+    return describeRuntime(this.config.baseUrl)
+  }
 
   getModelPlan() {
     return {

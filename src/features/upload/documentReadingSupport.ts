@@ -63,7 +63,7 @@ export function buildGemmaDocumentPlan(input: {
       configured: endpointConfigured,
       detail: endpointConfigured
         ? `The local Gemma image reader is configured through ${input.runtimeLabel}.`
-        : 'No local document-reading endpoint is configured.',
+        : 'No local document-reading endpoint is configured. You can enter an Ollama endpoint in this browser, or run the app locally with VITE_GEMMA_BASE_URL=/api/ollama in .env.local.',
       isRemote: input.endpointIsRemote,
       primaryModel: input.primaryModel,
       runtimeLabel: input.runtimeLabel,
@@ -85,7 +85,7 @@ export function getDocumentReadingStatusMessages(plan: GemmaDocumentPlan) {
     `Browser Gemma 4 E2B handles reviewed-text mapping. Image reading uses the local Gemma image reader when configured.${
       plan.endpointFallback.configured
         ? ''
-        : ' No local image reader is configured, so uploaded images stay as references until you paste the visible wording manually.'
+        : ' No local image reader is configured, so uploaded images stay as references until you paste the visible wording manually or configure an Ollama endpoint.'
     }`,
     `${plan.browserTextReasoning.label}: ${
       plan.browserTextReasoning.supported ? 'available for text mapping' : 'not available'

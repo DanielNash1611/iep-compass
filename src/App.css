@@ -360,6 +360,38 @@
   animation: live-pulse 1.2s ease-out infinite;
 }
 
+.ollama-endpoint-control {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(47, 110, 98, 0.18);
+  border-radius: 1rem;
+  background: rgba(255, 253, 252, 0.78);
+}
+
+.ollama-endpoint-control__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.ollama-endpoint-control__status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.ollama-endpoint-control__status--ready {
+  color: var(--accent-deep);
+  font-weight: 700;
+}
+
+.ollama-endpoint-control__status--error {
+  color: #943c2a;
+  font-weight: 700;
+}
+
 .field-label__title {
   display: block;
   font-weight: 700;
@@ -1541,6 +1573,10 @@
 
   .attachment-card,
   .source-review-file {
+    grid-template-columns: 1fr;
+  }
+
+  .ollama-endpoint-control__row {
     grid-template-columns: 1fr;
   }
 

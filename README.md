@@ -154,11 +154,13 @@ Default values:
 Local backup notes:
 
 - `VITE_GEMMA_BASE_URL` is optional and exists only for development endpoint testing.
-- Production demo builds do not rely on the local `/api/ollama` proxy.
+- Production demo builds do not rely on the local `/api/ollama` proxy, but a user can enter an OpenAI-compatible Ollama endpoint in the browser when they have Ollama running on their own device.
+- The browser-saved endpoint is stored in localStorage under `iep-compass:ollama-base-url` and takes precedence over `VITE_GEMMA_BASE_URL` until it is cleared.
+- Use `http://127.0.0.1:11434/v1` for the default local Ollama OpenAI-compatible endpoint. Entering `http://127.0.0.1:11434` is normalized to `/v1`.
 - `VITE_GEMMA_APP_MODEL` is the explicit user-facing app model knob and should stay on the lighter Gemma model unless you are intentionally testing something else.
 - `VITE_GEMMA_PRIMARY_MODEL` remains as a legacy fallback for older local setups, but the app prefers `VITE_GEMMA_APP_MODEL` when it is present.
 - With the default Vite proxy, `/api/ollama` forwards to `http://127.0.0.1:11434/v1`.
-- This local endpoint path is helpful for developer experiments, but it is not the competition delivery path and should not be expected from users.
+- This local endpoint path sends selected images or PDFs to the configured endpoint for reviewable draft creation; it does not add browser-private Gemma 4 E2B image interpretation.
 
 ## Stable Phone Demo
 
@@ -177,7 +179,7 @@ The upload UI distinguishes three states:
 
 - browser Gemma text reasoning: available after the model gate passes
 - browser Gemma image interpretation: unavailable for the current Gemma 4 E2B web path
-- endpoint-based document reading: optional development image-reading path, configured only when `VITE_GEMMA_BASE_URL` is set
+- endpoint-based document reading: optional image-reading path, configured by a browser-saved Ollama endpoint or by `VITE_GEMMA_BASE_URL`
 
 ### 4. Run locally
 

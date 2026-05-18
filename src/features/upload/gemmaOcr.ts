@@ -15,6 +15,7 @@ import {
 } from '../../lib/model/structuredOutput'
 import { recoverBlankTaskDocumentResult } from '../../lib/schema/documentReadingRecovery'
 import { GEMMA_LOCAL_MODEL_ID } from '../../lib/analysis/prompt'
+import { resolveOllamaEndpoint } from '../../lib/on-device/ollamaEndpointConfig'
 import { selectAccommodationDraft } from '../../lib/text/accommodationDraftSelection'
 import {
   ACCOMMODATION_EXTRACTION_SYSTEM_PROMPT,
@@ -187,7 +188,7 @@ function describeRuntime(baseUrl?: string) {
 }
 
 function readConfig(): GemmaDocumentConfig {
-  const baseUrl = import.meta.env.VITE_GEMMA_BASE_URL?.trim()
+  const baseUrl = resolveOllamaEndpoint().baseUrl
   const hasLocalRoute = Boolean(baseUrl && /^\/(?!\/)/.test(baseUrl))
   const hasLocalHost = Boolean(
     baseUrl && /localhost:11434|127\.0\.0\.1:11434/i.test(baseUrl),

@@ -99,5 +99,7 @@ test('unavailable document-reading copy does not ask users to tap an impossible 
   assert.doesNotMatch(action.note ?? '', /tap interpret/i)
   assert.match(messages, /Browser Gemma image interpretation: not available/i)
   assert.match(messages, /local Gemma image reader/i)
+  assert.match(messages, /enter an Ollama endpoint/i)
+  assert.match(messages, /VITE_GEMMA_BASE_URL=\/api\/ollama/i)
   assert.match(action.note, /reviewed-text mapping/i)
 })

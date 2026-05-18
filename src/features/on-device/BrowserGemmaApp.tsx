@@ -6,12 +6,14 @@ import {
   generateLocalBackupResponse,
   readLocalBackupConfig,
 } from '../../lib/on-device/localBackupSession'
+import { OllamaEndpointControl } from './OllamaEndpointControl'
 import {
   DEFAULT_MODEL_ASSET_PATH,
   GEMMA4_MODEL_LABEL,
   OFFICIAL_MODEL_PAGE_URL,
   OFFICIAL_WEB_MODEL_URL,
 } from '../../lib/on-device/modelConfig'
+import type { ResolvedOllamaEndpoint } from '../../lib/on-device/ollamaEndpointConfig'
 import { resolveGenerationLimits } from '../../lib/on-device/promptUtils'
 import type {
   CapabilityReport,
@@ -22,6 +24,8 @@ import './browserGemmaApp.css'
 
 interface BrowserGemmaAppProps {
   localModelPlan: ModelPlan
+  ollamaEndpoint: ResolvedOllamaEndpoint
+  onOllamaEndpointChange: (endpoint: ResolvedOllamaEndpoint) => void
 }
 
 const INITIAL_STATUS: StatusSnapshot = {
@@ -95,7 +99,7 @@ function describeLocalBackup(
   fallbackLabel: string | null,
 ) {
   if (!modelPlan.liveConfigured) {
-    return 'No local endpoint is configured yet. Add a local URL if you want a development image-reading path while the browser flow is still being tuned.'
+    return 'No local endpoint is configured yet. Add an Ollama URL in this browser for image reading, or use .env.local when running the app locally.'
   }
 
   return `Local Gemma endpoint: ${modelPlan.runtimeLabel} using ${modelPlan.primaryLabel}${
@@ -105,6 +109,8 @@ function describeLocalBackup(
 
 export default function BrowserGemmaApp({
   localModelPlan,
+  ollamaEndpoint,
+  onOllamaEndpointChange,
 }: BrowserGemmaAppProps) {
   const [capabilityReport, setCapabilityReport] = useState<CapabilityReport | null>(
     null,
@@ -479,8 +485,13 @@ export default function BrowserGemmaApp({
           <p className="browser-gemma-panel__microcopy">
             {localBackupConfig.configured
               ? 'Use this when the browser model is blocked or you want a quick local sanity check during development.'
-              : 'Configure VITE_GEMMA_BASE_URL to expose a local endpoint while keeping the browser model as the main product path.'}
+              : 'Enter an Ollama endpoint here, or run locally with VITE_GEMMA_BASE_URL=/api/ollama in .env.local.'}
           </p>
+
+          <OllamaEndpointControl
+            endpoint={ollamaEndpoint}
+            onEndpointChange={onOllamaEndpointChange}
+          />
         </article>
       </div>
 

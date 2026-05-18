@@ -2,6 +2,12 @@
 
 ## Recently Completed
 
+- Added a user-configurable Ollama endpoint for the local backup/image-reading path:
+  - introduced a shared browser endpoint resolver with localStorage key `iep-compass:ollama-base-url`, saved-over-env precedence, `/api/ollama` preservation, and bare `http://127.0.0.1:11434` normalization to `/v1`
+  - wired document reading, local backup testing, and live analysis/model-plan config through the shared resolver while keeping existing `VITE_GEMMA_BASE_URL=/api/ollama` local-dev behavior
+  - added a compact `Configure Ollama endpoint` control with Save, Test (`GET /models`), and clear-saved-endpoint behavior in the current not-configured local reader surfaces
+  - updated unavailable-state copy and README notes so users can either enter an endpoint in the deployed app or run locally with `.env.local`
+  - added endpoint-resolution coverage plus document-reading copy coverage; `npm run test`, `npx tsc --noEmit`, `npm run lint`, and `npm run build` all pass
 - Added a one-click "previous local Gemma run" option to the Jordan demo so the video demo flows without a configured image reader:
   - when no local image reader is configured, each Jordan demo image card now shows a `Use a previous local Gemma run (took ...)` button
   - clicking it inserts a representative pre-recorded raw image-reader transcript and the recorded interpretation time, landing the card in `review_ready` exactly like a live run

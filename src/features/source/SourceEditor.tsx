@@ -8,6 +8,8 @@ import type {
 } from '../../lib/schema/ocrSchema'
 import { AppIcon } from '../../components/AppIcon'
 import { useSpeechDictation } from '../../hooks/useSpeechDictation'
+import { OllamaEndpointControl } from '../on-device/OllamaEndpointControl'
+import type { ResolvedOllamaEndpoint } from '../../lib/on-device/ollamaEndpointConfig'
 import type { UploadedAttachment } from '../../types/analysis'
 import {
   getPendingReviewAttachments,
@@ -29,6 +31,7 @@ interface SourceEditorProps {
   children?: ReactNode
   documentPlan: GemmaDocumentPlan
   emptyState: string
+  ollamaEndpoint: ResolvedOllamaEndpoint
   onApplyAttachmentTextReview: (
     attachmentId: string,
     nextValue: string,
@@ -40,6 +43,7 @@ interface SourceEditorProps {
   ) => void
   onChooseFiles: (files: File[]) => Promise<void>
   onKeepAttachmentReference: (attachmentId: string) => void
+  onOllamaEndpointChange: (endpoint: ResolvedOllamaEndpoint) => void
   onApplyDemoAccommodationCorrection?: (attachmentId: string) => void
   onApplyDemoRecordedRun?: (attachmentId: string) => void
   onRemoveAttachment: (attachmentId: string) => void
@@ -1094,10 +1098,12 @@ export function SourceEditor({
   children,
   documentPlan,
   emptyState,
+  ollamaEndpoint,
   onApplyAttachmentTextReview,
   onAttachmentDocumentDraftChange,
   onChooseFiles,
   onKeepAttachmentReference,
+  onOllamaEndpointChange,
   onApplyDemoAccommodationCorrection,
   onApplyDemoRecordedRun,
   onRemoveAttachment,
@@ -1319,6 +1325,13 @@ export function SourceEditor({
                 model endpoint so it can build reviewable text or a structured task
                 draft.
               </p>
+            ) : null}
+            {!documentPlan.endpointFallback.configured ||
+            ollamaEndpoint.savedBaseUrl ? (
+              <OllamaEndpointControl
+                endpoint={ollamaEndpoint}
+                onEndpointChange={onOllamaEndpointChange}
+              />
             ) : null}
           </div>
         ) : null}

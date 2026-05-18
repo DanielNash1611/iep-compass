@@ -8,6 +8,7 @@ import {
   resolveGenerationLimits,
   sanitizeModelOutput,
 } from './promptUtils'
+import { resolveOllamaEndpoint } from './ollamaEndpointConfig'
 
 interface OpenAICompatibleResponse {
   choices?: Array<{
@@ -60,6 +61,7 @@ function describeRuntime(baseUrl?: string) {
 }
 
 function readRawConfig() {
+  const endpoint = resolveOllamaEndpoint()
   const primaryModel =
     import.meta.env.VITE_GEMMA_APP_MODEL?.trim()
     || import.meta.env.VITE_GEMMA_PRIMARY_MODEL?.trim()
@@ -67,7 +69,7 @@ function readRawConfig() {
 
   return {
     apiKey: import.meta.env.VITE_GEMMA_API_KEY?.trim(),
-    baseUrl: import.meta.env.VITE_GEMMA_BASE_URL?.trim(),
+    baseUrl: endpoint.baseUrl,
     fallbackModel: import.meta.env.VITE_GEMMA_FALLBACK_MODEL?.trim() || undefined,
     primaryModel,
   }
@@ -151,7 +153,7 @@ export async function generateLocalBackupResponse(options: {
 
   if (!config.baseUrl) {
     throw new Error(
-      'Local backup is not configured. Add VITE_GEMMA_BASE_URL to enable testing against a local model.',
+      'Local backup is not configured. Add an Ollama endpoint in this browser or set VITE_GEMMA_BASE_URL in .env.local.',
     )
   }
 
