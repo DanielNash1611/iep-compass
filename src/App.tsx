@@ -52,6 +52,7 @@ import {
 import { hasUncertaintyMarkers } from './lib/text/uncertaintyMarkers'
 import type {
   AnalysisExecution,
+  AnalysisOptions,
   AttachmentInterpretationProgress,
   SourceMaterial,
   TaskReviewDraft,
@@ -1546,6 +1547,7 @@ function IepCompassApp() {
     nextTaskTitle: string,
     nextLearningProfile: string,
     nextContextTags: TaskContext[],
+    options?: AnalysisOptions,
   ) {
     const runId = analysisRunIdRef.current + 1
     analysisRunIdRef.current = runId
@@ -1557,14 +1559,17 @@ function IepCompassApp() {
     clearTeacherConcernState()
 
     try {
-      const nextAnalysis = await analysisAdapter.analyze({
-        contextTags: nextContextTags,
-        iepSource: getAnalysisSource(nextIepSource),
-        learningProfile: nextLearningProfile.trim(),
-        taskTraits: getAnalysisTaskTraits(nextTaskSource),
-        taskTitle: nextTaskTitle.trim(),
-        taskSource: getAnalysisSource(nextTaskSource),
-      })
+      const nextAnalysis = await analysisAdapter.analyze(
+        {
+          contextTags: nextContextTags,
+          iepSource: getAnalysisSource(nextIepSource),
+          learningProfile: nextLearningProfile.trim(),
+          taskTraits: getAnalysisTaskTraits(nextTaskSource),
+          taskTitle: nextTaskTitle.trim(),
+          taskSource: getAnalysisSource(nextTaskSource),
+        },
+        options,
+      )
 
       if (analysisRunIdRef.current !== runId) {
         return false
@@ -1652,6 +1657,27 @@ function IepCompassApp() {
     if (!didGenerate) {
       return
     }
+  }
+
+  async function handleRerunMapping() {
+    const nextTaskTitle = taskTitle.trim() || deriveTaskTitleFromSource(taskSource)
+
+    if (!nextTaskTitle) {
+      return
+    }
+
+    // Rerun the current mapping as-is — same IEP supports, task source, task
+    // title, learning profile, and context tags — and force a fresh seed so a
+    // precached demo selection is not simply replayed. This deliberately skips
+    // the correction/fix-details flow.
+    await runPrimaryAnalysis(
+      iepSource,
+      taskSource,
+      nextTaskTitle,
+      learningProfile,
+      contextTags,
+      { forceFresh: true },
+    )
   }
 
   async function handleRegenerateFromCorrection() {
@@ -2660,7 +2686,7 @@ function IepCompassApp() {
                 <ResultsView
                   analysis={analysis}
                   onAskAboutAccommodation={askAboutSkippedAccommodation}
-                  onRerun={() => void handleGenerateOutput()}
+                  onRerun={() => void handleRerunMapping()}
                 />
               ) : null}
 

@@ -3,7 +3,12 @@ import {
   type AccommodationConfidence,
   type AnalysisResult,
 } from '../schema/analysisSchema.ts'
-import type { AnalysisRequest, SourceMaterial, UploadedAttachment } from '../../types/analysis.ts'
+import type {
+  AnalysisOptions,
+  AnalysisRequest,
+  SourceMaterial,
+  UploadedAttachment,
+} from '../../types/analysis.ts'
 
 type DemoAccommodationId =
   | 'written_directions'
@@ -352,7 +357,24 @@ function buildDemoMappingPrompt(request: AnalysisRequest) {
   ].join('\n')
 }
 
-async function requestBrowserDemoSelection(request: AnalysisRequest) {
+// Stable seed for the standard "See what helps" demo flow so the mapping
+// stays deterministic between presentations.
+const FIXED_DEMO_SEED = 7
+
+// A forceFresh rerun must avoid the fixed seed so a precached/demo output is
+// not simply replayed; each rerun gets its own small per-run seed instead.
+// Model and bootstrap caching are untouched — only the inference seed changes.
+export function resolveDemoRandomSeed(
+  forceFresh: boolean,
+  now: number = Date.now(),
+) {
+  return forceFresh ? now % 1_000_000 : FIXED_DEMO_SEED
+}
+
+async function requestBrowserDemoSelection(
+  request: AnalysisRequest,
+  options?: AnalysisOptions,
+) {
   const [{ bootstrapGemma4Model }, { DEFAULT_MODEL_ASSET_PATH }] = await Promise.all([
     import('../on-device/modelBootstrap.ts'),
     import('../on-device/modelConfig.ts'),
@@ -365,7 +387,7 @@ async function requestBrowserDemoSelection(request: AnalysisRequest) {
   try {
     await resources.llmInference.setOptions({
       maxTokens: 180,
-      randomSeed: 7,
+      randomSeed: resolveDemoRandomSeed(options?.forceFresh ?? false),
       temperature: 0.1,
       topK: 16,
     })
@@ -439,9 +461,12 @@ function buildDemoAnalysisResult(selectedIds: DemoAccommodationId[]): AnalysisRe
   })
 }
 
-export async function analyzeJordanDemoWithBrowserGemma(request: AnalysisRequest) {
+export async function analyzeJordanDemoWithBrowserGemma(
+  request: AnalysisRequest,
+  options?: AnalysisOptions,
+) {
   try {
-    const selection = await requestBrowserDemoSelection(request)
+    const selection = await requestBrowserDemoSelection(request, options)
     const selectedIds =
       selection.selectedIds.length > 0
         ? selection.selectedIds

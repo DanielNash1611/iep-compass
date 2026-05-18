@@ -109,6 +109,12 @@ export interface TeacherConcernRequest extends AnalysisRequest {
   teacherConcern: string
 }
 
+export interface AnalysisOptions {
+  // When true, a Jordan demo rerun bypasses the fixed inference seed and
+  // reseeds per run so a precached/demo output is not simply replayed.
+  forceFresh?: boolean
+}
+
 export interface AnalysisMeta {
   adapterLabel: string
   mode: 'live' | 'demo'
