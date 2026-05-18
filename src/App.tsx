@@ -7,6 +7,7 @@ import { ProductionLaunchGate } from './features/on-device/ProductionLaunchGate'
 import {
   createJordanDemoSources,
   getJordanDemoAccommodationCorrection,
+  getJordanDemoRecordedRun,
   JORDAN_DEMO_EXAMPLE_ID,
 } from './data/demoCase.ts'
 import { exampleScenarios } from './data/examples'
@@ -581,6 +582,52 @@ function IepCompassApp() {
           ],
           reviewedText: undefined,
           sourceTrailText: undefined,
+          status: 'review_ready' as const,
+        }),
+      false,
+    )
+  }
+
+  function applyJordanDemoRecordedRun(sourceKey: SourceKey, attachmentId: string) {
+    const run = getJordanDemoRecordedRun(attachmentId)
+
+    if (!run) {
+      return
+    }
+
+    const finishedAt = Date.now()
+
+    patchMainAttachment(
+      sourceKey,
+      attachmentId,
+      (current) =>
+        refreshAttachmentNotes({
+          ...current,
+          confidenceFlags: undefined,
+          demoCorrectionSource: undefined,
+          documentDraft: undefined,
+          documentKind: run.documentKind,
+          extractedText: run.rawOutput,
+          interpretationProgress: {
+            detail: `Finished in ${formatElapsedTime(run.elapsedMs)}.`,
+            elapsedMs: run.elapsedMs,
+            finishedAt,
+            label: 'Gemma interpretation finished',
+            phase: 'complete',
+            startedAt: finishedAt - run.elapsedMs,
+            updatedAt: finishedAt,
+          },
+          manualEditSummary: undefined,
+          rawDemoOutput: undefined,
+          rawTranscript: undefined,
+          readContainsUnclearText: run.containsUnclearText,
+          readError: undefined,
+          readMethod: run.readMethod,
+          readNotes: [
+            `Interpreted with ${run.modelLabel} via ${run.runtimeLabel}.`,
+            'Review this extracted text before adding it to the source trail.',
+          ],
+          reviewedText: undefined,
           status: 'review_ready' as const,
         }),
       false,
@@ -1981,6 +2028,9 @@ function IepCompassApp() {
                   onApplyDemoAccommodationCorrection={
                     applyJordanDemoAccommodationCorrection
                   }
+                  onApplyDemoRecordedRun={(attachmentId) =>
+                    applyJordanDemoRecordedRun('iep', attachmentId)
+                  }
                   onRunAttachmentInterpretation={(attachmentId) =>
                     runMainAttachmentInterpretation('iep', attachmentId)
                   }
@@ -2187,6 +2237,9 @@ function IepCompassApp() {
                   }
                   onKeepAttachmentReference={(attachmentId) =>
                     keepMainAttachmentReference('task', attachmentId)
+                  }
+                  onApplyDemoRecordedRun={(attachmentId) =>
+                    applyJordanDemoRecordedRun('task', attachmentId)
                   }
                   onRunAttachmentInterpretation={(attachmentId) =>
                     runMainAttachmentInterpretation('task', attachmentId)
