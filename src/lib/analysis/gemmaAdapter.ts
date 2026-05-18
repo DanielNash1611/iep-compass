@@ -33,6 +33,7 @@ import { getSourceReadyAttachments } from '../../features/source/sourceText'
 import { resolveOllamaEndpoint } from '../on-device/ollamaEndpointConfig'
 import type {
   AnalysisExecution,
+  AnalysisOptions,
   AnalysisRequest,
   TeacherConcernExecution,
   TeacherConcernRequest,
@@ -129,12 +130,15 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
     }
   }
 
-  async analyze(request: AnalysisRequest): Promise<AnalysisExecution> {
+  async analyze(
+    request: AnalysisRequest,
+    options?: AnalysisOptions,
+  ): Promise<AnalysisExecution> {
     const attachmentNotes = this.buildAnalysisNotes(request)
     const primaryLabel = formatModelLabel(this.config.primaryModel)
 
     if (isJordanDemoRequest(request)) {
-      const demoResult = await analyzeJordanDemoWithBrowserGemma(request)
+      const demoResult = await analyzeJordanDemoWithBrowserGemma(request, options)
 
       return {
         meta: {

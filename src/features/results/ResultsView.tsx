@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { AppIcon } from '../../components/AppIcon'
+import type { AppIconName } from '../../components/AppIcon'
 import { ConfidenceBadge } from '../../components/ConfidenceBadge'
 import { SectionCard } from '../../components/SectionCard'
 import type { AnalysisExecution } from '../../types/analysis'
@@ -117,6 +118,158 @@ function buildAlternativeAccommodationScripts(name: string) {
   ]
 }
 
+function iconForAccommodation(name: string): AppIconName {
+  const value = name.toLowerCase()
+  if (value.includes('time')) return 'clock'
+  if (
+    value.includes('read aloud') ||
+    value.includes('audio') ||
+    value.includes('listen') ||
+    value.includes('text-to-speech') ||
+    value.includes('text to speech')
+  ) {
+    return 'headphones'
+  }
+  if (
+    value.includes('organizer') ||
+    value.includes('graphic') ||
+    value.includes('outline') ||
+    value.includes('chart')
+  ) {
+    return 'notebook'
+  }
+  if (
+    value.includes('dictat') ||
+    value.includes('scribe') ||
+    value.includes('speech-to-text') ||
+    value.includes('voice') ||
+    value.includes('speak')
+  ) {
+    return 'microphone'
+  }
+  if (value.includes('note')) return 'notebook'
+  return 'spark'
+}
+
+type RelevantAccommodation =
+  AnalysisExecution['result']['relevantAccommodations'][number]
+
+function AccommodationCard({
+  item,
+  waypointLabel,
+}: {
+  item: RelevantAccommodation
+  waypointLabel: string
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const bodyId = useId()
+
+  return (
+    <article
+      className={`accommodation-card accommodation-card--${item.confidence}${
+        expanded ? ' accommodation-card--open' : ''
+      }`}
+    >
+      <button
+        type="button"
+        className="accommodation-card__summary-button"
+        aria-expanded={expanded}
+        aria-controls={bodyId}
+        onClick={() => setExpanded((open) => !open)}
+      >
+        <span className="accommodation-card__icon" aria-hidden="true">
+          <AppIcon name={iconForAccommodation(item.name)} />
+        </span>
+
+        <span className="accommodation-card__summary-text">
+          <span className="accommodation-card__waypoint">
+            <AppIcon name="star" className="button-icon button-icon--sm" />
+            {waypointLabel}
+          </span>
+          <h3>{item.name}</h3>
+          <p className="accommodation-card__summary">{item.plainLanguage}</p>
+        </span>
+
+        <span className="accommodation-card__summary-meta">
+          <ConfidenceBadge confidence={item.confidence} />
+          <AppIcon
+            name="chevron"
+            className="accommodation-card__chevron"
+            aria-hidden="true"
+          />
+        </span>
+      </button>
+
+      <div id={bodyId} className="accommodation-card__body" hidden={!expanded}>
+        <div className="accommodation-columns">
+          <section className="accommodation-pane accommodation-pane--why">
+            <h4>
+              <AppIcon name="results" className="button-icon button-icon--sm" />
+              <span>Why this may help</span>
+            </h4>
+            <p>{item.applicationReason}</p>
+            <p>{item.whyItMayMatter}</p>
+          </section>
+
+          <section className="accommodation-pane accommodation-pane--action">
+            <h4>
+              <AppIcon name="flag" className="button-icon button-icon--sm" />
+              <span>What to do next</span>
+            </h4>
+            {item.implementationNotes.length > 0 ? (
+              <ul className="support-list support-list--checks">
+                {item.implementationNotes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>{ACCOMMODATION_SUPPORT_COPY[item.confidence]}</p>
+            )}
+          </section>
+
+          <section className="accommodation-pane accommodation-pane--confirm">
+            <h4>
+              <AppIcon name="waypoint" className="button-icon button-icon--sm" />
+              <span>What to check</span>
+            </h4>
+            <p>{CONFIRMATION_COPY[item.confidence]}</p>
+          </section>
+
+          <section className="accommodation-pane accommodation-pane--script">
+            <h4>
+              <AppIcon name="quote" className="button-icon button-icon--sm" />
+              <span>What you can say</span>
+            </h4>
+            <blockquote className="quote-card quote-card--inline">
+              <p>{buildAccommodationScript(item.name)}</p>
+            </blockquote>
+            <CopyScriptButton text={buildAccommodationScript(item.name)} />
+            <details className="script-options">
+              <summary>Other ways to say it</summary>
+              <ul className="support-list">
+                {buildAlternativeAccommodationScripts(item.name).map((script) => (
+                  <li key={script}>{script}</li>
+                ))}
+              </ul>
+            </details>
+          </section>
+        </div>
+
+        <details className="source-snippet">
+          <summary className="source-snippet__summary">
+            <span className="summary-label">
+              <AppIcon name="source" className="button-icon button-icon--sm" />
+              Show the IEP wording this comes from
+            </span>
+          </summary>
+
+          <p className="source-snippet__body">{item.sourceText}</p>
+        </details>
+      </div>
+    </article>
+  )
+}
+
 export function ResultsView({
   analysis,
   onAskAboutAccommodation,
@@ -190,7 +343,7 @@ export function ResultsView({
         {isCachedResult && onRerun ? (
           <button className="ghost-button" type="button" onClick={onRerun}>
             <AppIcon name="results" className="button-icon button-icon--sm" />
-            Re-run the mapping
+            Re-run fresh mapping
           </button>
         ) : null}
       </div>
@@ -266,92 +419,15 @@ export function ResultsView({
           >
             <div className="accommodation-list">
               {group.items.map((item, index) => (
-                <article
+                <AccommodationCard
                   key={`${item.name}-${item.sourceText}`}
-                  className={`accommodation-card accommodation-card--${item.confidence}`}
-                >
-                  <div className="accommodation-card__topline">
-                    <span className="accommodation-card__waypoint">
-                      <AppIcon name="star" className="button-icon button-icon--sm" />
-                      {group.eyebrow === 'Check first'
-                        ? `Check ${index + 1}`
-                        : `Ask about ${index + 1}`}
-                    </span>
-                    <ConfidenceBadge confidence={item.confidence} />
-                  </div>
-
-                  <div className="accommodation-card__header">
-                    <div>
-                      <h3>{item.name}</h3>
-                      <p className="accommodation-card__summary">{item.plainLanguage}</p>
-                    </div>
-                  </div>
-
-                  <div className="accommodation-columns">
-                    <section className="accommodation-pane accommodation-pane--why">
-                      <h4>
-                        <AppIcon name="results" className="button-icon button-icon--sm" />
-                        <span>Why this may help</span>
-                      </h4>
-                      <p>{item.applicationReason}</p>
-                      <p>{item.whyItMayMatter}</p>
-                    </section>
-
-                    <section className="accommodation-pane accommodation-pane--action">
-                      <h4>
-                        <AppIcon name="flag" className="button-icon button-icon--sm" />
-                        <span>What to do next</span>
-                      </h4>
-                      {item.implementationNotes.length > 0 ? (
-                        <ul className="support-list support-list--checks">
-                          {item.implementationNotes.map((note) => (
-                            <li key={note}>{note}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p>{ACCOMMODATION_SUPPORT_COPY[item.confidence]}</p>
-                      )}
-                    </section>
-
-                    <section className="accommodation-pane accommodation-pane--confirm">
-                      <h4>
-                        <AppIcon name="waypoint" className="button-icon button-icon--sm" />
-                        <span>What to check</span>
-                      </h4>
-                      <p>{CONFIRMATION_COPY[item.confidence]}</p>
-                    </section>
-
-                    <section className="accommodation-pane accommodation-pane--script">
-                      <h4>
-                        <AppIcon name="quote" className="button-icon button-icon--sm" />
-                        <span>What you can say</span>
-                      </h4>
-                      <blockquote className="quote-card quote-card--inline">
-                        <p>{buildAccommodationScript(item.name)}</p>
-                      </blockquote>
-                      <CopyScriptButton text={buildAccommodationScript(item.name)} />
-                      <details className="script-options">
-                        <summary>Other ways to say it</summary>
-                        <ul className="support-list">
-                          {buildAlternativeAccommodationScripts(item.name).map((script) => (
-                            <li key={script}>{script}</li>
-                          ))}
-                        </ul>
-                      </details>
-                    </section>
-                  </div>
-
-                  <details className="source-snippet">
-                    <summary className="source-snippet__summary">
-                      <span className="summary-label">
-                        <AppIcon name="source" className="button-icon button-icon--sm" />
-                        Show the IEP wording this comes from
-                      </span>
-                    </summary>
-
-                    <p className="source-snippet__body">{item.sourceText}</p>
-                  </details>
-                </article>
+                  item={item}
+                  waypointLabel={
+                    group.eyebrow === 'Check first'
+                      ? `Check ${index + 1}`
+                      : `Ask about ${index + 1}`
+                  }
+                />
               ))}
             </div>
           </SectionCard>

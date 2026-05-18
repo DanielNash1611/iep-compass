@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import './App.css'
+import { BrandLockup } from './components/BrandLockup'
 import { AppIcon, type AppIconName } from './components/AppIcon'
 import { LoadingIndicator } from './components/LoadingIndicator'
 import { SectionCard } from './components/SectionCard'
@@ -52,6 +53,7 @@ import {
 import { hasUncertaintyMarkers } from './lib/text/uncertaintyMarkers'
 import type {
   AnalysisExecution,
+  AnalysisOptions,
   AttachmentInterpretationProgress,
   SourceMaterial,
   TaskReviewDraft,
@@ -1546,6 +1548,7 @@ function IepCompassApp() {
     nextTaskTitle: string,
     nextLearningProfile: string,
     nextContextTags: TaskContext[],
+    options?: AnalysisOptions,
   ) {
     const runId = analysisRunIdRef.current + 1
     analysisRunIdRef.current = runId
@@ -1557,14 +1560,17 @@ function IepCompassApp() {
     clearTeacherConcernState()
 
     try {
-      const nextAnalysis = await analysisAdapter.analyze({
-        contextTags: nextContextTags,
-        iepSource: getAnalysisSource(nextIepSource),
-        learningProfile: nextLearningProfile.trim(),
-        taskTraits: getAnalysisTaskTraits(nextTaskSource),
-        taskTitle: nextTaskTitle.trim(),
-        taskSource: getAnalysisSource(nextTaskSource),
-      })
+      const nextAnalysis = await analysisAdapter.analyze(
+        {
+          contextTags: nextContextTags,
+          iepSource: getAnalysisSource(nextIepSource),
+          learningProfile: nextLearningProfile.trim(),
+          taskTraits: getAnalysisTaskTraits(nextTaskSource),
+          taskTitle: nextTaskTitle.trim(),
+          taskSource: getAnalysisSource(nextTaskSource),
+        },
+        options,
+      )
 
       if (analysisRunIdRef.current !== runId) {
         return false
@@ -1652,6 +1658,27 @@ function IepCompassApp() {
     if (!didGenerate) {
       return
     }
+  }
+
+  async function handleRerunMapping() {
+    const nextTaskTitle = taskTitle.trim() || deriveTaskTitleFromSource(taskSource)
+
+    if (!nextTaskTitle) {
+      return
+    }
+
+    // Rerun the current mapping as-is — same IEP supports, task source, task
+    // title, learning profile, and context tags — and force a fresh seed so a
+    // precached demo selection is not simply replayed. This deliberately skips
+    // the correction/fix-details flow.
+    await runPrimaryAnalysis(
+      iepSource,
+      taskSource,
+      nextTaskTitle,
+      learningProfile,
+      contextTags,
+      { forceFresh: true },
+    )
   }
 
   async function handleRegenerateFromCorrection() {
@@ -1809,6 +1836,8 @@ function IepCompassApp() {
         {screen === 'iep' ? (
           <header className="app-header">
             <div className="app-header__copy">
+              <BrandLockup as="h1" className="app-header__brand" />
+
               <div className="app-header__eyebrow-row">
                 <span className="eyebrow eyebrow--hero">
                   <AppIcon name="compass" className="button-icon button-icon--sm" />
@@ -1822,7 +1851,6 @@ function IepCompassApp() {
 
               <div className="app-header__main">
                 <div className="app-header__headline">
-                  <h1>IEP Compass</h1>
                   <p className="app-header__lede">
                     First, add your IEP. Then add your school work. We will show
                     you which of your supports fit, what you can say, and what to
@@ -1890,7 +1918,7 @@ function IepCompassApp() {
                   <AppIcon name="waypoint" className="button-icon button-icon--sm" />
                   Step-by-step support helper
                 </span>
-                <h1>IEP Compass</h1>
+                <BrandLockup as="h1" compact className="app-header__brand" />
               </div>
 
               <button
@@ -2660,7 +2688,7 @@ function IepCompassApp() {
                 <ResultsView
                   analysis={analysis}
                   onAskAboutAccommodation={askAboutSkippedAccommodation}
-                  onRerun={() => void handleGenerateOutput()}
+                  onRerun={() => void handleRerunMapping()}
                 />
               ) : null}
 

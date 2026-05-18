@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import {
   isJordanDemoRequest,
   parseSelectedDemoAccommodationIds,
+  resolveDemoRandomSeed,
 } from '../../src/lib/analysis/demoBrowserMapping.ts'
 import {
   createJordanDemoSources,
@@ -70,6 +71,24 @@ test('demo browser mapping can recover IDs from non-json text while rejecting in
     'plus',
     'imaginary_legal_service',
   ])
+})
+
+test('standard demo flow keeps the fixed inference seed', () => {
+  assert.equal(resolveDemoRandomSeed(false), 7)
+  assert.equal(resolveDemoRandomSeed(false, 123456), 7)
+})
+
+test('forceFresh demo rerun reseeds per run and stays a small value', () => {
+  assert.equal(resolveDemoRandomSeed(true, 1234567), 234567)
+  assert.equal(resolveDemoRandomSeed(true, 42), 42)
+
+  const seedA = resolveDemoRandomSeed(true, 1000007)
+  const seedB = resolveDemoRandomSeed(true, 2000009)
+  assert.notEqual(seedA, seedB)
+
+  const liveSeed = resolveDemoRandomSeed(true)
+  assert.ok(Number.isInteger(liveSeed))
+  assert.ok(liveSeed >= 0 && liveSeed < 1_000_000)
 })
 
 test('Jordan demo request detection requires seeded demo attachments and the demo task title', async () => {

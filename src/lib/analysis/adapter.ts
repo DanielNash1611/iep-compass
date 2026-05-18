@@ -1,5 +1,6 @@
 import type {
   AnalysisExecution,
+  AnalysisOptions,
   AnalysisRequest,
   TeacherConcernExecution,
   TeacherConcernRequest,
@@ -14,7 +15,10 @@ export interface ModelPlan {
 }
 
 export interface AnalysisModelAdapter {
-  analyze: (request: AnalysisRequest) => Promise<AnalysisExecution>
+  analyze: (
+    request: AnalysisRequest,
+    options?: AnalysisOptions,
+  ) => Promise<AnalysisExecution>
   analyzeTeacherConcern: (
     request: TeacherConcernRequest,
   ) => Promise<TeacherConcernExecution>

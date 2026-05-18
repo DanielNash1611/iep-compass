@@ -2,6 +2,28 @@
 
 ## Recently Completed
 
+- Fixed the brand lockup so the compass logo renders at the intended size:
+  - sanitized the React-generated SVG gradient IDs and wired the SVG fills/strokes to the generated IDs, restoring the large compass rose pieces that were disappearing in browser rendering
+  - increased the hero and compact-header mark sizing so the logo reads as a real brand signal, with mobile-specific sizing variables for narrower layouts
+  - kept the fix inside the shared lockup/CSS surface so the main app shell and production launch gate stay consistent
+  - verified the hero and compact step header in the running browser app; `npm run lint`, `npm run build`, and `npm test` pass
+- Integrated a reusable compass-style brand lockup into the app shell:
+  - added a shared `BrandLockup` component with a custom compass rose, spark, and underline glow inspired by the provided logo image
+  - swapped the main hero and compact header over to the new lockup so the brand is stronger without adding extra chrome
+  - added the lockup to the production launch gate screens so the identity stays consistent before the app opens
+  - kept the mark subtle enough to fit the warm, notebook-like brand system rather than dropping the raw image in unchanged
+  - verified `npm run lint`, `npm run build`, and `npm run test` all pass; visually checked the updated header in Chrome on the running local app
+- Tightened demo/local-reader copy from browser review comments:
+  - changed the file-review overlay into a body-level modal portal so `Check what we read from your file` opens centered in the current viewport instead of depending on where the upload section sits in the page
+  - locked background scrolling while that review modal is open and added Escape/backdrop close behavior
+  - changed the local image action from model-centric wording (`Interpret with local Gemma`) to the plainer `Read this image`
+  - changed the Jordan shortcut from `Apply reviewed Jordan demo supports` to `Use reviewed eval version`
+  - clarified that the reviewed eval version is the fully accurate Jordan support text and is intentionally a speed-up after the small local model's rough snapshot read
+  - moved upload/image-reader explanatory copy and local-reader setup into a closed `Learn about photos and local reading` disclosure so the upload area stays lighter on mobile
+  - softened the pending file-review message so it explains the text loaded and now needs approval, instead of sounding like an error
+  - tightened mobile card containment so source-entry cards, upload panels, and required-field labels stay within the phone viewport
+  - moved structured file review drafts into the same modal-style approval experience as photo text review, leaving only a compact `Check what we found` action on the upload card
+  - stabilized long structured-review modal scrolling by using the backdrop as the single scroll surface instead of nesting a scrolling dialog inside a scrolling overlay
 - Made the local image reader (Ollama) setup more subtle and added cached-result transparency on the results step:
   - `OllamaEndpointControl` is now a collapsed `<details>` disclosure ("Set up a local image reader" + a Saved/From .env.local/Optional badge); the endpoint form only shows once the user opens it, instead of the whole form being visible inline
   - the results step now shows a transparency note stating whether the mapping used a saved demo response (`meta.mode === 'demo'`) or was generated fresh
@@ -205,6 +227,11 @@
   - `npm run lint` passed
   - `npm run test` is currently blocked in this environment because Node does not support `--experimental-strip-types`
   - `npm run build` passed
+
+## Next Up
+
+- If the logo should be more literal on smaller screens, give the compact header one more mobile-specific pass after a real phone-sized check.
+- Otherwise, keep the current brand treatment and move on to the next product or eval task.
 
 - Tried one shared narrow follow-up tile for the real phone photo’s student-response condition lines:
   - added a shared `student_response_conditions` recovery tile in both the browser app path and the comparison harness

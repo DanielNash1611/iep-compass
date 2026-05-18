@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { BrandLockup } from '../../components/BrandLockup'
 import { AppIcon } from '../../components/AppIcon'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
 import {
@@ -196,15 +197,16 @@ export function ProductionLaunchGate({
         <div className="app-shell__glow app-shell__glow--warm" aria-hidden="true" />
         <div className="app-shell__glow app-shell__glow--cool" aria-hidden="true" />
 
-        <main className="production-gate__panel" aria-live="polite">
-          <span className="eyebrow eyebrow--hero">
-            <AppIcon name="compass" className="button-icon button-icon--sm" />
-            Checking browser model support
-          </span>
-          <h1>IEP Compass</h1>
-          <LoadingIndicator label={`Checking whether ${GEMMA4_MODEL_LABEL} can run here.`} />
-          <p className="production-gate__copy">
-            This production version opens only when the configured browser model is
+      <main className="production-gate__panel" aria-live="polite">
+        <BrandLockup compact className="production-gate__brand" />
+        <span className="eyebrow eyebrow--hero">
+          <AppIcon name="compass" className="button-icon button-icon--sm" />
+          Browser model check
+        </span>
+        <h1>Checking browser model support</h1>
+        <LoadingIndicator label={`Checking whether ${GEMMA4_MODEL_LABEL} can run here.`} />
+        <p className="production-gate__copy">
+          This production version opens only when the configured browser model is
             available on this device.
           </p>
         </main>
@@ -422,6 +424,7 @@ function ModelLoadingScreen({
       <div className="app-shell__glow app-shell__glow--cool" aria-hidden="true" />
 
       <main className="production-gate__panel" aria-live="polite">
+        <BrandLockup compact className="production-gate__brand" />
         <span className="eyebrow eyebrow--hero">
           <AppIcon name="spark" className="button-icon button-icon--sm" />
           {phaseLabel}
@@ -444,6 +447,7 @@ function ModelLoadedScreen({ onStart }: { onStart: () => void }) {
       <div className="app-shell__glow app-shell__glow--cool" aria-hidden="true" />
 
       <main className="production-gate__panel" aria-live="polite">
+        <BrandLockup compact className="production-gate__brand" />
         <span className="eyebrow eyebrow--hero">
           <AppIcon name="check" className="button-icon button-icon--sm" />
           Model saved
@@ -479,6 +483,7 @@ function UnsupportedDeviceScreen({
       <div className="app-shell__glow app-shell__glow--cool" aria-hidden="true" />
 
       <main className="production-gate__panel production-gate__panel--blocked">
+        <BrandLockup compact className="production-gate__brand" />
         <span className="eyebrow eyebrow--hero">
           <AppIcon name="shield" className="button-icon button-icon--sm" />
           Browser model required

@@ -4,8 +4,11 @@ export type AppIconName =
   | 'assignment'
   | 'camera'
   | 'check'
+  | 'chevron'
+  | 'clock'
   | 'compass'
   | 'flag'
+  | 'headphones'
   | 'microphone'
   | 'notebook'
   | 'parent'
@@ -75,6 +78,23 @@ function renderIcon(name: AppIconName) {
         <>
           <circle cx="12" cy="12" r="8" />
           <path d="m8.7 12.2 2.2 2.2 4.5-4.8" />
+        </>
+      )
+    case 'chevron':
+      return <path d="m10 7 5 5-5 5" />
+    case 'clock':
+      return (
+        <>
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 7.5V12l3 1.8" />
+        </>
+      )
+    case 'headphones':
+      return (
+        <>
+          <path d="M5 14v-1.5a7 7 0 0 1 14 0V14" />
+          <rect x="4" y="13.5" width="3.6" height="6" rx="1.6" />
+          <rect x="16.4" y="13.5" width="3.6" height="6" rx="1.6" />
         </>
       )
     case 'compass':
