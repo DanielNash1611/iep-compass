@@ -416,3 +416,10 @@
 - Is the current text-only IEP persistence enough for most families, or do they expect reviewed upload text to come back too?
 - Should the on-device Gemma testing surface remain inside the assignment step long-term or move to a dedicated developer/testing area?
 - Is the current document-reading wording clear enough that families understand when upload details were reviewed versus kept as reference only?
+
+## Maintenance baseline — September 30, 2026
+
+- Patched dependencies, including PDF.js 6 and supported ESLint 10.
+- Added credential-free CI checks and HTTP-blocked deterministic tests.
+- Aligned MediaPipe WASM defaults with installed 0.10.29; preserved semantic model evals as separate opt-in commands.
+- Next: review the maintenance commit; model inference and real-document quality remain outside this offline validation.

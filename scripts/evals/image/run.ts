@@ -437,6 +437,7 @@ async function runCaseInFreshProcess(
         ]
           .filter(Boolean)
           .join(' '),
+        { cause: error },
       )
     }
   }

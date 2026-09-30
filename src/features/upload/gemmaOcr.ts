@@ -830,6 +830,7 @@ async function requestDocumentReading(options: {
       `Gemma document reading returned output the app could not parse: ${
         error instanceof Error ? error.message : String(error)
       }`,
+      { cause: error },
     )
   }
 }
@@ -1208,7 +1209,6 @@ async function runIepTextReadingPasses(options: {
   }> = []
   let modelLabel = formatModelLabel(options.config.primaryModel)
   let usedFallback = false
-  let focusedRecoveryTriggered = false
   const runPass = async (pass: {
     detail?: string
     imageDataUrl: string
@@ -1265,7 +1265,7 @@ async function runIepTextReadingPasses(options: {
   const draftHealth: AccommodationDraftHealth | undefined
     = assessAccommodationDraftHealth(firstPassResult)
 
-  focusedRecoveryTriggered = shouldTriggerAccommodationFocusedRecovery(firstPassResult, {
+  let focusedRecoveryTriggered = shouldTriggerAccommodationFocusedRecovery(firstPassResult, {
     isPhotoMode: Boolean(options.photoMode),
   })
 

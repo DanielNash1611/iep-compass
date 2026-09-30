@@ -202,6 +202,7 @@ export async function generateLocalBackupResponse(options: {
 
       throw new Error(
         `Local backup failed on ${formatModelLabel(config.primaryModel)} (${primaryMessage}) and ${formatModelLabel(config.fallbackModel)} (${fallbackMessage}).`,
+        { cause: fallbackError },
       )
     }
   }

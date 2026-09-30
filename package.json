@@ -8,36 +8,42 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test --experimental-strip-types scripts/tests/*.test.mjs",
+    "test": "node --require ./scripts/offline-test.cjs --test --experimental-strip-types scripts/tests/*.test.mjs",
     "evals:gemma": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/run.mjs",
     "evals:gemma:analysis:composite": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/analysisCompositeLoop.mjs",
     "evals:gemma:image": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts",
     "evals:gemma:image:accommodation": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite accommodation_upload",
     "evals:gemma:image:compare:app": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite accommodation_upload --model gemma4:e2b --fresh-process-per-case --runtime-retries 1 --json scripts/evals/image/baselines/app-gemma4-e2b-accommodation-baseline.json --md scripts/evals/image/baselines/app-gemma4-e2b-accommodation-baseline.md",
-    "evals:gemma:image:assignment": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite assignment_upload"
+    "evals:gemma:image:assignment": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/evals/image/run.ts --suite assignment_upload",
+    "check": "node scripts/check.cjs",
+    "typecheck": "tsc -b --pretty false",
+    "smoke": "node scripts/smoke.cjs"
   },
   "dependencies": {
     "@fontsource/manrope": "^5.2.8",
     "@fontsource/newsreader": "^5.2.10",
     "@mediapipe/tasks-genai": "^0.10.27",
     "ollama": "^0.6.3",
-    "pdfjs-dist": "^5.6.205",
+    "pdfjs-dist": "6.3.289",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "10.0.1",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^9.39.4",
+    "eslint": "10.11.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
     "vite": "^8.0.4"
+  },
+  "engines": {
+    "node": ">=22.22.0 <23 || >=24.13.0 <25"
   }
 }
