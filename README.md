@@ -141,7 +141,7 @@ Default values:
 
 - `VITE_GEMMA4_WEB_MODEL_PATH=/models/gemma-4-E2B-it-web.task` in local development
 - production default when no override is set: `https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it-web.task`
-- `VITE_MEDIAPIPE_WASM_ROOT=https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.27/wasm`
+- `VITE_MEDIAPIPE_WASM_ROOT=https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm`
 - `VITE_GEMMA_BASE_URL=/api/ollama`
 - `VITE_GEMMA_APP_MODEL=gemma4:e2b`
 - `VITE_GEMMA_PRIMARY_MODEL=gemma4:e2b`

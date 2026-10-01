@@ -59,7 +59,6 @@ export async function renderPdfPagesToImageDataUrls(
       processedPageCount,
     }
   } finally {
-    await pdf.destroy()
-    loadingTask.destroy()
+    await loadingTask.destroy()
   }
 }

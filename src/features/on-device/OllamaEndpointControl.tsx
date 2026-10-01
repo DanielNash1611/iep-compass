@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { AppIcon } from '../../components/AppIcon'
 import type { ResolvedOllamaEndpoint } from '../../lib/on-device/ollamaEndpointConfig'
 import {
@@ -31,9 +31,12 @@ export function OllamaEndpointControl({
   const [statusTone, setStatusTone] = useState<'error' | 'ready' | null>(null)
   const [isTesting, setIsTesting] = useState(false)
 
-  useEffect(() => {
-    setDraftEndpoint(visibleEndpoint.savedBaseUrl ?? '')
-  }, [visibleEndpoint.savedBaseUrl])
+  const savedBaseUrl = visibleEndpoint.savedBaseUrl ?? ''
+  const [previousSavedBaseUrl, setPreviousSavedBaseUrl] = useState(savedBaseUrl)
+  if (previousSavedBaseUrl !== savedBaseUrl) {
+    setPreviousSavedBaseUrl(savedBaseUrl)
+    setDraftEndpoint(savedBaseUrl)
+  }
 
   function handleSave() {
     const savedEndpoint = saveOllamaEndpoint(draftEndpoint)

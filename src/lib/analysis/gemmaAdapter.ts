@@ -496,6 +496,7 @@ class ConfigurableGemmaAdapter implements AnalysisModelAdapter {
       if (error instanceof DOMException && error.name === 'AbortError') {
         throw new Error(
           `Live model request timed out after ${Math.round(this.analysisTimeoutMs / 1000)} seconds`,
+          { cause: error },
         )
       }
 

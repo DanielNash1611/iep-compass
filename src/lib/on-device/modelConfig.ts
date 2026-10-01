@@ -15,7 +15,7 @@ export const DEFAULT_MODEL_ASSET_PATH =
 
 export const DEFAULT_WASM_ROOT =
   import.meta.env.VITE_MEDIAPIPE_WASM_ROOT?.trim() ||
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.27/wasm'
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm'
 
 export const GEMMA4_MODEL_LABEL = 'Gemma 4 E2B'
 
