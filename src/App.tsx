@@ -1560,6 +1560,7 @@ function IepCompassApp() {
     clearTeacherConcernState()
 
     try {
+      void analytics.track("analysis_started")
       const nextAnalysis = await analysisAdapter.analyze(
         {
           contextTags: nextContextTags,
@@ -1577,6 +1578,7 @@ function IepCompassApp() {
       }
 
       setAnalysis(nextAnalysis)
+      void analytics.track("results_viewed")
       return true
     } catch (error) {
       if (analysisRunIdRef.current !== runId) {
@@ -1584,6 +1586,7 @@ function IepCompassApp() {
       }
 
       setAnalysisError(formatErrorMessage(error))
+      void analytics.track("analysis_failed")
       return false
     } finally {
       if (analysisRunIdRef.current === runId) {
@@ -2897,3 +2900,4 @@ export default function App() {
     </ProductionLaunchGate>
   )
 }
+import { analytics } from "./analytics";
