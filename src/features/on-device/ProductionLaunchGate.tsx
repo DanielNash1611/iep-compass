@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { BrandLockup } from '../../components/BrandLockup'
+import { analytics } from '../../analytics'
 import { AppIcon } from '../../components/AppIcon'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
 import {
@@ -64,6 +65,12 @@ export function ProductionLaunchGate({
   const [checkCount, setCheckCount] = useState(0)
   const loadIdRef = useRef(0)
   const loadStartedAtRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!enabled) return
+    if (gateState.status === 'blocked' || gateState.status === 'error') void analytics.track('launch_blocked')
+    if (gateState.status === 'ready' || gateState.status === 'model-loaded') void analytics.track('model_ready')
+  }, [enabled, gateState.status])
 
   useEffect(() => {
     if (!enabled) {
@@ -230,6 +237,7 @@ export function ProductionLaunchGate({
       <ModelLoadScreen
         networkStatus={gateState.networkStatus}
         onLoad={() => {
+          void analytics.track('model_download_started')
           loadIdRef.current += 1
           void cacheBrowserModel(loadIdRef.current)
         }}
