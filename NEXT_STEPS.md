@@ -423,3 +423,10 @@
 - Added credential-free CI checks and HTTP-blocked deterministic tests.
 - Aligned MediaPipe WASM defaults with installed 0.10.29; preserved semantic model evals as separate opt-in commands.
 - Next: review the maintenance commit; model inference and real-document quality remain outside this offline validation.
+
+## Maintenance follow-up — October 8, 2026
+
+- Updated the Node pin to 22.23.3 and bounded checkout/setup-node to verified 7.0.1/7.1.0 releases.
+- Fresh install, typecheck, lint, all 90 deterministic tests, build, and loopback smoke passed; npm audit reports zero findings.
+- Recorded the MediaPipe-to-LiteRT-LM review scope in `docs/MAINTENANCE_2026-10-08.md`; no inference migration or model run was performed.
+- Next: review the isolated maintenance commit; schedule a separate architecture and semantic-quality review before any inference migration.
