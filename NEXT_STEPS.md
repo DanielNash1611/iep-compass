@@ -2,6 +2,11 @@
 
 ## Recently Completed
 
+- October 13 maintenance: patched Vite 8.3.1 to 8.3.4; clean installs, typecheck,
+  lint, 90 offline tests, build, smoke and audits pass on Node 22/24. Verified
+  the setup gate and emitted PDF worker with synthetic browser fixtures, without
+  downloading a model or running inference. Next: review the isolated local commit;
+  see `docs/MAINTENANCE_2026-10-13.md`.
 - Fixed the brand lockup so the compass logo renders at the intended size:
   - sanitized the React-generated SVG gradient IDs and wired the SVG fills/strokes to the generated IDs, restoring the large compass rose pieces that were disappearing in browser rendering
   - increased the hero and compact-header mark sizing so the logo reads as a real brand signal, with mobile-specific sizing variables for narrower layouts
