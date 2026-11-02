@@ -2,6 +2,8 @@
 
 ## Recently Completed
 
+- November 2 audit follow-up: scoped minimatch 11.0.4 to the three modern ESLint consumers after checking their named/class APIs. Lint policy is unchanged; focused glob, source-selection and bounded-preprocessing regressions accompany the existing checks. Revisit these overrides when upstream consumers adopt the patched major.
+
 - November 2 maintenance: raised the supported Node security floor to 22.23.4 / 24.22.1 and the local/CI pin to 22.23.4. Typecheck, lint, offline tests, build and HTTP smoke pass; no model inference was run.
 
 - October 13 maintenance: patched Vite 8.3.1 to 8.3.4; clean installs, typecheck,
