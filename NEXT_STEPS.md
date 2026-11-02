@@ -2,6 +2,8 @@
 
 ## Recently Completed
 
+- November 2 maintenance: raised the supported Node security floor to 22.23.4 / 24.22.1 and the local/CI pin to 22.23.4. Typecheck, lint, offline tests, build and HTTP smoke pass; no model inference was run.
+
 - October 13 maintenance: patched Vite 8.3.1 to 8.3.4; clean installs, typecheck,
   lint, 90 offline tests, build, smoke and audits pass on Node 22/24. Verified
   the setup gate and emitted PDF worker with synthetic browser fixtures, without
